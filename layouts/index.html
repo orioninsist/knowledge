@@ -1,0 +1,142 @@
+{{ define "main" }}
+
+<section class="home-dashboard">
+
+  <section
+    class="home-block knowledge-stats"
+    id="knowledge-stats"
+  >
+    <h1>Statistics</h1>
+
+    <div class="stats-grid">
+      <span>
+        <strong>Total</strong>
+        <b id="stat-total-notes">—</b>
+      </span>
+
+      <span>
+        <strong>Inbox</strong>
+        <b id="stat-inbox">—</b>
+      </span>
+
+      <span>
+        <strong>Projects</strong>
+        <b id="stat-projects">—</b>
+      </span>
+
+      <span>
+        <strong>Areas</strong>
+        <b id="stat-areas">—</b>
+      </span>
+
+      <span>
+        <strong>Resources</strong>
+        <b id="stat-resources">—</b>
+      </span>
+
+      <span>
+        <strong>Archives</strong>
+        <b id="stat-archives">—</b>
+      </span>
+
+      <span>
+        <strong>Tags</strong>
+        <b id="stat-unique-tags">—</b>
+      </span>
+
+      <span>
+        <strong>Size</strong>
+        <b id="stat-total-size">—</b>
+      </span>
+    </div>
+  </section>
+
+  <section class="home-block">
+    <h2>Shortcuts</h2>
+
+    <div class="home-inline">
+      <div class="home-card">
+        <strong>Alt + K</strong>
+        <span>Search</span>
+      </div>
+
+      <div class="home-card">
+        <strong>Alt + H</strong>
+        <span>Home</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-block">
+    <h2>Daily notes</h2>
+
+    <div class="daily-grid">
+
+      <div class="daily-row">
+        <span class="daily-label">
+          Create / Open
+        </span>
+
+        <code>
+          kn code inbox note-name.md
+        </code>
+      </div>
+
+      <div class="daily-row">
+        <span class="daily-label">
+          Delete
+        </span>
+
+        <code>
+          kn rm note-name.md
+        </code>
+      </div>
+
+      <div class="daily-row">
+        <span class="daily-label">
+          Move MOC
+        </span>
+
+        <div class="daily-move">
+          <code>kn mv note-name.md archives</code>
+          <span class="daily-hint">
+            projects → archives · asks y/N before moving
+          </span>
+        </div>
+      </div>
+
+      <div class="daily-row">
+        <span class="daily-label">
+          MOCs
+        </span>
+
+        <div class="moc-list">
+          <code>inbox</code>
+          <code>projects</code>
+          <code>areas</code>
+          <code>resources</code>
+          <code>archives</code>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="home-block">
+    <h2>Search examples</h2>
+
+    <div class="search-query-list">
+      <code>linux</code>
+      <code>section:inbox linux</code>
+      <code>section:projects youtube</code>
+      <code>section:areas deutsch</code>
+      <code>section:resources hugo</code>
+      <code>section:archives old</code>
+      <code>tag:linux</code>
+      <code>status:active</code>
+    </div>
+  </section>
+
+</section>
+
+{{ end }}

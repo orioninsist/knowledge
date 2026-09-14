@@ -1,0 +1,55 @@
+.note-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.tag:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.tag-index {
+  border-top: 1px solid var(--border);
+}
+
+.tag-index-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 15px 4px;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+}
+
+.tag-index-row:hover .tag-index-name {
+  color: var(--link);
+}
+
+.tag-index-name {
+  font-weight: 550;
+}
+
+.tag-index-count {
+  min-width: 28px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

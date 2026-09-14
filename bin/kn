@@ -1,0 +1,428 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(
+    cd "$(dirname "${BASH_SOURCE[0]}")"
+    pwd
+)"
+
+PROJECT="$(
+    cd "$SCRIPT_DIR/.."
+    pwd
+)"
+
+BUN="$(command -v bun || true)"
+
+if [ -z "$BUN" ]; then
+    echo
+    echo "ERROR: bun is not available in PATH."
+    exit 1
+fi
+
+RUNTIME_ENV="$PROJECT/.runtime/personal/runtime.env"
+
+if [ ! -r "$RUNTIME_ENV" ]; then
+    echo
+    echo "ERROR: Runtime environment not found."
+    echo
+    echo "$RUNTIME_ENV"
+    echo
+    echo "Run the installer/runtime bootstrap first."
+    exit 1
+fi
+
+ROOT="$(
+    sed -n \
+      's/^WORKSPACE_ROOT=//p' \
+      "$RUNTIME_ENV" |
+    head -1
+)"
+
+if [ -z "$ROOT" ]; then
+    echo
+    echo "ERROR: WORKSPACE_ROOT is missing from runtime.env."
+    exit 1
+fi
+
+usage() {
+    cat <<'HELP'
+
+Usage:
+
+  Read:
+    kn glow <filename.md>
+
+  Open/create:
+    kn <editor> <moc> <filename.md>
+
+  Move:
+    kn mv <filename.md> <moc>
+
+  Delete:
+    kn rm <filename.md>
+
+Examples:
+
+    kn glow linux-notes.md
+
+    kn code inbox linux-notes.md
+    kn zed projects project-note.md
+    kn hx resources linux-notes.md
+    kn nvim areas german-notes.md
+
+    kn mv linux-notes.md archives
+    kn rm linux-notes.md
+
+MOC:
+
+    inbox
+    projects
+    areas
+    resources
+    archives
+
+HELP
+}
+
+find_note() {
+    local name="$1"
+
+    find \
+        "$ROOT/0-Inbox" \
+        "$ROOT/1-Projects" \
+        "$ROOT/2-Areas" \
+        "$ROOT/3-Resources" \
+        "$ROOT/4-Archives" \
+        -maxdepth 1 \
+        -type f \
+        -name "$name" \
+        -print \
+        -quit \
+        2>/dev/null
+}
+
+validate_note_name() {
+    local filename="$1"
+
+    "$BUN" \
+        "$PROJECT/scripts/validate-note-name.ts" \
+        "$filename"
+}
+
+remember_note() {
+    local filename="$1"
+    local runtime_env="$PROJECT/.runtime/personal/runtime.env"
+    local api_port
+
+    [ -r "$runtime_env" ] || return 0
+
+    api_port="$(
+        sed -n \
+            's/^API_PORT=//p' \
+            "$runtime_env" |
+        head -1
+    )"
+
+    [ -n "$api_port" ] || return 0
+
+    curl \
+        -fsS \
+        -X POST \
+        --get \
+        --data-urlencode \
+        "filename=$filename" \
+        "http://127.0.0.1:${api_port}/api/last-note" \
+        >/dev/null 2>&1 \
+        || true
+}
+
+moc_dir() {
+    case "$1" in
+        inbox)
+            printf '%s\n' "$ROOT/0-Inbox"
+            ;;
+        projects)
+            printf '%s\n' "$ROOT/1-Projects"
+            ;;
+        areas)
+            printf '%s\n' "$ROOT/2-Areas"
+            ;;
+        resources)
+            printf '%s\n' "$ROOT/3-Resources"
+            ;;
+        archives)
+            printf '%s\n' "$ROOT/4-Archives"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+path_moc() {
+    case "$1" in
+        "$ROOT/0-Inbox/"*)
+            printf '%s\n' inbox
+            ;;
+        "$ROOT/1-Projects/"*)
+            printf '%s\n' projects
+            ;;
+        "$ROOT/2-Areas/"*)
+            printf '%s\n' areas
+            ;;
+        "$ROOT/3-Resources/"*)
+            printf '%s\n' resources
+            ;;
+        "$ROOT/4-Archives/"*)
+            printf '%s\n' archives
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+#
+# GLOW — READ NOTE
+#
+
+if [ "${1:-}" = "glow" ]; then
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: kn glow <filename.md>"
+        exit 1
+    fi
+
+    NAME="$2"
+
+    validate_note_name "$NAME" || exit 1
+
+    FOUND="$(find_note "$NAME")"
+
+    if [ -z "$FOUND" ]; then
+        echo
+        echo "ERROR: Markdown note not found."
+        echo
+        echo "$NAME"
+        exit 1
+    fi
+
+    if ! command -v glow >/dev/null 2>&1; then
+        echo
+        echo "ERROR: Glow is not installed."
+        echo "Install: sudo pacman -S glow"
+        exit 1
+    fi
+
+    if ! command -v zeditor >/dev/null 2>&1; then
+        echo
+        echo "ERROR: Zed CLI (zeditor) is not available."
+        exit 1
+    fi
+
+    remember_note "$NAME"
+
+    export EDITOR="zeditor --wait"
+    export VISUAL="zeditor --wait"
+
+    exec glow -t "$FOUND"
+fi
+
+#
+# DELETE
+#
+
+if [ "${1:-}" = "rm" ]; then
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: kn rm <filename.md>"
+        exit 1
+    fi
+
+    NAME="$2"
+
+    validate_note_name "$NAME" || exit 1
+
+    FOUND="$(find_note "$NAME")"
+
+    if [ -z "$FOUND" ]; then
+        echo
+        echo "ERROR: Markdown note not found."
+        echo
+        echo "$NAME"
+        exit 1
+    fi
+
+    MOC="$(path_moc "$FOUND")"
+
+    echo
+    echo "Delete note"
+    echo
+    echo "File:  $NAME"
+    echo "MOC:   $MOC"
+    echo
+    echo "$FOUND"
+    echo
+    printf "Delete this note? [y/N] "
+
+    read -r ANSWER
+
+    case "$ANSWER" in
+        y|Y|yes|YES|Yes)
+            ;;
+        *)
+            echo
+            echo "CANCELLED: Note was not deleted."
+            exit 0
+            ;;
+    esac
+
+    rm -- "$FOUND"
+
+    echo
+    echo "PASS: Note deleted."
+    exit 0
+fi
+
+#
+# MOVE BETWEEN MOCs
+#
+
+if [ "${1:-}" = "mv" ]; then
+    if [ "$#" -ne 3 ]; then
+        echo "Usage: kn mv <filename.md> <moc>"
+        exit 1
+    fi
+
+    NAME="$2"
+    TARGET_MOC="$3"
+
+    validate_note_name "$NAME" || exit 1
+
+    FOUND="$(find_note "$NAME")"
+
+    if [ -z "$FOUND" ]; then
+        echo
+        echo "ERROR: Markdown note not found."
+        echo
+        echo "$NAME"
+        exit 1
+    fi
+
+    TARGET_DIR="$(moc_dir "$TARGET_MOC")"
+
+    if [ -z "$TARGET_DIR" ]; then
+        echo
+        echo "ERROR: Unknown MOC: $TARGET_MOC"
+        echo
+        echo "Allowed:"
+        echo "  inbox"
+        echo "  projects"
+        echo "  areas"
+        echo "  resources"
+        echo "  archives"
+        exit 1
+    fi
+
+    CURRENT_MOC="$(path_moc "$FOUND")"
+    TARGET="$TARGET_DIR/$NAME"
+
+    if [ "$CURRENT_MOC" = "$TARGET_MOC" ]; then
+        echo
+        echo "INFO: Note is already in $TARGET_MOC."
+        echo
+        echo "$FOUND"
+        exit 0
+    fi
+
+    if [ -e "$TARGET" ]; then
+        echo
+        echo "ERROR: Target filename already exists."
+        echo
+        echo "$TARGET"
+        exit 1
+    fi
+
+    echo
+    echo "Move note"
+    echo
+    echo "File:  $NAME"
+    echo "From:  $CURRENT_MOC"
+    echo "To:    $TARGET_MOC"
+    echo
+    echo "$FOUND"
+    echo "→"
+    echo "$TARGET"
+    echo
+    printf "Move this note? [y/N] "
+
+    read -r ANSWER
+
+    case "$ANSWER" in
+        y|Y|yes|YES|Yes)
+            ;;
+        *)
+            echo
+            echo "CANCELLED: Note was not moved."
+            exit 0
+            ;;
+    esac
+
+    mv -- "$FOUND" "$TARGET"
+
+    remember_note "$NAME"
+
+    echo
+    echo "PASS: Note moved."
+    echo
+    echo "$CURRENT_MOC → $TARGET_MOC"
+    echo "$TARGET"
+
+    exit 0
+fi
+
+#
+# NORMAL OPEN / CREATE
+#
+
+if [ "$#" -ne 3 ]; then
+    usage
+    exit 1
+fi
+
+EDITOR_CMD="$1"
+MOC="$2"
+NAME="$3"
+
+validate_note_name "$NAME" || exit 1
+
+TARGET_DIR="$(moc_dir "$MOC")"
+
+if [ -z "$TARGET_DIR" ]; then
+    echo
+    echo "ERROR: Unknown MOC: $MOC"
+    exit 1
+fi
+
+if ! command -v "$EDITOR_CMD" >/dev/null 2>&1; then
+    echo
+    echo "ERROR: Editor command not found:"
+    echo "$EDITOR_CMD"
+    exit 1
+fi
+
+FOUND="$(find_note "$NAME")"
+
+if [ -n "$FOUND" ]; then
+    remember_note "$NAME"
+    exec "$EDITOR_CMD" "$FOUND"
+fi
+
+cd "$PROJECT" || exit 1
+
+"$BUN" \
+    scripts/new-note.ts \
+    "$MOC" \
+    "$NAME" \
+    || exit 1
+
+remember_note "$NAME"
+
+exec "$EDITOR_CMD" "$TARGET_DIR/$NAME"

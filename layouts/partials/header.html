@@ -1,0 +1,45 @@
+<header class="topbar">
+
+  <a class="brand" href="/">Knowledge</a>
+
+  <div class="search">
+
+    <label
+      class="visually-hidden"
+      for="knowledge-search"
+    >
+      Search
+    </label>
+
+    <input
+      id="knowledge-search"
+      class="search-input"
+      type="search"
+      placeholder="Search notes..."
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Search notes"
+    >
+
+    <div
+      id="search-results"
+      class="search-results"
+      hidden
+    >
+      <div
+        id="search-summary"
+        class="search-summary"
+        hidden
+      ></div>
+
+      <div
+        id="search-results-list"
+        class="search-results-list"
+      ></div>
+    </div>
+
+  </div>
+
+</header>
+
+<script src="/js/search.js" defer></script>

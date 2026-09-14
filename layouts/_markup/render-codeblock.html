@@ -1,0 +1,23 @@
+{{- $type := lower .Type -}}
+
+{{- if eq $type "mermaid" -}}
+<div
+  class="visual-note visual-mermaid"
+  data-visual-language="mermaid"
+>{{ .Inner }}</div>
+
+{{- else if eq $type "d2" -}}
+<div
+  class="visual-note visual-d2"
+  data-visual-language="d2"
+>{{ .Inner }}</div>
+
+{{- else if eq $type "typst" -}}
+<div
+  class="visual-note visual-typst"
+  data-visual-language="typst"
+>{{ .Inner }}</div>
+
+{{- else -}}
+{{ highlight .Inner .Type .Options }}
+{{- end -}}

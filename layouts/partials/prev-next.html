@@ -1,0 +1,74 @@
+{{- $current := . -}}
+{{- $pages := $current.CurrentSection.RegularPages.ByTitle -}}
+{{- $count := len $pages -}}
+
+{{- if gt $count 1 -}}
+
+  {{- $currentIndex := -1 -}}
+
+  {{- range $index, $page := $pages -}}
+    {{- if eq $page.RelPermalink $current.RelPermalink -}}
+      {{- $currentIndex = $index -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if ge $currentIndex 0 -}}
+
+    {{- $previous := false -}}
+    {{- $next := false -}}
+
+    {{- if gt $currentIndex 0 -}}
+      {{- $previous = index $pages (sub $currentIndex 1) -}}
+    {{- end -}}
+
+    {{- if lt $currentIndex (sub $count 1) -}}
+      {{- $next = index $pages (add $currentIndex 1) -}}
+    {{- end -}}
+
+    <nav class="prev-next" aria-label="Previous and next notes">
+
+      <div class="prev-next-slot prev-slot">
+
+        {{- with $previous -}}
+
+          <a class="prev-next-link" href="{{ .RelPermalink }}">
+
+            <span class="prev-next-direction">
+              ← Previous
+            </span>
+
+            <span class="prev-next-title">
+              {{ .Title }}
+            </span>
+
+          </a>
+
+        {{- end -}}
+
+      </div>
+
+      <div class="prev-next-slot next-slot">
+
+        {{- with $next -}}
+
+          <a class="prev-next-link next-link" href="{{ .RelPermalink }}">
+
+            <span class="prev-next-direction">
+              Next →
+            </span>
+
+            <span class="prev-next-title">
+              {{ .Title }}
+            </span>
+
+          </a>
+
+        {{- end -}}
+
+      </div>
+
+    </nav>
+
+  {{- end -}}
+
+{{- end -}}

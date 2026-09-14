@@ -1,0 +1,139 @@
+{{- $current := . -}}
+
+{{- if and $current.File (not $current.IsHome) -}}
+
+  {{- $folderMap := dict
+      "inbox" "1-Inbox"
+      "projects" "2-Projects"
+      "areas" "3-Areas"
+      "resources" "4-Resources"
+      "archives" "5-Archives"
+  -}}
+
+  {{- $currentTags := $current.Params.tags | default (slice) -}}
+  {{- $related := slice -}}
+
+  {{- range $candidate := $current.Site.RegularPages -}}
+
+    {{- if and
+        $candidate.File
+        (ne $candidate.RelPermalink $current.RelPermalink)
+    -}}
+
+      {{- $score := 0 -}}
+
+      {{/* Shared tags */}}
+
+      {{- $candidateTags := $candidate.Params.tags | default (slice) -}}
+
+      {{- range $tag := $currentTags -}}
+        {{- if in $candidateTags $tag -}}
+          {{- $score = add $score 10 -}}
+        {{- end -}}
+      {{- end -}}
+
+      {{/* Current page -> candidate link */}}
+
+      {{- $candidateFolder := index $folderMap $candidate.Section -}}
+      {{- $candidateFile := $candidate.File.LogicalName -}}
+
+      {{- if and $candidateFolder $candidateFile -}}
+
+        {{- $candidateCross := printf "../%s/%s" $candidateFolder $candidateFile -}}
+        {{- $candidateRoot := printf "%s/%s" $candidateFolder $candidateFile -}}
+        {{- $candidateSame := printf "](%s)" $candidateFile -}}
+
+        {{- if or
+            (in $current.RawContent $candidateCross)
+            (in $current.RawContent $candidateRoot)
+            (and
+              (eq $current.Section $candidate.Section)
+              (in $current.RawContent $candidateSame)
+            )
+        -}}
+          {{- $score = add $score 5 -}}
+        {{- end -}}
+
+      {{- end -}}
+
+      {{/* Candidate -> current page link */}}
+
+      {{- $currentFolder := index $folderMap $current.Section -}}
+      {{- $currentFile := $current.File.LogicalName -}}
+
+      {{- if and $currentFolder $currentFile -}}
+
+        {{- $currentCross := printf "../%s/%s" $currentFolder $currentFile -}}
+        {{- $currentRoot := printf "%s/%s" $currentFolder $currentFile -}}
+        {{- $currentSame := printf "](%s)" $currentFile -}}
+
+        {{- if or
+            (in $candidate.RawContent $currentCross)
+            (in $candidate.RawContent $currentRoot)
+            (and
+              (eq $current.Section $candidate.Section)
+              (in $candidate.RawContent $currentSame)
+            )
+        -}}
+          {{- $score = add $score 5 -}}
+        {{- end -}}
+
+      {{- end -}}
+
+      {{- if gt $score 0 -}}
+        {{- $related = $related | append
+            (dict
+              "page" $candidate
+              "score" $score
+            )
+        -}}
+      {{- end -}}
+
+    {{- end -}}
+
+  {{- end -}}
+
+  {{- $related = sort $related "score" "desc" -}}
+
+  {{- with first 6 $related -}}
+
+    <section class="related-notes" aria-labelledby="related-title">
+
+      <header class="related-header">
+        <p class="eyebrow">Discover</p>
+        <h2 id="related-title">Related Notes</h2>
+      </header>
+
+      <div class="related-list">
+
+        {{- range . -}}
+
+          <a class="related-row" href="{{ .page.RelPermalink }}">
+
+            <span class="related-main">
+
+              <span class="related-title">
+                {{ .page.Title }}
+              </span>
+
+              <span class="related-section">
+                {{ .page.Section }}
+              </span>
+
+            </span>
+
+            <span class="related-score">
+              {{ .score }}
+            </span>
+
+          </a>
+
+        {{- end -}}
+
+      </div>
+
+    </section>
+
+  {{- end -}}
+
+{{- end -}}

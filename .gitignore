@@ -1,0 +1,27 @@
+# Dependencies
+/node_modules/
+
+# Local workspace configuration
+/workspace.toml
+
+# Local runtime / generated state
+/.runtime/
+/.search/
+
+# Hugo generated output
+/public/
+/resources/_gen/
+/.hugo_build.lock
+/hugo_stats.json
+
+# Local environment
+.env
+.env.*
+!/.env.example
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo

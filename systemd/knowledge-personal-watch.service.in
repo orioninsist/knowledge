@@ -1,0 +1,14 @@
+[Unit]
+Description=Knowledge Personal Live Filesystem Sync
+After=knowledge-personal-search.service knowledge-personal-web.service
+Wants=knowledge-personal-search.service knowledge-personal-web.service
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+ExecStart=@PROJECT_DIR@/scripts/live-workspace-sync.sh
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

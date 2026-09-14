@@ -1,0 +1,59 @@
+locale = "tr-TR"
+title = "Knowledge"
+
+disableKinds = ["RSS", "sitemap", "robotsTXT", "taxonomy", "term"]
+
+[outputs]
+  home = ["HTML"]
+[frontmatter]
+  lastmod = ["lastmod", "modified", ":fileModTime"]
+
+[markup]
+
+  [markup.goldmark]
+
+    [markup.goldmark.renderer]
+      unsafe = true
+
+    [markup.goldmark.extensions]
+      strikethrough = true
+      table = true
+      taskList = true
+      linkify = true
+
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 6
+    ordered = false
+
+[build]
+
+[module]
+
+  [[module.mounts]]
+    source = "1-Inbox"
+    target = "content/inbox"
+
+  [[module.mounts]]
+    source = "2-Projects"
+    target = "content/projects"
+
+  [[module.mounts]]
+    source = "3-Areas"
+    target = "content/areas"
+
+  [[module.mounts]]
+    source = "4-Resources"
+    target = "content/resources"
+
+  [[module.mounts]]
+    source = "5-Archives"
+    target = "content/archives"
+
+  [[module.mounts]]
+    source = "layouts"
+    target = "layouts"
+
+  [[module.mounts]]
+    source = "static"
+    target = "static"

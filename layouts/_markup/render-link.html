@@ -1,0 +1,25 @@
+{{- $destination := .Destination -}}
+{{- $href := $destination -}}
+
+{{- if findRE `\.md(?:#.*)?$` $destination -}}
+
+  {{- $href = replaceRE `^\.\./1-Inbox/` `/inbox/` $href -}}
+  {{- $href = replaceRE `^\.\./2-Projects/` `/projects/` $href -}}
+  {{- $href = replaceRE `^\.\./3-Areas/` `/areas/` $href -}}
+  {{- $href = replaceRE `^\.\./4-Resources/` `/resources/` $href -}}
+  {{- $href = replaceRE `^\.\./5-Archives/` `/archives/` $href -}}
+
+  {{- $href = replaceRE `^1-Inbox/` `/inbox/` $href -}}
+  {{- $href = replaceRE `^2-Projects/` `/projects/` $href -}}
+  {{- $href = replaceRE `^3-Areas/` `/areas/` $href -}}
+  {{- $href = replaceRE `^4-Resources/` `/resources/` $href -}}
+  {{- $href = replaceRE `^5-Archives/` `/archives/` $href -}}
+
+  {{- $href = replaceRE `\.md(#.*)?$` `/$1` $href -}}
+
+{{- end -}}
+
+<a href="{{ $href | safeURL }}"
+  {{- with .Title }} title="{{ . }}"{{ end -}}>
+  {{- .Text | safeHTML -}}
+</a>

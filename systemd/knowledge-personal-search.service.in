@@ -1,0 +1,17 @@
+[Unit]
+Description=Knowledge Personal Search API
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+Environment=KNOWLEDGE_API_PORT=8788
+Environment=KNOWLEDGE_DB_PATH=@PROJECT_DIR@/.runtime/personal/knowledge.db
+Environment=KNOWLEDGE_D2_BIN=@D2@
+Environment=KNOWLEDGE_TYPST_BIN=@TYPST@
+ExecStart=@BUN@ scripts/search-server.ts
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

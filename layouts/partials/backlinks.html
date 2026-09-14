@@ -1,0 +1,93 @@
+{{- $current := . -}}
+
+{{- if and $current.File (not $current.IsHome) -}}
+
+  {{- $folderMap := dict
+      "inbox" "1-Inbox"
+      "projects" "2-Projects"
+      "areas" "3-Areas"
+      "resources" "4-Resources"
+      "archives" "5-Archives"
+  -}}
+
+  {{- $targetFolder := index $folderMap $current.Section -}}
+  {{- $targetFile := $current.File.LogicalName -}}
+
+  {{- if and $targetFolder $targetFile -}}
+
+    {{- $crossFolderTarget := printf "../%s/%s" $targetFolder $targetFile -}}
+    {{- $rootTarget := printf "%s/%s" $targetFolder $targetFile -}}
+    {{- $sameFolderTarget := $targetFile -}}
+
+    {{- $backlinks := slice -}}
+
+    {{- range $page := $current.Site.RegularPages -}}
+
+      {{- if and
+          (ne $page.RelPermalink $current.RelPermalink)
+          $page.File
+      -}}
+
+        {{- $raw := $page.RawContent -}}
+
+        {{- $hasCrossFolder := in $raw $crossFolderTarget -}}
+        {{- $hasRootPath := in $raw $rootTarget -}}
+
+        {{- $sameSection := eq $page.Section $current.Section -}}
+        {{- $hasSameFolder := and
+            $sameSection
+            (in $raw (printf "](%s)" $sameFolderTarget))
+        -}}
+
+        {{- if or $hasCrossFolder $hasRootPath $hasSameFolder -}}
+          {{- $backlinks = $backlinks | append $page -}}
+        {{- end -}}
+
+      {{- end -}}
+
+    {{- end -}}
+
+    {{- with $backlinks -}}
+
+      <section class="backlinks" aria-labelledby="backlinks-title">
+
+        <header class="backlinks-header">
+          <p class="eyebrow">Connections</p>
+          <h2 id="backlinks-title">Linked from</h2>
+        </header>
+
+        <div class="backlink-list">
+
+          {{- range sort . "Title" -}}
+
+            <a class="backlink-row" href="{{ .RelPermalink }}">
+
+              <span class="backlink-main">
+
+                <span class="backlink-title">
+                  {{ .Title }}
+                </span>
+
+                <span class="backlink-section">
+                  {{ .Section }}
+                </span>
+
+              </span>
+
+              <span class="backlink-arrow">
+                ←
+              </span>
+
+            </a>
+
+          {{- end -}}
+
+        </div>
+
+      </section>
+
+    {{- end -}}
+
+  {{- end -}}
+
+{{- end -}}

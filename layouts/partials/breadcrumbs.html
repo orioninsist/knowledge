@@ -1,0 +1,46 @@
+<nav
+  class="breadcrumbs"
+  aria-label="Breadcrumb"
+>
+
+  <a
+    class="breadcrumb-home"
+    href="/"
+  >
+    Knowledge
+  </a>
+
+  {{ with .Section }}
+
+    <span
+      class="breadcrumb-separator"
+      aria-hidden="true"
+    >
+      /
+    </span>
+
+    <span class="breadcrumb-section">
+      {{ . | humanize | title }}
+    </span>
+
+  {{ end }}
+
+  {{ if not .IsSection }}
+
+    <span
+      class="breadcrumb-separator"
+      aria-hidden="true"
+    >
+      /
+    </span>
+
+    <span
+      class="breadcrumb-current"
+      aria-current="page"
+    >
+      {{ .Title }}
+    </span>
+
+  {{ end }}
+
+</nav>

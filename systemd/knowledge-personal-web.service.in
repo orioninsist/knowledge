@@ -1,0 +1,14 @@
+[Unit]
+Description=Knowledge Personal Hugo Runtime
+After=knowledge-personal-search.service
+Requires=knowledge-personal-search.service
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+ExecStart=@HUGO@ server --config hugo.toml,.runtime/personal/hugo.toml --bind 127.0.0.1 --port 1314 --renderToMemory --disableFastRender --noBuildLock
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

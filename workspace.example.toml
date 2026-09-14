@@ -1,0 +1,21 @@
+# Knowledge workspace configuration
+#
+# The only user-configured value is the note root.
+#
+# Each root must contain exactly these five MOC directories:
+#
+# 0-Inbox
+# 1-Projects
+# 2-Areas
+# 3-Resources
+# 4-Archives
+#
+# Runtime IDs and ports are assigned automatically.
+
+[[workspace]]
+root = "/absolute/path/to/your/notes"
+
+# Additional workspace:
+#
+# [[workspace]]
+# root = "/absolute/path/to/another/notes"

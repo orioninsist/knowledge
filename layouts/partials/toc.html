@@ -1,0 +1,16 @@
+{{- if gt (len .TableOfContents) 32 -}}
+
+<nav class="toc" aria-labelledby="toc-title">
+
+  <header class="toc-header">
+    <p class="eyebrow">On this page</p>
+    <h2 id="toc-title">Contents</h2>
+  </header>
+
+  <div class="toc-content">
+    {{ .TableOfContents }}
+  </div>
+
+</nav>
+
+{{- end -}}
