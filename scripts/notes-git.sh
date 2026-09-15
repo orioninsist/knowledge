@@ -18,20 +18,6 @@ notes_git_assert() {
     fi
 }
 
-notes_git_require_clean() {
-    notes_git_assert || return 1
-
-    if [ -n "$(git -C "$NOTES_ROOT" status --porcelain)" ]; then
-        echo
-        echo "ERROR: Notes Git has uncommitted changes."
-        echo
-        git -C "$NOTES_ROOT" status --short
-        echo
-        echo "Commit or restore these changes before another modifying kn operation."
-        return 1
-    fi
-}
-
 notes_git_relative_path() {
     local path="$1"
 

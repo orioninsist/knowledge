@@ -235,7 +235,6 @@ if [ "${1:-}" = "rm" ]; then
     NAME="$2"
 
     validate_note_name "$NAME" || exit 1
-    notes_git_require_clean || exit 1
 
     FOUND="$(find_note "$NAME")"
 
@@ -315,7 +314,6 @@ if [ "${1:-}" = "mv" ]; then
     TARGET_MOC="$3"
 
     validate_note_name "$NAME" || exit 1
-    notes_git_require_clean || exit 1
 
     FOUND="$(find_note "$NAME")"
 
@@ -417,7 +415,6 @@ MOC="$2"
 NAME="$3"
 
 validate_note_name "$NAME" || exit 1
-notes_git_require_clean || exit 1
 
 TARGET_DIR="$(moc_dir "$MOC")"
 
