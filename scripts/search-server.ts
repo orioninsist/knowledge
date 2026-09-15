@@ -132,7 +132,7 @@ const buildFTSQuery = (
       (term) =>
         normalize(term)
           .split(
-            /[^\\p{L}\\p{N}_]+/u,
+            /[^\p{L}\p{N}_]+/u,
           )
           .filter(Boolean),
     )
