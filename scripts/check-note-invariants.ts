@@ -82,6 +82,27 @@ for (
     }
 
     /*
+     * Markdown filename policy:
+     *
+     * - lowercase English letters a-z only
+     * - hyphen is the only allowed separator
+     * - no digits
+     * - no spaces, underscores, uppercase, or non-ASCII letters
+     */
+    const validFilename =
+      /^[a-z]+(?:-[a-z]+)*\.md$/;
+
+    if (
+      !validFilename.test(entry.name)
+    ) {
+      errors.push(
+        `${section.path}/${entry.name}: invalid Markdown filename`
+      );
+
+      continue;
+    }
+
+    /*
      * index.md / _index.md are forbidden in
      * real note workspaces.
      */

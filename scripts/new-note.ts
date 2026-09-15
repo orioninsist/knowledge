@@ -92,6 +92,35 @@ if (
   process.exit(1);
 }
 
+/*
+ * Markdown filename policy:
+ *
+ * - lowercase English letters a-z only
+ * - hyphen is the only allowed separator
+ * - no digits
+ * - no spaces, underscores, uppercase, or non-ASCII letters
+ */
+const validFilename =
+  /^[a-z]+(?:-[a-z]+)*\.md$/;
+
+if (
+  !validFilename.test(filename)
+) {
+  console.error(
+    `ERROR: Invalid Markdown filename: ${filename}`
+  );
+
+  console.error(
+    "Allowed: lowercase English letters (a-z) and single hyphens between words only."
+  );
+
+  console.error(
+    "Example: openai-api.md"
+  );
+
+  process.exit(1);
+}
+
 if (
   filename.toLowerCase() ===
     "index.md" ||

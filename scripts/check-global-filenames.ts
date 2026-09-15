@@ -71,6 +71,19 @@ for (
       continue;
     }
 
+    const validFilename =
+      /^[a-z]+(?:-[a-z]+)*\.md$/;
+
+    if (
+      !validFilename.test(entry.name)
+    ) {
+      console.error(
+        `ERROR: Invalid Markdown filename: ${join(section.path, entry.name)}`
+      );
+
+      process.exit(1);
+    }
+
     const canonical =
       entry.name
         .normalize("NFKC")

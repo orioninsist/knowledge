@@ -115,10 +115,10 @@ do
   # Allowed:
   #   note.md
   #   openai-api.md
-  #   note-123.md
   #
   # Rejected:
   #   AA.md
+  #   note-123.md
   #   My-Note.md
   #   my_note.md
   #   my note.md
@@ -128,7 +128,7 @@ do
   #
   filename="${path##*/}"
 
-  if [[ ! "$filename" =~ ^[a-z0-9]+(-[a-z0-9]+)*\.md$ ]]; then
+  if [[ ! "$filename" =~ ^[a-z]+(-[a-z]+)*\.md$ ]]; then
     echo "REJECT INVALID FILENAME: $path" >&2
 
     # If this path was previously indexed under a valid/old state,
