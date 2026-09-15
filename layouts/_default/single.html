@@ -47,6 +47,12 @@
 
     </div>
 
+    {{ with .Description }}
+      <p class="note-description">
+        {{ . }}
+      </p>
+    {{ end }}
+
     <div class="note-metadata">
 
       {{ with .Params.status }}
@@ -58,12 +64,21 @@
         </span>
       {{ end }}
 
-      {{ with .GetTerms "tags" }}
+      {{ with .Params.aliases }}
+        <div class="note-aliases" aria-label="Aliases">
+          <span class="note-meta-label">Aliases</span>
+          {{ if reflect.IsSlice . }}
+            {{ delimit . ", " }}
+          {{ else }}
+            {{ . }}
+          {{ end }}
+        </div>
+      {{ end }}
+
+      {{ with .Params.tags }}
         <div class="note-tags" aria-label="Tags">
           {{ range . }}
-            <a class="tag" href="{{ .RelPermalink }}">
-              #{{ .LinkTitle }}
-            </a>
+            <span class="tag">#{{ . }}</span>
           {{ end }}
         </div>
       {{ end }}
