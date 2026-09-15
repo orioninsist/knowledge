@@ -39,11 +39,59 @@
       "search-results-list"
     );
 
+  const filterFolder =
+    document.getElementById(
+      "search-filter-folder"
+    );
+
+  const filterFilename =
+    document.getElementById(
+      "search-filter-filename"
+    );
+
+  const filterTitle =
+    document.getElementById(
+      "search-filter-title"
+    );
+
+  const filterDescription =
+    document.getElementById(
+      "search-filter-description"
+    );
+
+  const filterStatus =
+    document.getElementById(
+      "search-filter-status"
+    );
+
+  const filterAlias =
+    document.getElementById(
+      "search-filter-alias"
+    );
+
+  const filterTag =
+    document.getElementById(
+      "search-filter-tag"
+    );
+
+  const filterClear =
+    document.getElementById(
+      "search-filter-clear"
+    );
+
   if (
     !input ||
     !results ||
     !summary ||
-    !resultsList
+    !resultsList ||
+    !filterFolder ||
+    !filterFilename ||
+    !filterTitle ||
+    !filterDescription ||
+    !filterStatus ||
+    !filterAlias ||
+    !filterTag ||
+    !filterClear
   ) {
     return;
   }
@@ -51,6 +99,147 @@
   let activeResultIndex = -1;
   let searchTimer = null;
   let requestController = null;
+
+  let loadedResults = [];
+  let currentQuery = "";
+  let currentFilters = {
+    folders: [],
+    filename: "",
+    title: "",
+    description: "",
+    statuses: [],
+    aliases: [],
+    tags: [],
+  };
+  let nextOffset = null;
+  let totalResults = 0;
+  let isLoadingMore = false;
+
+  const splitFilterValues = (
+    value,
+  ) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  const getFilters = () => ({
+    folders:
+      splitFilterValues(
+        filterFolder.value,
+      ),
+
+    filename:
+      filterFilename.value.trim(),
+
+    title:
+      filterTitle.value.trim(),
+
+    description:
+      filterDescription.value.trim(),
+
+    statuses:
+      splitFilterValues(
+        filterStatus.value,
+      ),
+
+    aliases:
+      splitFilterValues(
+        filterAlias.value,
+      ),
+
+    tags:
+      splitFilterValues(
+        filterTag.value,
+      ),
+  });
+
+  const hasFilters = (filters) =>
+    Boolean(
+      filters.folders.length ||
+      filters.filename ||
+      filters.title ||
+      filters.description ||
+      filters.statuses.length ||
+      filters.aliases.length ||
+      filters.tags.length
+    );
+
+  const buildSearchURL = (
+    query,
+    filters,
+    offset = 0,
+  ) => {
+    const url =
+      new URL(
+        SEARCH_ENDPOINT,
+      );
+
+    if (query) {
+      url.searchParams.set(
+        "q",
+        query,
+      );
+    }
+
+    for (const folder of filters.folders) {
+      url.searchParams.append(
+        "folder",
+        folder,
+      );
+    }
+
+    if (filters.filename) {
+      url.searchParams.set(
+        "filename",
+        filters.filename,
+      );
+    }
+
+    if (filters.title) {
+      url.searchParams.set(
+        "title",
+        filters.title,
+      );
+    }
+
+    if (filters.description) {
+      url.searchParams.set(
+        "description",
+        filters.description,
+      );
+    }
+
+    for (const status of filters.statuses) {
+      url.searchParams.append(
+        "status",
+        status,
+      );
+    }
+
+    for (const alias of filters.aliases) {
+      url.searchParams.append(
+        "alias",
+        alias,
+      );
+    }
+
+    for (const tag of filters.tags) {
+      url.searchParams.append(
+        "tag",
+        tag,
+      );
+    }
+
+    if (offset > 0) {
+      url.searchParams.set(
+        "offset",
+        String(offset),
+      );
+    }
+
+    return url;
+  };
 
   const escapeHTML = (value) =>
     String(value ?? "")
@@ -149,6 +338,21 @@
 
     results.hidden = true;
     resultsList.innerHTML = "";
+
+    loadedResults = [];
+    currentQuery = "";
+    currentFilters = {
+      folders: [],
+      filename: "",
+      title: "",
+      description: "",
+      statuses: [],
+      aliases: [],
+      tags: [],
+    };
+    nextOffset = null;
+    totalResults = 0;
+    isLoadingMore = false;
   };
 
   const render = (
@@ -158,7 +362,9 @@
 
     const count =
       Number(
-        payload.count ?? 0,
+        payload.total ??
+        payload.count ??
+        0,
       );
 
     const filters =
@@ -173,20 +379,29 @@
     ];
 
     for (
-      const section
-      of filters.sections ?? []
+      const folder
+      of filters.folders ?? []
     ) {
       summaryParts.push(
-        `section:${section}`,
+        `folder: ${folder}`,
       );
     }
 
-    for (
-      const tag
-      of filters.tags ?? []
-    ) {
+    if (filters.filename) {
       summaryParts.push(
-        `tag:${tag}`,
+        `filename: ${filters.filename}`,
+      );
+    }
+
+    if (filters.title) {
+      summaryParts.push(
+        `title: ${filters.title}`,
+      );
+    }
+
+    if (filters.description) {
+      summaryParts.push(
+        `description: ${filters.description}`,
       );
     }
 
@@ -195,7 +410,25 @@
       of filters.statuses ?? []
     ) {
       summaryParts.push(
-        `status:${status}`,
+        `status: ${status}`,
+      );
+    }
+
+    for (
+      const alias
+      of filters.aliases ?? []
+    ) {
+      summaryParts.push(
+        `alias: ${alias}`,
+      );
+    }
+
+    for (
+      const tag
+      of filters.tags ?? []
+    ) {
+      summaryParts.push(
+        `tag: ${tag}`,
       );
     }
 
@@ -205,11 +438,7 @@
     summary.hidden = false;
 
     const rows =
-      Array.isArray(
-        payload.results,
-      )
-        ? payload.results
-        : [];
+      loadedResults;
 
     if (!rows.length) {
       resultsList.innerHTML = `
@@ -318,6 +547,30 @@
         })
         .join("");
 
+    if (
+      nextOffset !== null &&
+      loadedResults.length < totalResults
+    ) {
+      resultsList.insertAdjacentHTML(
+        "beforeend",
+        `
+          <button
+            type="button"
+            class="search-load-more"
+            data-search-load-more
+          >
+            Load more — ${
+              Math.max(
+                0,
+                totalResults -
+                loadedResults.length,
+              )
+            } remaining
+          </button>
+        `,
+      );
+    }
+
     results.hidden = false;
   };
 
@@ -326,7 +579,13 @@
       const query =
         input.value.trim();
 
-      if (!query) {
+      const filters =
+        getFilters();
+
+      if (
+        !query &&
+        !hasFilters(filters)
+      ) {
         resetResults();
         return;
       }
@@ -340,14 +599,10 @@
 
       try {
         const url =
-          new URL(
-            SEARCH_ENDPOINT,
+          buildSearchURL(
+            query,
+            filters,
           );
-
-        url.searchParams.set(
-          "q",
-          query,
-        );
 
         const response =
           await fetch(
@@ -369,6 +624,48 @@
 
         const payload =
           await response.json();
+
+        currentQuery = query;
+        currentFilters = {
+          folders: [
+            ...filters.folders,
+          ],
+          filename:
+            filters.filename,
+          title:
+            filters.title,
+          description:
+            filters.description,
+          statuses: [
+            ...filters.statuses,
+          ],
+          aliases: [
+            ...filters.aliases,
+          ],
+          tags: [
+            ...filters.tags,
+          ],
+        };
+
+        loadedResults =
+          Array.isArray(
+            payload.results,
+          )
+            ? payload.results
+            : [];
+
+        totalResults =
+          Number(
+            payload.total ??
+            loadedResults.length,
+          );
+
+        nextOffset =
+          payload.hasMore
+            ? Number(
+                payload.nextOffset,
+              )
+            : null;
 
         render(payload);
       } catch (error) {
@@ -412,260 +709,44 @@
   };
 
 
-  /*
-   * Tag autocomplete lives inside the main SearchController.
-   *
-   * There is no static tag list.
-   * `tag:` alone returns nothing.
-   * Suggestions begin only after a prefix is typed.
-   */
-  let tagTimer = null;
-  let tagController = null;
-
-  const escapeTagHTML = (
-    value,
-  ) =>
-    String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-
-  const getTagPrefix = (
-    value,
-  ) => {
-    const match =
-      value.match(
-        /(?:^|\s)tag:([^\s]*)$/i,
-      );
-
-    if (!match) {
-      return null;
-    }
-
-    return match[1];
-  };
-
-  const clearTagSuggestions = () => {
-    if (
-      resultsList.dataset.mode ===
-      "tag-suggestions"
-    ) {
-      resultsList.innerHTML = "";
-      resultsList.removeAttribute(
-        "data-mode",
-      );
-
-      results.hidden = true;
-    }
-  };
-
-  const renderTagSuggestions = (
-    payload,
-  ) => {
-    const rows =
-      Array.isArray(
-        payload.results,
-      )
-        ? payload.results
-        : [];
-
-    if (!rows.length) {
-      clearTagSuggestions();
-      return;
-    }
-
-    clearActiveResult();
-
-    resultsList.dataset.mode =
-      "tag-suggestions";
-
-    resultsList.innerHTML =
-      rows
-        .map(
-          (item) => `
-            <button
-              type="button"
-              class="search-result tag-suggestion"
-              data-tag="${escapeTagHTML(
-                item.tag,
-              )}"
-            >
-              <span class="search-result-title">
-                ${escapeTagHTML(
-                  item.tag,
-                )}
-              </span>
-
-              <span class="search-result-section">
-                ${Number(
-                  item.count ?? 0,
-                )} note${Number(
-                  item.count ?? 0,
-                ) === 1 ? "" : "s"}
-              </span>
-            </button>
-          `,
-        )
-        .join("");
-
-    results.hidden = false;
-  };
-
-  const loadTagSuggestions =
-    async (
-      prefix,
-    ) => {
-      if (!prefix) {
-        clearTagSuggestions();
-        return;
-      }
-
-      if (tagController) {
-        tagController.abort();
-      }
-
-      tagController =
-        new AbortController();
-
-      const url =
-        new URL(
-          TAG_ENDPOINT,
-        );
-
-      url.searchParams.set(
-        "q",
-        prefix,
-      );
-
-      try {
-        const response =
-          await fetch(
-            url,
-            {
-              signal:
-                tagController.signal,
-
-              cache:
-                "no-store",
-            },
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            `Tag endpoint returned ${response.status}`,
-          );
-        }
-
-        const payload =
-          await response.json();
-
-        const currentPrefix =
-          getTagPrefix(
-            input.value,
-          );
-
-        if (
-          currentPrefix !== prefix
-        ) {
-          return;
-        }
-
-        renderTagSuggestions(
-          payload,
-        );
-      } catch (error) {
-        if (
-          error instanceof DOMException &&
-          error.name === "AbortError"
-        ) {
-          return;
-        }
-
-        console.error(error);
-        clearTagSuggestions();
-      }
-    };
-
-  const scheduleTagSuggestions = (
-    prefix,
-  ) => {
-    if (tagTimer) {
-      window.clearTimeout(
-        tagTimer,
-      );
-    }
-
-    if (!prefix) {
-      clearTagSuggestions();
-      return;
-    }
-
-    tagTimer =
-      window.setTimeout(
-        () =>
-          loadTagSuggestions(
-            prefix,
-          ),
-        80,
-      );
-  };
-
-  /*
-   * One input owner.
-   *
-   * While the user is typing an unfinished tag token,
-   * autocomplete owns the result area.
-   *
-   * Once the token is completed with a space,
-   * normal /api/search resumes.
-   */
   const handleSearchInput = () => {
-    const tagPrefix =
-      getTagPrefix(
-        input.value,
-      );
-
-    if (tagPrefix !== null) {
-      if (searchTimer) {
-        window.clearTimeout(
-          searchTimer,
-        );
-      }
-
-      /*
-       * Important:
-       * `tag:` by itself renders absolutely nothing.
-       */
-      if (tagPrefix.length === 0) {
-        clearActiveResult();
-
-        resultsList.innerHTML = "";
-        resultsList.removeAttribute(
-          "data-mode",
-        );
-
-        summary.hidden = true;
-        results.hidden = true;
-
-        return;
-      }
-
-      scheduleTagSuggestions(
-        tagPrefix,
-      );
-
-      return;
-    }
-
-    clearTagSuggestions();
     scheduleSearch();
   };
 
   input.addEventListener(
     "input",
     handleSearchInput,
+  );
+
+  const filterInputs = [
+    filterFolder,
+    filterFilename,
+    filterTitle,
+    filterDescription,
+    filterStatus,
+    filterAlias,
+    filterTag,
+  ];
+
+  for (const filterInput of filterInputs) {
+    filterInput.addEventListener(
+      "input",
+      scheduleSearch,
+    );
+  }
+
+  filterClear.addEventListener(
+    "click",
+    () => {
+      for (
+        const filterInput
+        of filterInputs
+      ) {
+        filterInput.value = "";
+      }
+
+      scheduleSearch();
+    },
   );
 
   /*
@@ -675,51 +756,103 @@
    */
   resultsList.addEventListener(
     "click",
-    (event) => {
-      const button =
+    async (event) => {
+      const loadMore =
         event.target.closest(
-          ".tag-suggestion",
+          "[data-search-load-more]",
         );
 
-      if (!button) {
+      if (loadMore) {
+        if (
+          isLoadingMore ||
+          nextOffset === null ||
+          (
+            !currentQuery &&
+            !hasFilters(
+              currentFilters,
+            )
+          )
+        ) {
+          return;
+        }
+
+        isLoadingMore = true;
+        loadMore.disabled = true;
+
+        try {
+          const url =
+            buildSearchURL(
+              currentQuery,
+              currentFilters,
+              nextOffset,
+            );
+
+          const response =
+            await fetch(
+              url,
+              {
+                cache:
+                  "no-store",
+              },
+            );
+
+          if (!response.ok) {
+            throw new Error(
+              `Search endpoint returned ${response.status}`,
+            );
+          }
+
+          const payload =
+            await response.json();
+
+          const more =
+            Array.isArray(
+              payload.results,
+            )
+              ? payload.results
+              : [];
+
+          const known =
+            new Set(
+              loadedResults.map(
+                (item) => item.url,
+              ),
+            );
+
+          for (const item of more) {
+            if (!known.has(item.url)) {
+              loadedResults.push(item);
+              known.add(item.url);
+            }
+          }
+
+          totalResults =
+            Number(
+              payload.total ??
+              totalResults,
+            );
+
+          nextOffset =
+            payload.hasMore
+              ? Number(
+                  payload.nextOffset,
+                )
+              : null;
+
+          render({
+            ...payload,
+            total: totalResults,
+          });
+        } catch (error) {
+          console.error(error);
+          loadMore.disabled = false;
+        } finally {
+          isLoadingMore = false;
+        }
+
         return;
       }
 
-      const tag =
-        button.dataset.tag;
-
-      if (!tag) {
-        return;
-      }
-
-      input.value =
-        input.value.replace(
-          /(?:^|\s)tag:[^\s]*$/i,
-          (match) => {
-            const leadingSpace =
-              match.startsWith(" ")
-                ? " "
-                : "";
-
-            return `${leadingSpace}tag:${tag} `;
-          },
-        );
-
-      input.dispatchEvent(
-        new Event(
-          "input",
-          {
-            bubbles: true,
-          },
-        ),
-      );
-
-      input.focus();
-
-      input.setSelectionRange(
-        input.value.length,
-        input.value.length,
-      );
     },
   );
 

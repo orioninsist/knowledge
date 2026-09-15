@@ -15,7 +15,7 @@ const DB_PATH =
   process.env.KNOWLEDGE_DB_PATH ??
   ".search/knowledge.db";
 
-const MAX_RESULTS = 5;
+const PAGE_SIZE = 30;
 
 const SECTION_ALIASES: Record<string, string> = {
   inbox: "inbox",
@@ -189,18 +189,31 @@ const json = (
 const search = (
   db: Database,
   rawQuery: string,
+  filters: {
+    folders: string[];
+    filename: string;
+    title: string;
+    description: string;
+    statuses: string[];
+    aliases: string[];
+    tags: string[];
+  },
+  offset = 0,
 ) => {
-  const parsed =
-    parseQuery(rawQuery);
-
   const where: string[] = [];
   const params: Array<
     string | number
   > = [];
 
+  const ftsTerms =
+    rawQuery
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+
   const ftsQuery =
     buildFTSQuery(
-      parsed.terms,
+      ftsTerms,
     );
 
   const hasText =
@@ -214,9 +227,9 @@ const search = (
     params.push(ftsQuery);
   }
 
-  if (parsed.sections.length) {
+  if (filters.folders.length) {
     const placeholders =
-      parsed.sections
+      filters.folders
         .map(() => "?")
         .join(", ");
 
@@ -225,13 +238,43 @@ const search = (
     );
 
     params.push(
-      ...parsed.sections,
+      ...filters.folders,
     );
   }
 
-  if (parsed.statuses.length) {
+  if (filters.filename) {
+    where.push(
+      "n.path LIKE ?",
+    );
+
+    params.push(
+      `%${filters.filename}%`,
+    );
+  }
+
+  if (filters.title) {
+    where.push(
+      "n.title LIKE ?",
+    );
+
+    params.push(
+      `%${filters.title}%`,
+    );
+  }
+
+  if (filters.description) {
+    where.push(
+      "n.description LIKE ?",
+    );
+
+    params.push(
+      `%${filters.description}%`,
+    );
+  }
+
+  if (filters.statuses.length) {
     const placeholders =
-      parsed.statuses
+      filters.statuses
         .map(() => "?")
         .join(", ");
 
@@ -240,11 +283,21 @@ const search = (
     );
 
     params.push(
-      ...parsed.statuses,
+      ...filters.statuses,
     );
   }
 
-  for (const tag of parsed.tags) {
+  for (const alias of filters.aliases) {
+    where.push(
+      "n.aliases LIKE ?",
+    );
+
+    params.push(
+      `%${alias}%`,
+    );
+  }
+
+  for (const tag of filters.tags) {
     where.push(`
       EXISTS (
         SELECT 1
@@ -308,10 +361,31 @@ const search = (
       n.title COLLATE NOCASE ASC
 
     LIMIT ?
+    OFFSET ?
   `;
 
+  const countSQL = `
+    SELECT COUNT(*) AS total
+    ${from}
+    ${whereSQL}
+  `;
+
+  const countParams =
+    params.slice();
+
+  const countRow =
+    db.query(countSQL).get(
+      ...countParams,
+    ) as {
+      total: number;
+    };
+
+  const total =
+    Number(countRow?.total ?? 0);
+
   params.push(
-    MAX_RESULTS,
+    PAGE_SIZE,
+    offset,
   );
 
   const rows =
@@ -333,17 +407,43 @@ const search = (
     query: rawQuery,
 
     filters: {
-      sections:
-        parsed.sections,
+      folders:
+        filters.folders,
 
-      tags:
-        parsed.tags,
+      filename:
+        filters.filename,
+
+      title:
+        filters.title,
+
+      description:
+        filters.description,
 
       statuses:
-        parsed.statuses,
+        filters.statuses,
+
+      aliases:
+        filters.aliases,
+
+      tags:
+        filters.tags,
     },
 
+    total,
+
     count: rows.length,
+
+    offset,
+
+    pageSize: PAGE_SIZE,
+
+    hasMore:
+      offset + rows.length < total,
+
+    nextOffset:
+      offset + rows.length < total
+        ? offset + rows.length
+        : null,
 
     results: rows.map(
       (row) => {
@@ -1182,11 +1282,58 @@ const server = Bun.serve({
         const tagRow =
           db.query(`
             SELECT
+              count(*) AS tag_uses,
               count(DISTINCT tag) AS unique_tags
             FROM note_tags
           `).get() as {
+            tag_uses: number;
             unique_tags: number;
           };
+
+          const statusRows =
+            db.query(`
+              SELECT
+                status,
+                count(*) AS count
+              FROM notes
+              WHERE status IN (
+                'todo',
+                'in-progress',
+                'review',
+                'done'
+              )
+              GROUP BY status
+            `).all() as Array<{
+              status: string;
+              count: number;
+            }>;
+
+          const statusCounts = {
+            todo: 0,
+            inProgress: 0,
+            review: 0,
+            done: 0,
+          };
+
+          for (const row of statusRows) {
+            if (row.status === "todo") {
+              statusCounts.todo = row.count;
+            } else if (
+              row.status === "in-progress"
+            ) {
+              statusCounts.inProgress =
+                row.count;
+            } else if (
+              row.status === "review"
+            ) {
+              statusCounts.review =
+                row.count;
+            } else if (
+              row.status === "done"
+            ) {
+              statusCounts.done = row.count;
+            }
+          }
 
         db.close();
 
@@ -1218,6 +1365,12 @@ const server = Bun.serve({
 
           uniqueTags:
             tagRow.unique_tags,
+
+          tagUses:
+            tagRow.tag_uses,
+
+          statuses:
+            statusCounts,
 
           sections:
             sectionCounts,
@@ -1332,13 +1485,26 @@ const server = Bun.serve({
           .get("q")
           ?.trim() ?? "";
 
-      if (!q) {
+      const hasSearchFilters =
+        url.searchParams.has("folder") ||
+        url.searchParams.has("filename") ||
+        url.searchParams.has("title") ||
+        url.searchParams.has("description") ||
+        url.searchParams.has("status") ||
+        url.searchParams.has("alias") ||
+        url.searchParams.has("tag");
+
+      if (!q && !hasSearchFilters) {
         return json({
           query: "",
           filters: {
-            sections: [],
-            tags: [],
+            folders: [],
+            filename: "",
+            title: "",
+            description: "",
             statuses: [],
+            aliases: [],
+            tags: [],
           },
           count: 0,
           results: [],
@@ -1358,7 +1524,51 @@ const server = Bun.serve({
           search(
             db,
             q,
-          );
+            {
+              folders:
+                url.searchParams
+                  .getAll("folder")
+                  .filter(Boolean),
+
+              filename:
+                url.searchParams
+                  .get("filename")
+                  ?.trim() ?? "",
+
+              title:
+                url.searchParams
+                  .get("title")
+                  ?.trim() ?? "",
+
+              description:
+                url.searchParams
+                  .get("description")
+                  ?.trim() ?? "",
+
+              statuses:
+                url.searchParams
+                  .getAll("status")
+                  .filter(Boolean),
+
+              aliases:
+                url.searchParams
+                  .getAll("alias")
+                  .filter(Boolean),
+
+              tags:
+                url.searchParams
+                  .getAll("tag")
+                  .filter(Boolean),
+            },
+            Math.max(
+              0,
+              Number(
+                url.searchParams.get(
+                  "offset",
+                ) ?? "0",
+              ) || 0,
+            ),
+          )
 
         db.close();
 
