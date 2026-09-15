@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR="$(
-    cd "$(dirname "${BASH_SOURCE[0]}")"
-    pwd
-)"
-
-PROJECT="$(
-    cd "$SCRIPT_DIR/.."
-    pwd
-)"
+PROJECT="/mnt/local/projects/knowledge"
 
 BUN="$(command -v bun || true)"
 
@@ -247,6 +239,25 @@ if [ "${1:-}" = "rm" ]; then
         echo "ERROR: Markdown note not found."
         echo
         echo "$NAME"
+        exit 1
+    fi
+
+    if ! command -v nvim >/dev/null 2>&1; then
+        echo
+        echo "ERROR: Neovim (nvim) is not available."
+        echo "Note was not deleted."
+        exit 1
+    fi
+
+    echo
+    echo "Review note before deletion."
+    echo "Exit Neovim with :q to continue to the delete confirmation."
+    echo
+
+    if ! nvim -R "$FOUND"; then
+        echo
+        echo "CANCELLED: Neovim did not exit successfully."
+        echo "Note was not deleted."
         exit 1
     fi
 
