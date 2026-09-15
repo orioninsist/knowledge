@@ -272,25 +272,17 @@ This avoids duplicating binary files inside the note workspace.
 
 The local search API uses SQLite FTS5.
 
-Examples:
+Global Search accepts normal text queries.
 
-```text
-linux
-section:inbox linux
-section:projects youtube
-section:areas deutsch
-section:resources hugo
-section:archives old
-tag:linux
-status:active
-```
+Structured filters are available for:
 
-Search supports:
-
-* normal text
-* section filters
-* tag filters
-* status filters
+* folder
+* filename
+* title
+* description
+* status
+* alias
+* tag
 
 ## Shell Command
 
