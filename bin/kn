@@ -2,6 +2,10 @@
 
 PROJECT="/mnt/local/projects/knowledge"
 
+# Local-only version history for personal Markdown notes.
+# This repository must never have a remote.
+source "$PROJECT/scripts/notes-git.sh"
+
 BUN="$(command -v bun || true)"
 
 if [ -z "$BUN" ]; then
@@ -231,6 +235,7 @@ if [ "${1:-}" = "rm" ]; then
     NAME="$2"
 
     validate_note_name "$NAME" || exit 1
+    notes_git_require_clean || exit 1
 
     FOUND="$(find_note "$NAME")"
 
@@ -285,10 +290,14 @@ if [ "${1:-}" = "rm" ]; then
             ;;
     esac
 
+    RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
+
     rm -- "$FOUND"
 
     echo
     echo "PASS: Note deleted."
+
+    notes_git_commit "DELETE" "$RELATIVE"
     exit 0
 fi
 
@@ -306,6 +315,7 @@ if [ "${1:-}" = "mv" ]; then
     TARGET_MOC="$3"
 
     validate_note_name "$NAME" || exit 1
+    notes_git_require_clean || exit 1
 
     FOUND="$(find_note "$NAME")"
 
@@ -376,6 +386,9 @@ if [ "${1:-}" = "mv" ]; then
             ;;
     esac
 
+    OLD_RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
+    NEW_RELATIVE="$(notes_git_relative_path "$TARGET")" || exit 1
+
     mv -- "$FOUND" "$TARGET"
 
     remember_note "$NAME"
@@ -386,6 +399,7 @@ if [ "${1:-}" = "mv" ]; then
     echo "$CURRENT_MOC → $TARGET_MOC"
     echo "$TARGET"
 
+    notes_git_commit "MOVE" "$OLD_RELATIVE" "$NEW_RELATIVE"
     exit 0
 fi
 
@@ -403,6 +417,7 @@ MOC="$2"
 NAME="$3"
 
 validate_note_name "$NAME" || exit 1
+notes_git_require_clean || exit 1
 
 TARGET_DIR="$(moc_dir "$MOC")"
 
@@ -423,7 +438,13 @@ FOUND="$(find_note "$NAME")"
 
 if [ -n "$FOUND" ]; then
     remember_note "$NAME"
-    exec "$EDITOR_CMD" "$FOUND"
+
+    RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
+
+    "$EDITOR_CMD" "$FOUND" || exit $?
+
+    notes_git_commit "EDIT" "$RELATIVE"
+    exit 0
 fi
 
 cd "$PROJECT" || exit 1
@@ -436,4 +457,10 @@ cd "$PROJECT" || exit 1
 
 remember_note "$NAME"
 
-exec "$EDITOR_CMD" "$TARGET_DIR/$NAME"
+NEW_PATH="$TARGET_DIR/$NAME"
+RELATIVE="$(notes_git_relative_path "$NEW_PATH")" || exit 1
+
+"$EDITOR_CMD" "$NEW_PATH" || exit $?
+
+notes_git_commit "CREATE" "$RELATIVE"
+exit 0
