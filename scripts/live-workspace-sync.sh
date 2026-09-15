@@ -84,11 +84,10 @@ delete_note() {
 }
 
 refresh_hugo_after_removal() {
-  systemctl --user \
-    try-restart \
-    knowledge-personal-web.service \
-    >/dev/null 2>&1 \
-    || true
+  # Hugo server already watches the Knowledge content directories.
+  # Never restart Hugo for individual file deletions.
+  # Repeated restarts can trigger systemd start-limit-hit.
+  :
 }
 
 inotifywait \
@@ -109,6 +108,35 @@ do
       continue
       ;;
   esac
+
+  #
+  # Global Markdown filename invariant
+  #
+  # Allowed:
+  #   note.md
+  #   openai-api.md
+  #   note-123.md
+  #
+  # Rejected:
+  #   AA.md
+  #   My-Note.md
+  #   my_note.md
+  #   my note.md
+  #   türkçe.md
+  #
+  # Never rename or delete an invalid file automatically.
+  #
+  filename="${path##*/}"
+
+  if [[ ! "$filename" =~ ^[a-z0-9]+(-[a-z0-9]+)*\.md$ ]]; then
+    echo "REJECT INVALID FILENAME: $path" >&2
+
+    # If this path was previously indexed under a valid/old state,
+    # make sure an invalid Markdown filename cannot remain searchable.
+    delete_note "$path" >/dev/null 2>&1 || true
+
+    continue
+  fi
 
   case "$events" in
 
