@@ -434,6 +434,19 @@ if ! command -v "$EDITOR_CMD" >/dev/null 2>&1; then
     exit 1
 fi
 
+run_editor() {
+    local file="$1"
+
+    case "$EDITOR_CMD" in
+        code|code-insiders|codium)
+            "$EDITOR_CMD" --wait "$file"
+            ;;
+        *)
+            "$EDITOR_CMD" "$file"
+            ;;
+    esac
+}
+
 FOUND="$(find_note "$NAME")"
 
 if [ -n "$FOUND" ]; then
@@ -441,7 +454,7 @@ if [ -n "$FOUND" ]; then
 
     RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
 
-    "$EDITOR_CMD" "$FOUND" || exit $?
+    run_editor "$FOUND" || exit $?
 
     notes_git_commit "EDIT" "$RELATIVE"
     exit 0
@@ -460,7 +473,7 @@ remember_note "$NAME"
 NEW_PATH="$TARGET_DIR/$NAME"
 RELATIVE="$(notes_git_relative_path "$NEW_PATH")" || exit 1
 
-"$EDITOR_CMD" "$NEW_PATH" || exit $?
+run_editor "$NEW_PATH" || exit $?
 
 notes_git_commit "CREATE" "$RELATIVE"
 exit 0
