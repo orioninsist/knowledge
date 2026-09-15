@@ -15,7 +15,7 @@ const DB_PATH =
   process.env.KNOWLEDGE_DB_PATH ??
   ".search/knowledge.db";
 
-const MAX_RESULTS = 30;
+const MAX_RESULTS = 5;
 
 const SECTION_ALIASES: Record<string, string> = {
   inbox: "inbox",
@@ -128,7 +128,18 @@ const buildFTSQuery = (
   terms: string[],
 ): string =>
   terms
-    .map(escapeFTSTerm)
+    .flatMap(
+      (term) =>
+        normalize(term)
+          .split(
+            /[^\\p{L}\\p{N}_]+/u,
+          )
+          .filter(Boolean),
+    )
+    .map(
+      (term) =>
+        `${escapeFTSTerm(term)}*`,
+    )
     .join(" AND ");
 
 const getURL = (
