@@ -1,6 +1,145 @@
 {{- $type := lower .Type -}}
 
-{{- if eq $type "mermaid" -}}
+{{- if eq $type "knowledge" -}}
+
+{{- $filename := "" -}}
+{{- $content := "" -}}
+{{- $title := "" -}}
+{{- $moc := "" -}}
+{{- $description := "" -}}
+{{- $status := "" -}}
+{{- $tags := slice -}}
+{{- $aliases := slice -}}
+
+{{- range split .Inner "\n" -}}
+  {{- $line := trim . " \t\r" -}}
+
+  {{- if and $line (strings.Contains $line ":") -}}
+    {{- $parts := split $line ":" -}}
+    {{- $key := lower (trim (index $parts 0) " \t") -}}
+    {{- $value := trim (delimit (after 1 $parts) ":") " \t\r" -}}
+
+    {{- if eq $key "filename" -}}
+      {{- $filename = lower $value -}}
+    {{- else if eq $key "content" -}}
+      {{- $content = lower $value -}}
+    {{- else if eq $key "title" -}}
+      {{- $title = lower $value -}}
+    {{- else if eq $key "moc" -}}
+      {{- $moc = lower $value -}}
+    {{- else if eq $key "description" -}}
+      {{- $description = lower $value -}}
+    {{- else if eq $key "status" -}}
+      {{- $status = lower $value -}}
+    {{- else if eq $key "tags" -}}
+      {{- $tags = $tags | append (lower $value) -}}
+    {{- else if eq $key "aliases" -}}
+      {{- $aliases = $aliases | append (lower $value) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $matches := slice -}}
+
+{{- range .Page.Site.RegularPages -}}
+  {{- $page := . -}}
+  {{- $match := true -}}
+
+  {{- if eq $page.RelPermalink $.Page.RelPermalink -}}
+    {{- $match = false -}}
+  {{- end -}}
+
+  {{- if $filename -}}
+    {{- if not $page.File -}}
+      {{- $match = false -}}
+    {{- else -}}
+      {{- $name := lower $page.File.LogicalName -}}
+      {{- if not (hasPrefix $name $filename) -}}
+        {{- $match = false -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if and $match $title -}}
+    {{- if not (strings.Contains (lower $page.Title) $title) -}}
+      {{- $match = false -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if and $match $description -}}
+    {{- if not (strings.Contains (lower ($page.Description | default "")) $description) -}}
+      {{- $match = false -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if and $match $status -}}
+    {{- if ne (lower ($page.Params.status | default "")) $status -}}
+      {{- $match = false -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if and $match $moc -}}
+    {{- if ne (lower $page.Section) $moc -}}
+      {{- $match = false -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if and $match $content -}}
+    {{- if not (strings.Contains (lower $page.RawContent) $content) -}}
+      {{- $match = false -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if and $match (gt (len $tags) 0) -}}
+    {{- $pageTags := $page.Params.tags | default (slice) -}}
+    {{- range $wanted := $tags -}}
+      {{- $found := false -}}
+      {{- range $actual := $pageTags -}}
+        {{- if eq (lower (printf "%v" $actual)) $wanted -}}
+          {{- $found = true -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if not $found -}}
+        {{- $match = false -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if and $match (gt (len $aliases) 0) -}}
+    {{- $pageAliases := $page.Params.aliases | default (slice) -}}
+    {{- if not (reflect.IsSlice $pageAliases) -}}
+      {{- $pageAliases = slice $pageAliases -}}
+    {{- end -}}
+
+    {{- range $wanted := $aliases -}}
+      {{- $found := false -}}
+      {{- range $actual := $pageAliases -}}
+        {{- if strings.Contains (lower (printf "%v" $actual)) $wanted -}}
+          {{- $found = true -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if not $found -}}
+        {{- $match = false -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if $match -}}
+    {{- $matches = $matches | append $page -}}
+  {{- end -}}
+{{- end -}}
+
+<div class="knowledge-query">
+  <ul>
+    {{- range sort $matches "Title" -}}
+      <li>
+        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+      </li>
+    {{- end -}}
+  </ul>
+</div>
+
+{{- else if eq $type "mermaid" -}}
 <div
   class="visual-note visual-mermaid"
   data-visual-language="mermaid"
