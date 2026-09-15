@@ -45,10 +45,6 @@
   {{- $page := . -}}
   {{- $match := true -}}
 
-  {{- if eq $page.RelPermalink $.Page.RelPermalink -}}
-    {{- $match = false -}}
-  {{- end -}}
-
   {{- if $filename -}}
     {{- if not $page.File -}}
       {{- $match = false -}}
@@ -133,7 +129,11 @@
   <ul>
     {{- range sort $matches "Title" -}}
       <li>
-        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+        {{- $label := .Title -}}
+        {{- if and (not $label) .File -}}
+          {{- $label = strings.TrimSuffix ".md" .File.LogicalName -}}
+        {{- end -}}
+        <a href="{{ .RelPermalink }}">{{ $label }}</a>
       </li>
     {{- end -}}
   </ul>
