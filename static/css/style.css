@@ -16,7 +16,7 @@
     --page: #181818;
     --surface: #222222;
     --surface-hover: #292929;
-    --text: #ededed;
+    --text: #e3e3e3;
     --muted: #9d9d9d;
     --border: #333333;
     --link: #8ab4f8;
@@ -37,7 +37,8 @@ body {
   background: var(--page);
   color: var(--text);
   font-family:
-    Inter,
+    "Noto Sans",
+    "Noto Color Emoji",
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -46,6 +47,8 @@ body {
     sans-serif;
   font-size: 16px;
   line-height: 1.65;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -316,6 +319,9 @@ h6 {
   border-radius: 5px;
   background: var(--code);
   font-family:
+    "Google Sans Code",
+    "Noto Color Emoji",
+    ui-monospace,
     "SFMono-Regular",
     Consolas,
     "Liberation Mono",
@@ -2402,5 +2408,75 @@ body {
     width: 100%;
     justify-self: stretch;
   }
+}
+
+
+
+/* Knowledge Reading Theme
+ *
+ * Long-form reading uses a comfortable text measure while wide content
+ * such as code, tables, and media may continue to use the full layout.
+ */
+
+.prose {
+  font-size: 17px;
+}
+
+.prose > p,
+.prose > ul,
+.prose > ol,
+.prose > blockquote,
+.prose > h2,
+.prose > h3,
+.prose > h4,
+.prose > h5,
+.prose > h6 {
+  max-width: 68ch;
+}
+
+.prose > p,
+.prose > ul,
+.prose > ol {
+  line-height: 1.72;
+}
+
+.prose > p {
+  margin-top: 0;
+  margin-bottom: 1.15em;
+}
+
+.prose > h2 {
+  margin-top: 2.15em;
+  margin-bottom: 0.75em;
+}
+
+.prose > h3 {
+  margin-top: 1.8em;
+  margin-bottom: 0.65em;
+}
+
+.prose > h4,
+.prose > h5,
+.prose > h6 {
+  margin-top: 1.55em;
+  margin-bottom: 0.55em;
+}
+
+.prose > blockquote {
+  line-height: 1.7;
+}
+
+.prose pre,
+.prose table,
+.prose img,
+.prose video,
+.prose iframe,
+.prose embed,
+.prose object {
+  max-width: 100%;
+}
+
+.prose pre {
+  line-height: 1.6;
 }
 
