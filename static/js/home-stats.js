@@ -113,6 +113,31 @@
       );
 
       setText(
+        "stat-tag-uses",
+        stats.tagUses ?? 0,
+      );
+
+      setText(
+        "stat-status-todo",
+        stats.statuses?.todo ?? 0,
+      );
+
+      setText(
+        "stat-status-in-progress",
+        stats.statuses?.inProgress ?? 0,
+      );
+
+      setText(
+        "stat-status-review",
+        stats.statuses?.review ?? 0,
+      );
+
+      setText(
+        "stat-status-done",
+        stats.statuses?.done ?? 0,
+      );
+
+      setText(
         "stat-total-size",
         formatBytes(
           stats.totalSize,
