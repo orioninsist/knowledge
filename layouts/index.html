@@ -174,6 +174,52 @@ tags:
     </div>
   </section>
 
+  <section class="home-block">
+    <h2>Knowledge Query</h2>
+
+    <div class="home-card knowledge-query-guide">
+      <p>
+        Mevcut notları filtreler ve eşleşen notları tıklanabilir linkler olarak listeler.
+        Yeni not oluşturmaz veya mevcut notları değiştirmez.
+      </p>
+
+      <pre><code>```knowledge
+filename: krizim-geldi
+```</code></pre>
+
+      <p>
+        <strong>Filters:</strong>
+        <code>filename</code> ·
+        <code>content</code> ·
+        <code>title</code> ·
+        <code>moc</code> ·
+        <code>tags</code> ·
+        <code>description</code> ·
+        <code>status</code> ·
+        <code>aliases</code>
+      </p>
+
+      <p>
+        Birden fazla filtre aynı blokta kullanılırsa <strong>AND</strong> olarak uygulanır.
+      </p>
+
+      <pre><code>```knowledge
+moc: areas
+tags: krizimgeldi
+status: active
+```</code></pre>
+
+      <p>
+        <strong>MOCs:</strong>
+        <code>inbox</code> ·
+        <code>projects</code> ·
+        <code>areas</code> ·
+        <code>resources</code> ·
+        <code>archives</code>
+      </p>
+    </div>
+  </section>
+
 </section>
 
 {{ end }}

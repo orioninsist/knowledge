@@ -2480,3 +2480,32 @@ body {
   line-height: 1.6;
 }
 
+
+/* Knowledge Query home guide */
+
+.knowledge-query-guide {
+  display: grid;
+  justify-content: stretch;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.knowledge-query-guide p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.knowledge-query-guide pre {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.knowledge-query-guide pre code {
+  white-space: pre;
+}
+
