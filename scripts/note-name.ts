@@ -24,12 +24,12 @@ export const validateNoteName = (
     );
 
   if (
-    !/^[a-z]+(?:-[a-z]+)*$/.test(
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(
       stem
     )
   ) {
     return (
-      "Only lowercase English letters a-z " +
+      "Only lowercase English letters a-z, numbers 0-9, " +
       "and single hyphens are allowed."
     );
   }
