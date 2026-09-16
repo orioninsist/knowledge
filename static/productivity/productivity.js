@@ -426,6 +426,31 @@
       : "clock";
   };
 
+  const productivityShared =
+    window.KnowledgeProductivity =
+      window.KnowledgeProductivity || {};
+
+  Object.assign(
+    productivityShared,
+    {
+      workspace,
+      now,
+      tabs,
+      escapeHtml,
+      getTool,
+    }
+  );
+
+  (
+    window.KnowledgeProductivityQueue || []
+  ).forEach(register => {
+    register(
+      productivityShared
+    );
+  });
+
+  window.KnowledgeProductivityQueue = [];
+
   const loadClocks = () => {
     try {
       const raw =
@@ -5901,6 +5926,1506 @@
       ]);
     };
 
+
+  /* Timer V1 */
+
+  const TIMER_STORAGE_KEY =
+    "knowledge.productivity.timer.v1";
+
+  let timerInterval = null;
+  let timerRinging = false;
+
+  /*
+   * Timer owns its playback lifecycle.
+   *
+   * Alarm's sound library remains the source of custom sound blobs,
+   * but Timer does not depend on Alarm's delayed HTMLAudio playback.
+   */
+  let timerAudioContext = null;
+  let timerAudioGain = null;
+  let timerAudioSource = null;
+  let timerPreparedSoundId = null;
+  let timerPreparedBuffer = null;
+
+  const ensureTimerAudio = async () => {
+    const AudioContextClass =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    if (!AudioContextClass) {
+      return null;
+    }
+
+    if (!timerAudioContext) {
+      timerAudioContext =
+        new AudioContextClass();
+
+      timerAudioGain =
+        timerAudioContext.createGain();
+
+      timerAudioGain.gain.value =
+        0.22;
+
+      timerAudioGain.connect(
+        timerAudioContext.destination
+      );
+    }
+
+    if (
+      timerAudioContext.state ===
+      "suspended"
+    ) {
+      await timerAudioContext.resume();
+    }
+
+    /*
+     * Produce an inaudible sample while still inside
+     * the Start click gesture. This activates the
+     * Timer's actual Web Audio output path.
+     */
+    const oscillator =
+      timerAudioContext.createOscillator();
+
+    const gain =
+      timerAudioContext.createGain();
+
+    gain.gain.value = 0.000001;
+
+    oscillator.connect(gain);
+    gain.connect(
+      timerAudioContext.destination
+    );
+
+    oscillator.start();
+    oscillator.stop(
+      timerAudioContext.currentTime +
+        0.01
+    );
+
+    return timerAudioContext;
+  };
+
+  const stopTimerAudio = () => {
+    if (timerAudioSource) {
+      try {
+        timerAudioSource.stop();
+      } catch {
+        // Source may already be stopped.
+      }
+
+      try {
+        timerAudioSource.disconnect();
+      } catch {
+        // Best-effort cleanup.
+      }
+
+      timerAudioSource = null;
+    }
+  };
+
+  const prepareTimerSound =
+    async soundId => {
+      stopTimerAudio();
+
+      timerPreparedSoundId = null;
+      timerPreparedBuffer = null;
+
+      const context =
+        await ensureTimerAudio();
+
+      if (!context) {
+        return;
+      }
+
+      if (
+        !soundId ||
+        soundId === "default"
+      ) {
+        timerPreparedSoundId =
+          "default";
+        return;
+      }
+
+      const sound =
+        await getAlarmSound(
+          soundId
+        );
+
+      if (
+        !sound ||
+        !sound.blob
+      ) {
+        throw new Error(
+          `Timer sound not found: ${soundId}`
+        );
+      }
+
+      const bytes =
+        await sound.blob.arrayBuffer();
+
+      timerPreparedBuffer =
+        await context.decodeAudioData(
+          bytes.slice(0)
+        );
+
+      timerPreparedSoundId =
+        soundId;
+    };
+
+  const playTimerAudio =
+    async soundId => {
+      const context =
+        await ensureTimerAudio();
+
+      if (!context) {
+        return;
+      }
+
+      stopTimerAudio();
+
+      if (
+        soundId &&
+        soundId !== "default"
+      ) {
+        if (
+          timerPreparedSoundId !==
+            soundId ||
+          !timerPreparedBuffer
+        ) {
+          throw new Error(
+            `Timer sound was not prepared: ${soundId}`
+          );
+        }
+
+        const source =
+          context.createBufferSource();
+
+        source.buffer =
+          timerPreparedBuffer;
+
+        source.loop = true;
+
+        source.connect(
+          timerAudioGain
+        );
+
+        timerAudioSource =
+          source;
+
+        source.start();
+
+        return;
+      }
+
+      const ring = () => {
+        if (!timerRinging) {
+          return;
+        }
+
+        const now =
+          context.currentTime;
+
+        [
+          [880, 0],
+          [660, 0.18],
+        ].forEach(
+          ([frequency, delay]) => {
+            const oscillator =
+              context.createOscillator();
+
+            const gain =
+              context.createGain();
+
+            oscillator.type =
+              "sine";
+
+            oscillator.frequency
+              .setValueAtTime(
+                frequency,
+                now + delay
+              );
+
+            gain.gain
+              .setValueAtTime(
+                0.0001,
+                now + delay
+              );
+
+            gain.gain
+              .exponentialRampToValueAtTime(
+                0.22,
+                now + delay + 0.02
+              );
+
+            gain.gain
+              .exponentialRampToValueAtTime(
+                0.0001,
+                now + delay + 0.16
+              );
+
+            oscillator.connect(
+              gain
+            );
+
+            gain.connect(
+              context.destination
+            );
+
+            oscillator.start(
+              now + delay
+            );
+
+            oscillator.stop(
+              now + delay + 0.18
+            );
+          }
+        );
+      };
+
+      ring();
+
+      /*
+       * Reuse timerAudioSource as a stoppable sentinel
+       * is inappropriate for oscillator repetition,
+       * so retain a dedicated interval on the function.
+       */
+      if (
+        playTimerAudio.defaultInterval
+      ) {
+        clearInterval(
+          playTimerAudio.defaultInterval
+        );
+      }
+
+      playTimerAudio.defaultInterval =
+        window.setInterval(
+          ring,
+          1200
+        );
+    };
+
+  playTimerAudio.defaultInterval =
+    null;
+
+  const stopAllTimerAudio = () => {
+    stopTimerAudio();
+
+    if (
+      playTimerAudio.defaultInterval !==
+      null
+    ) {
+      window.clearInterval(
+        playTimerAudio.defaultInterval
+      );
+
+      playTimerAudio.defaultInterval =
+        null;
+    }
+  };
+  const defaultTimerState = () => ({
+    durationMs: 5 * 60 * 1000,
+    remainingMs: 5 * 60 * 1000,
+    endAt: null,
+    status: "idle",
+    notification: true,
+    sound: true,
+    soundId: "default",
+  });
+
+  const normalizeTimerState =
+    state => {
+      const fallback =
+        defaultTimerState();
+
+      const durationMs =
+        Number.isFinite(
+          Number(state?.durationMs)
+        ) &&
+        Number(state?.durationMs) > 0
+          ? Number(state.durationMs)
+          : fallback.durationMs;
+
+      let remainingMs =
+        Number.isFinite(
+          Number(state?.remainingMs)
+        )
+          ? Math.max(
+              0,
+              Number(
+                state.remainingMs
+              )
+            )
+          : durationMs;
+
+      let status =
+        [
+          "idle",
+          "running",
+          "paused",
+          "completed",
+        ].includes(state?.status)
+          ? state.status
+          : "idle";
+
+      let endAt =
+        Number.isFinite(
+          Number(state?.endAt)
+        )
+          ? Number(state.endAt)
+          : null;
+
+      if (
+        status === "running" &&
+        endAt
+      ) {
+        remainingMs =
+          Math.max(
+            0,
+            endAt - Date.now()
+          );
+      }
+
+      return {
+        durationMs,
+        remainingMs,
+        endAt,
+        status,
+        notification:
+          state?.notification !==
+          false,
+        sound:
+          state?.sound !== false,
+        soundId:
+          typeof state?.soundId ===
+          "string"
+            ? state.soundId
+            : "default",
+      };
+    };
+
+  const loadTimerState = () => {
+    try {
+      const raw =
+        localStorage.getItem(
+          TIMER_STORAGE_KEY
+        );
+
+      if (!raw) {
+        return defaultTimerState();
+      }
+
+      return normalizeTimerState(
+        JSON.parse(raw)
+      );
+    } catch {
+      return defaultTimerState();
+    }
+  };
+
+  const saveTimerState =
+    state => {
+      const normalized =
+        normalizeTimerState(
+          state
+        );
+
+      localStorage.setItem(
+        TIMER_STORAGE_KEY,
+        JSON.stringify(
+          normalized
+        )
+      );
+
+      return normalized;
+    };
+
+  const getTimerRemaining =
+    state => {
+      if (
+        state.status ===
+          "running" &&
+        state.endAt
+      ) {
+        return Math.max(
+          0,
+          state.endAt -
+            Date.now()
+        );
+      }
+
+      return Math.max(
+        0,
+        state.remainingMs
+      );
+    };
+
+  const formatTimerDuration =
+    milliseconds => {
+      const totalSeconds =
+        Math.max(
+          0,
+          Math.ceil(
+            milliseconds /
+              1000
+          )
+        );
+
+      const hours =
+        Math.floor(
+          totalSeconds /
+            3600
+        );
+
+      const minutes =
+        Math.floor(
+          (
+            totalSeconds %
+            3600
+          ) / 60
+        );
+
+      const seconds =
+        totalSeconds % 60;
+
+      if (hours > 0) {
+        return [
+          hours,
+          minutes,
+          seconds,
+        ]
+          .map(
+            value =>
+              String(value)
+                .padStart(
+                  2,
+                  "0"
+                )
+          )
+          .join(":");
+      }
+
+      return [
+        minutes,
+        seconds,
+      ]
+        .map(
+          value =>
+            String(value)
+              .padStart(
+                2,
+                "0"
+              )
+        )
+        .join(":");
+    };
+
+  const getTimerInputMs =
+    () => {
+      const hours =
+        Number(
+          workspace
+            .querySelector(
+              "#timer-hours"
+            )
+            ?.value || 0
+        );
+
+      const minutes =
+        Number(
+          workspace
+            .querySelector(
+              "#timer-minutes"
+            )
+            ?.value || 0
+        );
+
+      const seconds =
+        Number(
+          workspace
+            .querySelector(
+              "#timer-seconds"
+            )
+            ?.value || 0
+        );
+
+      return Math.max(
+        0,
+        (
+          hours * 3600 +
+          minutes * 60 +
+          seconds
+        ) * 1000
+      );
+    };
+
+  const setTimerInputs =
+    milliseconds => {
+      const totalSeconds =
+        Math.max(
+          0,
+          Math.floor(
+            milliseconds /
+              1000
+          )
+        );
+
+      const hours =
+        Math.floor(
+          totalSeconds /
+            3600
+        );
+
+      const minutes =
+        Math.floor(
+          (
+            totalSeconds %
+            3600
+          ) / 60
+        );
+
+      const seconds =
+        totalSeconds % 60;
+
+      const hourInput =
+        workspace.querySelector(
+          "#timer-hours"
+        );
+
+      const minuteInput =
+        workspace.querySelector(
+          "#timer-minutes"
+        );
+
+      const secondInput =
+        workspace.querySelector(
+          "#timer-seconds"
+        );
+
+      if (hourInput) {
+        hourInput.value =
+          String(hours);
+      }
+
+      if (minuteInput) {
+        minuteInput.value =
+          String(minutes);
+      }
+
+      if (secondInput) {
+        secondInput.value =
+          String(seconds);
+      }
+    };
+
+  const stopTimerInterval =
+    () => {
+      if (
+        timerInterval !== null
+      ) {
+        window.clearInterval(
+          timerInterval
+        );
+
+        timerInterval = null;
+      }
+    };
+
+  const stopTimerRinging =
+    () => {
+      timerRinging = false;
+
+      stopAllTimerAudio();
+
+      document
+        .querySelector(
+          "#timer-ringing"
+        )
+        ?.remove();
+    };
+
+  const showTimerNotification =
+    state => {
+      if (
+        !state.notification ||
+        !(
+          "Notification" in
+          window
+        ) ||
+        Notification.permission !==
+          "granted"
+      ) {
+        return;
+      }
+
+      try {
+        new Notification(
+          "Timer finished",
+          {
+            body:
+              "Your countdown is complete.",
+          }
+        );
+      } catch {
+        // Browser notification is
+        // best-effort only.
+      }
+    };
+
+  const showTimerRinging =
+    () => {
+      document
+        .querySelector(
+          "#timer-ringing"
+        )
+        ?.remove();
+
+      const node =
+        document.createElement(
+          "div"
+        );
+
+      node.id =
+        "timer-ringing";
+
+      node.className =
+        "timer-ringing";
+
+      node.innerHTML = `
+        <div class="timer-ringing-card">
+          <span class="tool-kicker">
+            Timer
+          </span>
+
+          <div class="timer-ringing-time">
+            00:00
+          </div>
+
+          <h2>
+            Timer finished
+          </h2>
+
+          <p>
+            Your countdown is complete.
+          </p>
+
+          <button
+            type="button"
+            id="timer-stop-ringing"
+            class="alarm-primary-button"
+          >
+            Stop
+          </button>
+        </div>
+      `;
+
+      document.body.append(
+        node
+      );
+    };
+
+  const finishTimer =
+    async state => {
+      if (timerRinging) {
+        return;
+      }
+
+      timerRinging = true;
+
+      stopTimerInterval();
+
+      const completed =
+        saveTimerState({
+          ...state,
+          remainingMs: 0,
+          endAt: null,
+          status: "completed",
+        });
+
+      updateTimerUi(
+        completed
+      );
+
+      showTimerRinging();
+
+      try {
+        showTimerNotification(
+          completed
+        );
+      } catch {
+        // Browser notification is
+        // best-effort only.
+      }
+
+      if (completed.sound) {
+        try {
+          await playTimerAudio(
+            completed.soundId
+          );
+        } catch (error) {
+          console.error(
+            "[Timer] sound failed",
+            error
+          );
+        }
+      }
+    };
+
+  const updateTimerUi =
+    stateInput => {
+      const state =
+        normalizeTimerState(
+          stateInput
+        );
+
+      const remaining =
+        getTimerRemaining(
+          state
+        );
+
+      const display =
+        workspace.querySelector(
+          "#timer-display"
+        );
+
+      if (display) {
+        display.textContent =
+          formatTimerDuration(
+            remaining
+          );
+      }
+
+      const status =
+        workspace.querySelector(
+          "#timer-status"
+        );
+
+      if (status) {
+        status.textContent =
+          state.status ===
+          "running"
+            ? "Running"
+            : state.status ===
+                "paused"
+              ? "Paused"
+              : state.status ===
+                  "completed"
+                ? "Finished"
+                : "Ready";
+      }
+
+      const start =
+        workspace.querySelector(
+          "#timer-start"
+        );
+
+      if (start) {
+        start.textContent =
+          state.status ===
+          "paused"
+            ? "Resume"
+            : "Start";
+
+        start.disabled =
+          state.status ===
+          "running";
+      }
+
+      const pause =
+        workspace.querySelector(
+          "#timer-pause"
+        );
+
+      if (pause) {
+        pause.disabled =
+          state.status !==
+          "running";
+      }
+
+      const inputs =
+        workspace.querySelector(
+          "#timer-inputs"
+        );
+
+      if (inputs) {
+        inputs.classList.toggle(
+          "is-disabled",
+          state.status ===
+            "running"
+        );
+      }
+
+      workspace
+        .querySelectorAll(
+          "#timer-inputs input"
+        )
+        .forEach(
+          input => {
+            input.disabled =
+              state.status ===
+              "running";
+          }
+        );
+    };
+
+  const timerTick =
+    async () => {
+      const state =
+        loadTimerState();
+
+      if (
+        state.status !==
+        "running"
+      ) {
+        stopTimerInterval();
+        updateTimerUi(
+          state
+        );
+        return;
+      }
+
+      const remaining =
+        getTimerRemaining(
+          state
+        );
+
+      if (
+        remaining <= 0
+      ) {
+        await finishTimer(
+          state
+        );
+        return;
+      }
+
+      updateTimerUi({
+        ...state,
+        remainingMs:
+          remaining,
+      });
+    };
+
+  const startTimerInterval =
+    () => {
+      stopTimerInterval();
+
+      timerTick();
+
+      timerInterval =
+        window.setInterval(
+          timerTick,
+          250
+        );
+    };
+
+  const startTimer = () => {
+    let state =
+      loadTimerState();
+
+    let remaining =
+      state.status ===
+        "paused"
+        ? state.remainingMs
+        : getTimerInputMs();
+
+    if (
+      remaining <= 0
+    ) {
+      return;
+    }
+
+    state =
+      saveTimerState({
+        ...state,
+        durationMs:
+          state.status ===
+          "paused"
+            ? state.durationMs
+            : remaining,
+        remainingMs:
+          remaining,
+        endAt:
+          Date.now() +
+          remaining,
+        status: "running",
+      });
+
+    updateTimerUi(
+      state
+    );
+
+    startTimerInterval();
+  };
+
+  const pauseTimer = () => {
+    const state =
+      loadTimerState();
+
+    if (
+      state.status !==
+      "running"
+    ) {
+      return;
+    }
+
+    const remaining =
+      getTimerRemaining(
+        state
+      );
+
+    const paused =
+      saveTimerState({
+        ...state,
+        remainingMs:
+          remaining,
+        endAt: null,
+        status: "paused",
+      });
+
+    stopTimerInterval();
+
+    updateTimerUi(
+      paused
+    );
+  };
+
+  const resetTimer = () => {
+    stopTimerInterval();
+    stopTimerRinging();
+
+    const state =
+      loadTimerState();
+
+    const reset =
+      saveTimerState({
+        ...state,
+        remainingMs:
+          state.durationMs,
+        endAt: null,
+        status: "idle",
+      });
+
+    setTimerInputs(
+      reset.durationMs
+    );
+
+    updateTimerUi(
+      reset
+    );
+  };
+
+  const bindTimerEvents = () => {
+    document.addEventListener(
+      "click",
+      async event => {
+        const key =
+          getTool();
+
+        if (
+          event.target.closest(
+            "#timer-stop-ringing"
+          )
+        ) {
+          stopTimerRinging();
+          return;
+        }
+
+        if (key !== "timer") {
+          return;
+        }
+
+        if (
+          event.target.closest(
+            "#timer-start"
+          )
+        ) {
+          stopTimerRinging();
+
+          try {
+            const context =
+              await ensureTimerAudio();
+
+            const state =
+              loadTimerState();
+
+            if (state.sound) {
+              await prepareTimerSound(
+                state.soundId
+              );
+            } else {
+              stopAllTimerAudio();
+              await ensureTimerAudio();
+            }
+          } catch (error) {
+            console.error(
+              "[Timer] sound preparation failed",
+              error
+            );
+
+            stopAllTimerAudio();
+          }
+
+          startTimer();
+          return;
+        }
+
+        if (
+          event.target.closest(
+            "#timer-pause"
+          )
+        ) {
+          pauseTimer();
+          return;
+        }
+
+        if (
+          event.target.closest(
+            "#timer-reset"
+          )
+        ) {
+          resetTimer();
+          return;
+        }
+
+        if (
+          event.target.closest(
+            "#timer-notification"
+          )
+        ) {
+          const checkbox =
+            workspace.querySelector(
+              "#timer-notification"
+            );
+
+          if (
+            checkbox?.checked &&
+            "Notification" in
+              window &&
+            Notification.permission ===
+              "default"
+          ) {
+            await requestAlarmNotifications();
+          }
+
+          const state =
+            loadTimerState();
+
+          saveTimerState({
+            ...state,
+            notification:
+              Boolean(
+                checkbox?.checked
+              ),
+          });
+
+          return;
+        }
+
+        if (
+          event.target.closest(
+            "#timer-sound"
+          )
+        ) {
+          const checkbox =
+            workspace.querySelector(
+              "#timer-sound"
+            );
+
+          const state =
+            loadTimerState();
+
+          saveTimerState({
+            ...state,
+            sound:
+              Boolean(
+                checkbox?.checked
+              ),
+          });
+        }
+      }
+    );
+
+    document.addEventListener(
+      "change",
+      event => {
+        if (
+          getTool() !== "timer"
+        ) {
+          return;
+        }
+
+        if (
+          event.target.id ===
+          "timer-sound-select"
+        ) {
+          const state =
+            loadTimerState();
+
+          saveTimerState({
+            ...state,
+            soundId:
+              event.target.value ||
+              "default",
+          });
+        }
+      }
+    );
+
+    document.addEventListener(
+      "input",
+      event => {
+        if (
+          getTool() !== "timer" ||
+          !event.target.closest(
+            "#timer-inputs"
+          )
+        ) {
+          return;
+        }
+
+        const state =
+          loadTimerState();
+
+        if (
+          state.status ===
+          "running" ||
+          state.status ===
+          "paused"
+        ) {
+          return;
+        }
+
+        const duration =
+          getTimerInputMs();
+
+        if (
+          duration <= 0
+        ) {
+          updateTimerUi({
+            ...state,
+            durationMs: 0,
+            remainingMs: 0,
+            status: "idle",
+          });
+
+          return;
+        }
+
+        const next =
+          saveTimerState({
+            ...state,
+            durationMs:
+              duration,
+            remainingMs:
+              duration,
+            endAt: null,
+            status: "idle",
+          });
+
+        updateTimerUi(
+          next
+        );
+      }
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (
+          !document.hidden
+        ) {
+          timerTick();
+        }
+      }
+    );
+
+    window.addEventListener(
+      "focus",
+      timerTick
+    );
+  };
+
+  const renderTimer =
+    async () => {
+      stopTimerInterval();
+
+      let state =
+        loadTimerState();
+
+      let sounds = [];
+
+      try {
+        sounds =
+          await getAlarmSounds();
+      } catch {
+        sounds = [];
+      }
+
+      if (
+        state.status ===
+        "running"
+      ) {
+        const remaining =
+          getTimerRemaining(
+            state
+          );
+
+        if (
+          remaining <= 0
+        ) {
+          await finishTimer(
+            state
+          );
+
+          state =
+            loadTimerState();
+        }
+      }
+
+      workspace.innerHTML = `
+        <section class="timer-view">
+          <header class="tool-header">
+            <div>
+              <span class="tool-kicker">
+                Timer
+              </span>
+
+              <h2>
+                Timer
+              </h2>
+
+              <p>
+                A local countdown with
+                notification and reusable
+                alarm sounds.
+              </p>
+            </div>
+
+            <span class="timer-local-note">
+              Local only
+            </span>
+          </header>
+
+          <div class="timer-shell">
+            <div class="timer-main">
+              <span
+                id="timer-status"
+                class="timer-status"
+              >
+                Ready
+              </span>
+
+              <div
+                id="timer-display"
+                class="timer-display"
+                aria-live="polite"
+              >
+                ${formatTimerDuration(
+                  getTimerRemaining(
+                    state
+                  )
+                )}
+              </div>
+
+              <div
+                id="timer-inputs"
+                class="timer-inputs"
+              >
+                <label>
+                  <span>Hours</span>
+                  <input
+                    id="timer-hours"
+                    type="number"
+                    min="0"
+                    max="99"
+                    step="1"
+                  >
+                </label>
+
+                <span>:</span>
+
+                <label>
+                  <span>Minutes</span>
+                  <input
+                    id="timer-minutes"
+                    type="number"
+                    min="0"
+                    max="59"
+                    step="1"
+                  >
+                </label>
+
+                <span>:</span>
+
+                <label>
+                  <span>Seconds</span>
+                  <input
+                    id="timer-seconds"
+                    type="number"
+                    min="0"
+                    max="59"
+                    step="1"
+                  >
+                </label>
+              </div>
+
+              <div class="timer-actions">
+                <button
+                  type="button"
+                  id="timer-start"
+                  class="alarm-primary-button"
+                >
+                  Start
+                </button>
+
+                <button
+                  type="button"
+                  id="timer-pause"
+                >
+                  Pause
+                </button>
+
+                <button
+                  type="button"
+                  id="timer-reset"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <aside class="timer-options">
+              <h3>
+                Alert
+              </h3>
+
+              <label class="timer-option">
+                <span>
+                  <strong>
+                    Notification
+                  </strong>
+
+                  <small>
+                    Browser notification
+                    when finished.
+                  </small>
+                </span>
+
+                <input
+                  id="timer-notification"
+                  type="checkbox"
+                  ${
+                    state.notification
+                      ? "checked"
+                      : ""
+                  }
+                >
+              </label>
+
+              <label class="timer-option">
+                <span>
+                  <strong>
+                    Sound
+                  </strong>
+
+                  <small>
+                    Play an alarm sound
+                    when finished.
+                  </small>
+                </span>
+
+                <input
+                  id="timer-sound"
+                  type="checkbox"
+                  ${
+                    state.sound
+                      ? "checked"
+                      : ""
+                  }
+                >
+              </label>
+
+              <label class="timer-sound-select">
+                <span>
+                  Sound
+                </span>
+
+                <select
+                  id="timer-sound-select"
+                >
+                  <option
+                    value="default"
+                    ${
+                      state.soundId ===
+                      "default"
+                        ? "selected"
+                        : ""
+                    }
+                  >
+                    Default Alarm
+                  </option>
+
+                  ${
+                    sounds.map(
+                      sound => `
+                        <option
+                          value="${escapeHtml(
+                            sound.id
+                          )}"
+                          ${
+                            state.soundId ===
+                            sound.id
+                              ? "selected"
+                              : ""
+                          }
+                        >
+                          ${escapeHtml(
+                            sound.name
+                          )}
+                        </option>
+                      `
+                    ).join("")
+                  }
+                </select>
+              </label>
+
+              <p class="timer-sound-note">
+                Custom sounds come from
+                Alarm → Sounds. Add them
+                once and reuse them here.
+              </p>
+            </aside>
+          </div>
+
+          <p class="timer-browser-note">
+            The countdown is calculated
+            from its target timestamp, so
+            background-tab throttling does
+            not change the remaining time.
+            Closing the browser stops web
+            alerts.
+          </p>
+        </section>
+      `;
+
+      setTimerInputs(
+        state.status ===
+          "paused"
+          ? state.remainingMs
+          : state.durationMs
+      );
+
+      updateTimerUi(
+        state
+      );
+
+      if (
+        state.status ===
+        "running"
+      ) {
+        startTimerInterval();
+      }
+    };
+
   const renderBoard = () => {
     workspace.innerHTML = `
       <section class="board-view">
@@ -5934,6 +7459,864 @@
     `;
 
     renderBoardColumns();
+  };
+
+  /* Focus V1 */
+
+  const FOCUS_STORAGE_KEY =
+    "knowledge.productivity.focus.v1";
+
+  let focusInterval = null;
+
+  const defaultFocusState = () => ({
+    goal: "",
+    durationMinutes: 25,
+    elapsedMs: 0,
+    startedAt: null,
+    status: "idle",
+  });
+
+  const normalizeFocusState =
+    state => {
+      const fallback =
+        defaultFocusState();
+
+      const status =
+        [
+          "idle",
+          "running",
+          "paused",
+          "completed",
+        ].includes(
+          state?.status
+        )
+          ? state.status
+          : fallback.status;
+
+      const durationMinutes =
+        Math.min(
+          720,
+          Math.max(
+            0,
+            Math.round(
+              Number(
+                state?.durationMinutes
+              ) || 0
+            )
+          )
+        );
+
+      const elapsedMs =
+        Math.max(
+          0,
+          Number(
+            state?.elapsedMs
+          ) || 0
+        );
+
+      const startedAt =
+        Number.isFinite(
+          Number(
+            state?.startedAt
+          )
+        )
+          ? Number(
+              state.startedAt
+            )
+          : null;
+
+      return {
+        goal:
+          typeof state?.goal ===
+          "string"
+            ? state.goal
+            : "",
+        durationMinutes,
+        elapsedMs,
+        startedAt:
+          status === "running"
+            ? startedAt
+            : null,
+        status,
+      };
+    };
+
+  const loadFocusState = () => {
+    try {
+      const raw =
+        localStorage.getItem(
+          FOCUS_STORAGE_KEY
+        );
+
+      if (!raw) {
+        return defaultFocusState();
+      }
+
+      return normalizeFocusState(
+        JSON.parse(raw)
+      );
+    } catch {
+      return defaultFocusState();
+    }
+  };
+
+  const saveFocusState =
+    state => {
+      const normalized =
+        normalizeFocusState(
+          state
+        );
+
+      localStorage.setItem(
+        FOCUS_STORAGE_KEY,
+        JSON.stringify(
+          normalized
+        )
+      );
+
+      return normalized;
+    };
+
+  const getFocusElapsed =
+    state => {
+      const normalized =
+        normalizeFocusState(
+          state
+        );
+
+      if (
+        normalized.status !==
+          "running" ||
+        !normalized.startedAt
+      ) {
+        return normalized.elapsedMs;
+      }
+
+      return (
+        normalized.elapsedMs +
+        Math.max(
+          0,
+          Date.now() -
+            normalized.startedAt
+        )
+      );
+    };
+
+  const getFocusLimitMs =
+    state =>
+      Math.max(
+        0,
+        Number(
+          state.durationMinutes
+        ) *
+          60 *
+          1000
+      );
+
+  const formatFocusTime =
+    milliseconds => {
+      const totalSeconds =
+        Math.max(
+          0,
+          Math.floor(
+            milliseconds /
+              1000
+          )
+        );
+
+      const hours =
+        Math.floor(
+          totalSeconds /
+            3600
+        );
+
+      const minutes =
+        Math.floor(
+          (
+            totalSeconds %
+            3600
+          ) /
+            60
+        );
+
+      const seconds =
+        totalSeconds % 60;
+
+      return [
+        hours,
+        minutes,
+        seconds,
+      ]
+        .map(
+          value =>
+            String(value)
+              .padStart(
+                2,
+                "0"
+              )
+        )
+        .join(":");
+    };
+
+  const stopFocusInterval =
+    () => {
+      if (
+        focusInterval !==
+        null
+      ) {
+        window.clearInterval(
+          focusInterval
+        );
+
+        focusInterval = null;
+      }
+    };
+
+  const updateFocusUi =
+    stateInput => {
+      const state =
+        normalizeFocusState(
+          stateInput
+        );
+
+      const elapsed =
+        getFocusElapsed(
+          state
+        );
+
+      const limit =
+        getFocusLimitMs(
+          state
+        );
+
+      const display =
+        workspace.querySelector(
+          "#focus-time"
+        );
+
+      const status =
+        workspace.querySelector(
+          "#focus-status"
+        );
+
+      const start =
+        workspace.querySelector(
+          "#focus-start"
+        );
+
+      const pause =
+        workspace.querySelector(
+          "#focus-pause"
+        );
+
+      const complete =
+        workspace.querySelector(
+          "#focus-complete"
+        );
+
+      const goal =
+        workspace.querySelector(
+          "#focus-goal"
+        );
+
+      const duration =
+        workspace.querySelector(
+          "#focus-duration"
+        );
+
+      if (display) {
+        display.textContent =
+          formatFocusTime(
+            elapsed
+          );
+      }
+
+      if (status) {
+        status.textContent =
+          state.status ===
+          "running"
+            ? "Focusing"
+            : state.status ===
+              "paused"
+            ? "Paused"
+            : state.status ===
+              "completed"
+            ? "Completed"
+            : "Ready";
+      }
+
+      if (start) {
+        start.textContent =
+          state.status ===
+          "paused"
+            ? "Resume"
+            : "Start";
+
+        start.disabled =
+          state.status ===
+          "running";
+      }
+
+      if (pause) {
+        pause.disabled =
+          state.status !==
+          "running";
+      }
+
+      if (complete) {
+        complete.disabled =
+          state.status ===
+            "completed" ||
+          (
+            state.status ===
+              "idle" &&
+            elapsed <= 0
+          );
+      }
+
+      if (goal) {
+        goal.disabled =
+          state.status ===
+          "running";
+      }
+
+      if (duration) {
+        duration.disabled =
+          state.status ===
+          "running";
+      }
+
+      const progress =
+        workspace.querySelector(
+          "#focus-progress"
+        );
+
+      if (progress) {
+        if (limit > 0) {
+          const percentage =
+            Math.min(
+              100,
+              (
+                elapsed /
+                limit
+              ) *
+                100
+            );
+
+          progress.textContent =
+            `${Math.round(
+              percentage
+            )}%`;
+        } else {
+          progress.textContent =
+            "Open ended";
+        }
+      }
+    };
+
+  const completeFocus = () => {
+    const state =
+      loadFocusState();
+
+    const elapsed =
+      getFocusElapsed(
+        state
+      );
+
+    const completed =
+      saveFocusState({
+        ...state,
+        elapsedMs:
+          elapsed,
+        startedAt: null,
+        status: "completed",
+      });
+
+    stopFocusInterval();
+
+    updateFocusUi(
+      completed
+    );
+  };
+
+  const focusTick = () => {
+    const state =
+      loadFocusState();
+
+    if (
+      state.status !==
+      "running"
+    ) {
+      stopFocusInterval();
+
+      updateFocusUi(
+        state
+      );
+
+      return;
+    }
+
+    const elapsed =
+      getFocusElapsed(
+        state
+      );
+
+    const limit =
+      getFocusLimitMs(
+        state
+      );
+
+    if (
+      limit > 0 &&
+      elapsed >= limit
+    ) {
+      completeFocus();
+      return;
+    }
+
+    updateFocusUi(
+      state
+    );
+  };
+
+  const startFocusInterval =
+    () => {
+      stopFocusInterval();
+
+      focusTick();
+
+      focusInterval =
+        window.setInterval(
+          focusTick,
+          250
+        );
+    };
+
+  const startFocus = () => {
+    let state =
+      loadFocusState();
+
+    if (
+      state.status ===
+      "running"
+    ) {
+      return;
+    }
+
+    if (
+      state.status ===
+      "completed"
+    ) {
+      state = {
+        ...state,
+        elapsedMs: 0,
+      };
+    }
+
+    const goalInput =
+      workspace.querySelector(
+        "#focus-goal"
+      );
+
+    const durationInput =
+      workspace.querySelector(
+        "#focus-duration"
+      );
+
+    const goal =
+      goalInput?.value
+        ?.trim() ||
+      state.goal;
+
+    const durationMinutes =
+      Math.min(
+        720,
+        Math.max(
+          0,
+          Math.round(
+            Number(
+              durationInput?.value
+            ) || 0
+          )
+        )
+      );
+
+    const running =
+      saveFocusState({
+        ...state,
+        goal,
+        durationMinutes,
+        startedAt:
+          Date.now(),
+        status: "running",
+      });
+
+    updateFocusUi(
+      running
+    );
+
+    startFocusInterval();
+  };
+
+  const pauseFocus = () => {
+    const state =
+      loadFocusState();
+
+    if (
+      state.status !==
+      "running"
+    ) {
+      return;
+    }
+
+    const paused =
+      saveFocusState({
+        ...state,
+        elapsedMs:
+          getFocusElapsed(
+            state
+          ),
+        startedAt: null,
+        status: "paused",
+      });
+
+    stopFocusInterval();
+
+    updateFocusUi(
+      paused
+    );
+  };
+
+  const resetFocus = () => {
+    stopFocusInterval();
+
+    const current =
+      loadFocusState();
+
+    const reset =
+      saveFocusState({
+        ...defaultFocusState(),
+        goal:
+          current.goal,
+        durationMinutes:
+          current.durationMinutes,
+      });
+
+    const goal =
+      workspace.querySelector(
+        "#focus-goal"
+      );
+
+    const duration =
+      workspace.querySelector(
+        "#focus-duration"
+      );
+
+    if (goal) {
+      goal.value =
+        reset.goal;
+    }
+
+    if (duration) {
+      duration.value =
+        String(
+          reset.durationMinutes
+        );
+    }
+
+    updateFocusUi(
+      reset
+    );
+  };
+
+  const bindFocusEvents =
+    () => {
+      document.addEventListener(
+        "click",
+        event => {
+          if (
+            getTool() !==
+            "focus"
+          ) {
+            return;
+          }
+
+          if (
+            event.target.closest(
+              "#focus-start"
+            )
+          ) {
+            startFocus();
+            return;
+          }
+
+          if (
+            event.target.closest(
+              "#focus-pause"
+            )
+          ) {
+            pauseFocus();
+            return;
+          }
+
+          if (
+            event.target.closest(
+              "#focus-complete"
+            )
+          ) {
+            completeFocus();
+            return;
+          }
+
+          if (
+            event.target.closest(
+              "#focus-reset"
+            )
+          ) {
+            resetFocus();
+          }
+        }
+      );
+
+      document.addEventListener(
+        "change",
+        event => {
+          if (
+            getTool() !==
+            "focus"
+          ) {
+            return;
+          }
+
+          if (
+            event.target.id !==
+              "focus-goal" &&
+            event.target.id !==
+              "focus-duration"
+          ) {
+            return;
+          }
+
+          const state =
+            loadFocusState();
+
+          if (
+            state.status ===
+            "running"
+          ) {
+            return;
+          }
+
+          const goal =
+            workspace.querySelector(
+              "#focus-goal"
+            );
+
+          const duration =
+            workspace.querySelector(
+              "#focus-duration"
+            );
+
+          saveFocusState({
+            ...state,
+            goal:
+              goal?.value
+                ?.trim() ||
+              "",
+            durationMinutes:
+              Math.min(
+                720,
+                Math.max(
+                  0,
+                  Math.round(
+                    Number(
+                      duration
+                        ?.value
+                    ) || 0
+                  )
+                )
+              ),
+          });
+        }
+      );
+    };
+
+  const renderFocus = () => {
+    let state =
+      loadFocusState();
+
+    if (
+      state.status ===
+      "running"
+    ) {
+      const elapsed =
+        getFocusElapsed(
+          state
+        );
+
+      const limit =
+        getFocusLimitMs(
+          state
+        );
+
+      if (
+        limit > 0 &&
+        elapsed >= limit
+      ) {
+        completeFocus();
+
+        state =
+          loadFocusState();
+      }
+    }
+
+    workspace.innerHTML = `
+      <section class="focus-view">
+        <header class="tool-header">
+          <div>
+            <span class="tool-kicker">
+              Focus
+            </span>
+
+            <h2>
+              Focus
+            </h2>
+
+            <p>
+              Work on one clear target
+              without adding another
+              workflow.
+            </p>
+          </div>
+
+          <span class="tool-status">
+            Local only
+          </span>
+        </header>
+
+        <div class="focus-shell">
+          <section class="focus-card">
+            <label class="focus-goal-field">
+              <span>
+                Focus target
+              </span>
+
+              <input
+                id="focus-goal"
+                type="text"
+                maxlength="240"
+                placeholder="What are you working on?"
+                value="${escapeHtml(
+                  state.goal
+                )}"
+              >
+            </label>
+
+            <div
+              id="focus-time"
+              class="focus-time"
+            >
+              00:00:00
+            </div>
+
+            <div class="focus-meta">
+              <span
+                id="focus-status"
+              >
+                Ready
+              </span>
+
+              <span
+                id="focus-progress"
+              >
+                0%
+              </span>
+            </div>
+
+            <div class="focus-actions">
+              <button
+                type="button"
+                id="focus-start"
+                class="alarm-primary-button"
+              >
+                Start
+              </button>
+
+              <button
+                type="button"
+                id="focus-pause"
+              >
+                Pause
+              </button>
+
+              <button
+                type="button"
+                id="focus-complete"
+              >
+                Complete
+              </button>
+
+              <button
+                type="button"
+                id="focus-reset"
+              >
+                Reset
+              </button>
+            </div>
+          </section>
+
+          <aside class="focus-settings">
+            <div>
+              <span class="tool-kicker">
+                Session
+              </span>
+
+              <h3>
+                Duration
+              </h3>
+            </div>
+
+            <label class="focus-duration-field">
+              <span>
+                Minutes
+                <small>
+                  0 = open ended
+                </small>
+              </span>
+
+              <input
+                id="focus-duration"
+                type="number"
+                min="0"
+                max="720"
+                step="1"
+                value="${state.durationMinutes}"
+              >
+            </label>
+          </aside>
+        </div>
+
+        <p class="tool-note">
+          Running time is calculated from
+          timestamps, so refreshes and
+          background-tab throttling do not
+          change elapsed time.
+        </p>
+      </section>
+    `;
+
+    updateFocusUi(
+      state
+    );
+
+    if (
+      state.status ===
+      "running"
+    ) {
+      startFocusInterval();
+    } else {
+      stopFocusInterval();
+    }
   };
 
   const renderPlaceholder = (
@@ -6017,6 +8400,28 @@
       return;
     }
 
+    if (key === "timer") {
+      renderTimer();
+      return;
+    }
+
+    if (key === "stopwatch") {
+      productivityShared.stopwatch
+        ?.render();
+      return;
+    }
+
+    if (key === "pomodoro") {
+      productivityShared.pomodoro
+        ?.render();
+      return;
+    }
+
+    if (key === "focus") {
+      renderFocus();
+      return;
+    }
+
     renderPlaceholder(
       key
     );
@@ -6049,6 +8454,12 @@
 
   bindBoardEvents();
   bindAlarmEvents();
+  bindTimerEvents();
+  productivityShared.stopwatch
+    ?.bindEvents();
+  productivityShared.pomodoro
+    ?.bindEvents();
+  bindFocusEvents();
   startAlarmScheduler();
 
   renderTool();
