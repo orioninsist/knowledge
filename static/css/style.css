@@ -2509,3 +2509,136 @@ body {
   white-space: pre;
 }
 
+
+/* Calendar visual renderer */
+
+.visual-calendar {
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.calendar-render {
+  min-width: 760px;
+  border: 1px solid var(--lightgray);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid var(--lightgray);
+}
+
+.calendar-nav-button {
+  appearance: none;
+  padding: 0.38rem 0.65rem;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}
+
+.calendar-nav-button:hover {
+  background: rgba(127, 127, 127, 0.12);
+}
+
+.calendar-render-title {
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-bottom: 1px solid var(--lightgray);
+}
+
+.calendar-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.calendar-week-header {
+  background: rgba(127, 127, 127, 0.035);
+}
+
+.calendar-day-header {
+  padding: 0.65rem 0.35rem 0.55rem;
+  text-align: center;
+  border-right: 1px solid var(--lightgray);
+}
+
+.calendar-day-header:last-child,
+.calendar-day-column:last-child {
+  border-right: 0;
+}
+
+.calendar-weekday {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 500;
+  opacity: 0.62;
+  text-transform: uppercase;
+}
+
+.calendar-day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  height: 1.9rem;
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  border-radius: 999px;
+}
+
+.calendar-today .calendar-day-number {
+  outline: 2px solid currentColor;
+}
+
+.calendar-week-body {
+  border-top: 1px solid var(--lightgray);
+}
+
+.calendar-day-column {
+  min-height: 145px;
+  padding: 0.4rem;
+  border-right: 1px solid var(--lightgray);
+}
+
+.calendar-event {
+  margin-bottom: 0.4rem;
+  padding: 0.4rem 0.45rem;
+  border: 1px solid var(--lightgray);
+  border-radius: 6px;
+  background: rgba(127, 127, 127, 0.045);
+  overflow-wrap: anywhere;
+}
+
+.calendar-event:last-child {
+  margin-bottom: 0;
+}
+
+.calendar-event-time {
+  margin-bottom: 0.12rem;
+  font-size: 0.66rem;
+  line-height: 1.25;
+  opacity: 0.65;
+}
+
+.calendar-event-title {
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.calendar-event-location {
+  display: none;
+}
+
+.calendar-empty {
+  min-height: 1px;
+}

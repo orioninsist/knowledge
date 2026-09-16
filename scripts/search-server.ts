@@ -554,6 +554,8 @@ const visualJson = async (
 type CalendarRequest = {
   src: string;
   view: string;
+  rangeStart: Date;
+  rangeEnd: Date;
 };
 
 const CALENDAR_VIEWS =
@@ -588,6 +590,8 @@ const calendarJson = async (
     await request.json() as {
       src?: unknown;
       view?: unknown;
+      rangeStart?: unknown;
+      rangeEnd?: unknown;
     };
 
   if (
@@ -613,27 +617,52 @@ const calendarJson = async (
 
   const view =
     typeof body.view === "string"
-      ? body.view
-          .trim()
-          .toLowerCase()
+      ? body.view.trim().toLowerCase()
       : "week";
 
-  if (
-    !CALENDAR_VIEWS.has(view)
-  ) {
+  if (!CALENDAR_VIEWS.has(view)) {
     throw new Error(
       `Unsupported calendar view: ${view}`
+    );
+  }
+
+  if (
+    typeof body.rangeStart !== "string" ||
+    typeof body.rangeEnd !== "string"
+  ) {
+    throw new Error(
+      "Missing calendar date range."
+    );
+  }
+
+  const rangeStart =
+    new Date(body.rangeStart);
+
+  const rangeEnd =
+    new Date(body.rangeEnd);
+
+  if (
+    Number.isNaN(rangeStart.getTime()) ||
+    Number.isNaN(rangeEnd.getTime()) ||
+    rangeEnd <= rangeStart
+  ) {
+    throw new Error(
+      "Invalid calendar date range."
     );
   }
 
   return {
     src,
     view,
+    rangeStart,
+    rangeEnd,
   };
 };
 
 const readCalendar = async (
   src: string,
+  rangeStart: Date,
+  rangeEnd: Date,
 ) => {
   const fs =
     await import(
@@ -668,72 +697,148 @@ const readCalendar = async (
     ICAL.parse(source);
 
   const component =
-    new ICAL.Component(
-      jcal
-    );
+    new ICAL.Component(jcal);
 
   const vevents =
     component.getAllSubcomponents(
       "vevent"
     );
 
-  return vevents.map(
-    (
-      vevent: any,
-      index: number,
-    ) => {
-      const event =
-        new ICAL.Event(
-          vevent
-        );
+  const output: any[] = [];
 
-      const start =
-        event.startDate;
+  const pushOccurrence = (
+    event: any,
+    start: any,
+    end: any,
+    recurring: boolean,
+    suffix = "",
+  ) => {
+    if (!start || !end) {
+      return;
+    }
 
-      const end =
-        event.endDate;
+    const startDate =
+      start.toJSDate();
 
-      return {
-        id:
-          event.uid ||
-          `calendar-event-${index}`,
+    const endDate =
+      end.toJSDate();
 
-        title:
-          event.summary ||
-          "(Untitled)",
+    if (
+      endDate <= rangeStart ||
+      startDate >= rangeEnd
+    ) {
+      return;
+    }
 
-        description:
-          event.description ||
-          "",
+    output.push({
+      id:
+        `${event.uid || "calendar-event"}${suffix}`,
 
-        location:
-          event.location ||
-          "",
+      title:
+        event.summary ||
+        "(Untitled)",
 
-        start:
-          start
-            ? start.toJSDate()
-                .toISOString()
-            : null,
+      description:
+        event.description ||
+        "",
 
-        end:
-          end
-            ? end.toJSDate()
-                .toISOString()
-            : null,
+      location:
+        event.location ||
+        "",
 
-        allDay:
-          Boolean(
-            start?.isDate
-          ),
+      start:
+        startDate.toISOString(),
 
-        recurring:
-          vevent.hasProperty(
-            "rrule"
-          ),
-      };
-    },
+      end:
+        endDate.toISOString(),
+
+      allDay:
+        Boolean(start.isDate),
+
+      recurring,
+    });
+  };
+
+  for (
+    let index = 0;
+    index < vevents.length;
+    index++
+  ) {
+    const vevent =
+      vevents[index];
+
+    const event =
+      new ICAL.Event(vevent);
+
+    if (!event.isRecurring()) {
+      pushOccurrence(
+        event,
+        event.startDate,
+        event.endDate,
+        false,
+        `-${index}`,
+      );
+
+      continue;
+    }
+
+    const iterator =
+      event.iterator();
+
+    const duration =
+      event.duration;
+
+    let occurrence;
+
+    while (
+      (
+        occurrence =
+          iterator.next()
+      )
+    ) {
+      const occurrenceStart =
+        occurrence.toJSDate();
+
+      if (
+        occurrenceStart >=
+        rangeEnd
+      ) {
+        break;
+      }
+
+      const occurrenceEnd =
+        occurrence.clone();
+
+      occurrenceEnd.addDuration(
+        duration
+      );
+
+      if (
+        occurrenceEnd.toJSDate() <=
+        rangeStart
+      ) {
+        continue;
+      }
+
+      pushOccurrence(
+        event,
+        occurrence,
+        occurrenceEnd,
+        true,
+        `-${occurrence.toString()}`,
+      );
+    }
+  }
+
+  output.sort(
+    (a, b) =>
+      String(a.start)
+        .localeCompare(
+          String(b.start)
+        )
   );
+
+  return output;
 };
 
 const visualHash = (
@@ -971,6 +1076,8 @@ const server = Bun.serve({
         const {
           src,
           view,
+          rangeStart,
+          rangeEnd,
         } =
           await calendarJson(
             request
@@ -978,7 +1085,9 @@ const server = Bun.serve({
 
         const events =
           await readCalendar(
-            src
+            src,
+            rangeStart,
+            rangeEnd,
           );
 
         return json({
