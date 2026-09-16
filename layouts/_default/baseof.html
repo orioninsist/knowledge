@@ -4,161 +4,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-
-  <meta
-    name="knowledge-search-api"
-    content="{{ .Site.Params.searchEndpoint }}"
-  >
-
-  <title>
-    {{- if .IsHome -}}
-      {{ .Site.Title }}
-    {{- else -}}
-      {{ .Title }} · {{ .Site.Title }}
-    {{- end -}}
-  </title>
-
+  <meta name="knowledge-search-api" content="{{ .Site.Params.searchEndpoint }}">
+  <title>{{- if .IsHome -}}{{ .Site.Title }}{{- else -}}{{ .Title }} · {{ .Site.Title }}{{- end -}}</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/tags.css">
   <link rel="icon" type="image/png" href="/favicon.png">
 </head>
-
 <body>
+  <main class="main">{{ block "main" . }}{{ end }}</main>
 
-  <main class="main">
-    {{ block "main" . }}{{ end }}
-  </main>
-
-  <div
-    id="command-search"
-    class="command-search"
-    hidden
-  >
-    <div
-      class="command-search-backdrop"
-      data-command-search-close
-    ></div>
-
-    <section
-      class="command-search-panel"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Search notes"
-    >
-
-      <label
-        class="visually-hidden"
-        for="knowledge-search"
-      >
-        Search notes
-      </label>
-
-      <input
-        id="knowledge-search"
-        class="search-input command-search-input"
-        type="search"
-        placeholder="Search notes..."
-        autocomplete="off"
-        spellcheck="false"
-        aria-label="Search notes"
-      >
-
-      <details
-        id="search-filters"
-        class="search-filters"
-      >
+  <div id="command-search" class="command-search" hidden>
+    <div class="command-search-backdrop" data-command-search-close></div>
+    <section class="command-search-panel" role="dialog" aria-modal="true" aria-label="Search notes">
+      <label class="visually-hidden" for="knowledge-search">Search notes</label>
+      <input id="knowledge-search" class="search-input command-search-input" type="search" placeholder="Search notes..." autocomplete="off" spellcheck="false" aria-label="Search notes">
+      <details id="search-filters" class="search-filters">
         <summary>Filters</summary>
-
         <div class="search-filter-fields">
-          <label>
-            Folder
-            <input
-              id="search-filter-folder"
-              type="text"
-              autocomplete="off"
-            >
-          </label>
-
-          <label>
-            Filename
-            <input
-              id="search-filter-filename"
-              type="text"
-              autocomplete="off"
-            >
-          </label>
-
-          <label>
-            Title
-            <input
-              id="search-filter-title"
-              type="text"
-              autocomplete="off"
-            >
-          </label>
-
-          <label>
-            Description
-            <input
-              id="search-filter-description"
-              type="text"
-              autocomplete="off"
-            >
-          </label>
-
-          <label>
-            Status
-            <input
-              id="search-filter-status"
-              type="text"
-              autocomplete="off"
-            >
-          </label>
-
-          <label>
-            Alias
-            <input
-              id="search-filter-alias"
-              type="text"
-              autocomplete="off"
-            >
-          </label>
-
-          <label>
-            Tag
-            <input
-              id="search-filter-tag"
-              type="text"
-              autocomplete="off"
-            >
-          </label>
-
-          <button
-            id="search-filter-clear"
-            type="button"
-          >
-            Clear filters
-          </button>
+          <label>Folder<input id="search-filter-folder" type="text" autocomplete="off"></label>
+          <label>Filename<input id="search-filter-filename" type="text" autocomplete="off"></label>
+          <label>Title<input id="search-filter-title" type="text" autocomplete="off"></label>
+          <label>Description<input id="search-filter-description" type="text" autocomplete="off"></label>
+          <label>Status<input id="search-filter-status" type="text" autocomplete="off"></label>
+          <label>Alias<input id="search-filter-alias" type="text" autocomplete="off"></label>
+          <label>Tag<input id="search-filter-tag" type="text" autocomplete="off"></label>
+          <button id="search-filter-clear" type="button">Clear filters</button>
         </div>
       </details>
-
-      <div
-        id="search-results"
-        class="search-results command-search-results"
-        hidden
-      >
-        <div
-          id="search-summary"
-          class="search-summary"
-          hidden
-        ></div>
-
-        <div
-          id="search-results-list"
-          class="search-results-list"
-        ></div>
+      <div id="search-results" class="search-results command-search-results" hidden>
+        <div id="search-summary" class="search-summary" hidden></div>
+        <div id="search-results-list" class="search-results-list"></div>
       </div>
-
     </section>
   </div>
 
@@ -167,13 +43,8 @@
   <script src="/js/copy-link.js" defer></script>
   <script src="/js/keyboard-shortcuts.js" defer></script>
   <script src="/js/reading-progress.js" defer></script>
-    <script src="/js/visual-renderers.js" defer></script>
-
-
-  <script
-    src="/js/home-stats.js"
-    defer
-  ></script>
-
+  <script src="/js/visual-renderers.js" defer></script>
+  <script src="/js/canvas-renderer.js" defer></script>
+  <script src="/js/home-stats.js" defer></script>
 </body>
 </html>
