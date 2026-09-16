@@ -393,6 +393,264 @@ const renderCalendarWeek = (
   );
 };
 
+
+
+const renderCalendar4Days = (
+  element,
+  events,
+  rangeStart,
+) => {
+  const today =
+    new Date();
+
+  const weekdayFormatter =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        weekday: "short",
+      },
+    );
+
+  const days =
+    Array.from(
+      { length: 4 },
+      (_, index) =>
+        addDays(
+          rangeStart,
+          index,
+        ),
+    );
+
+  const header =
+    days.map(
+      (day) => {
+        const todayClass =
+          sameLocalDay(
+            day,
+            today,
+          )
+            ? " calendar-today"
+            : "";
+
+        return `
+          <div class="calendar-day-header${todayClass}">
+            <span class="calendar-weekday">
+              ${escapeHtml(
+                weekdayFormatter.format(day)
+              )}
+            </span>
+
+            <strong class="calendar-day-number">
+              ${day.getDate()}
+            </strong>
+          </div>
+        `;
+      },
+    ).join("");
+
+  const columns =
+    days.map(
+      (day) => {
+        const dayEvents =
+          events.filter(
+            (item) =>
+              sameLocalDay(
+                new Date(item.start),
+                day,
+              ),
+          );
+
+        const cards =
+          dayEvents.map(
+            (item) => {
+              const start =
+                new Date(item.start);
+
+              const end =
+                new Date(item.end);
+
+              const time =
+                item.allDay
+                  ? "Tüm gün"
+                  : `${start.toLocaleTimeString(
+                      "tr-TR",
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )}–${end.toLocaleTimeString(
+                      "tr-TR",
+                      {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )}`;
+
+              return `
+                <article class="calendar-event">
+                  <div class="calendar-event-time">
+                    ${escapeHtml(time)}
+                  </div>
+
+                  <div class="calendar-event-title">
+                    ${escapeHtml(item.title)}
+                  </div>
+                </article>
+              `;
+            },
+          ).join("");
+
+        return `
+          <div class="calendar-day-column">
+            ${
+              cards ||
+              '<div class="calendar-empty"></div>'
+            }
+          </div>
+        `;
+      },
+    ).join("");
+
+  const rangeEnd =
+    addDays(
+      rangeStart,
+      3,
+    );
+
+  const title =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        day: "numeric",
+        month: "long",
+      },
+    ).format(rangeStart) +
+    " – " +
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      },
+    ).format(rangeEnd);
+
+  element.innerHTML = `
+    <section class="calendar-render">
+      <div class="calendar-render-title">
+        ${escapeHtml(title)}
+      </div>
+
+      <div class="calendar-four-grid calendar-week-header">
+        ${header}
+      </div>
+
+      <div class="calendar-four-grid calendar-week-body">
+        ${columns}
+      </div>
+    </section>
+  `;
+
+  element.classList.add(
+    "visual-rendered"
+  );
+};
+
+const renderCalendarDay = (
+  element,
+  events,
+  day,
+) => {
+  const today =
+    new Date();
+
+  const title =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      },
+    ).format(day);
+
+  const dayEvents =
+    events.filter(
+      (item) =>
+        sameLocalDay(
+          new Date(item.start),
+          day,
+        ),
+    );
+
+  const cards =
+    dayEvents.map(
+      (item) => {
+        const start =
+          new Date(item.start);
+
+        const end =
+          new Date(item.end);
+
+        const time =
+          item.allDay
+            ? "Tüm gün"
+            : `${start.toLocaleTimeString(
+                "tr-TR",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              )}–${end.toLocaleTimeString(
+                "tr-TR",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                },
+              )}`;
+
+        return `
+          <article class="calendar-event calendar-day-event">
+            <div class="calendar-event-time">
+              ${escapeHtml(time)}
+            </div>
+            <div class="calendar-event-title">
+              ${escapeHtml(item.title)}
+            </div>
+          </article>
+        `;
+      },
+    ).join("");
+
+  const todayClass =
+    sameLocalDay(
+      day,
+      today,
+    )
+      ? " calendar-day-view-today"
+      : "";
+
+  element.innerHTML = `
+    <section class="calendar-render calendar-day-view${todayClass}">
+      <div class="calendar-render-title">
+        ${escapeHtml(title)}
+      </div>
+
+      <div class="calendar-day-events">
+        ${
+          cards ||
+          '<div class="calendar-day-empty">Bu gün için etkinlik yok.</div>'
+        }
+      </div>
+    </section>
+  `;
+
+  element.classList.add(
+    "visual-rendered"
+  );
+};
+
 const renderCalendar = async (
   element,
 ) => {
@@ -411,7 +669,11 @@ const renderCalendar = async (
     return;
   }
 
-  if (config.view !== "week") {
+  if (
+    config.view !== "week" &&
+    config.view !== "day" &&
+    config.view !== "4days"
+  ) {
     showError(
       element,
       `Calendar view "${config.view}" is not implemented yet.`
@@ -420,16 +682,43 @@ const renderCalendar = async (
     return;
   }
 
-  let currentWeek =
-    startOfWeek(
-      new Date()
+  let currentDate =
+    new Date();
+
+  const normalizeCurrent = () => {
+    if (
+      config.view === "week"
+    ) {
+      return startOfWeek(
+        currentDate
+      );
+    }
+
+    const result =
+      new Date(currentDate);
+
+    result.setHours(
+      0, 0, 0, 0
     );
 
-  const loadWeek = async () => {
+    return result;
+  };
+
+  const loadCalendar = async () => {
+    const rangeStart =
+      normalizeCurrent();
+
+    const rangeDays =
+      config.view === "week"
+        ? 7
+        : config.view === "4days"
+          ? 4
+          : 1;
+
     const rangeEnd =
       addDays(
-        currentWeek,
-        7,
+        rangeStart,
+        rangeDays,
       );
 
     try {
@@ -453,7 +742,7 @@ const renderCalendar = async (
                   config.view,
 
                 rangeStart:
-                  currentWeek
+                  rangeStart
                     .toISOString(),
 
                 rangeEnd:
@@ -472,11 +761,29 @@ const renderCalendar = async (
       const result =
         await response.json();
 
-      renderCalendarWeek(
-        element,
-        result.events ?? [],
-        currentWeek,
-      );
+      if (
+        config.view === "week"
+      ) {
+        renderCalendarWeek(
+          element,
+          result.events ?? [],
+          rangeStart,
+        );
+      } else if (
+        config.view === "4days"
+      ) {
+        renderCalendar4Days(
+          element,
+          result.events ?? [],
+          rangeStart,
+        );
+      } else {
+        renderCalendarDay(
+          element,
+          result.events ?? [],
+          rangeStart,
+        );
+      }
 
       const calendar =
         element.querySelector(
@@ -535,35 +842,37 @@ const renderCalendar = async (
             button.dataset
               .calendarAction;
 
+          const step =
+            config.view === "week"
+              ? 7
+              : config.view === "4days"
+                ? 4
+                : 1;
+
           if (
-            action ===
-            "previous"
+            action === "previous"
           ) {
-            currentWeek =
+            currentDate =
               addDays(
-                currentWeek,
-                -7,
+                rangeStart,
+                -step,
               );
           } else if (
-            action ===
-            "next"
+            action === "next"
           ) {
-            currentWeek =
+            currentDate =
               addDays(
-                currentWeek,
-                7,
+                rangeStart,
+                step,
               );
           } else if (
-            action ===
-            "today"
+            action === "today"
           ) {
-            currentWeek =
-              startOfWeek(
-                new Date()
-              );
+            currentDate =
+              new Date();
           }
 
-          await loadWeek();
+          await loadCalendar();
         },
       );
     } catch (error) {
@@ -574,7 +883,7 @@ const renderCalendar = async (
     }
   };
 
-  await loadWeek();
+  await loadCalendar();
 };
 
 const renderCalendars = async () => {

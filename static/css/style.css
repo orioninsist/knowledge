@@ -2642,3 +2642,33 @@ body {
 .calendar-empty {
   min-height: 1px;
 }
+
+/* Calendar Day view */
+
+.calendar-day-events {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem;
+}
+
+.calendar-day-event {
+  margin: 0;
+}
+
+.calendar-day-empty {
+  padding: 1rem 0.35rem;
+  font-size: 0.8rem;
+  opacity: 0.55;
+}
+
+.calendar-day-view-today .calendar-render-title {
+  font-weight: 750;
+}
+
+/* Calendar 4 Days view */
+
+.calendar-four-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
