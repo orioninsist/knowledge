@@ -570,3 +570,290 @@ a {
     display: none;
   }
 }
+
+
+/* Weather V1 */
+
+.weather-view {
+  padding: 28px;
+}
+
+.weather-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.weather-card {
+  padding: 22px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.weather-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.weather-card-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.015em;
+}
+
+.weather-card-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.weather-remove {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.weather-remove:hover {
+  background: var(--surface-soft);
+  color: var(--text);
+}
+
+.weather-current {
+  display: grid;
+  grid-template-columns:
+    auto
+    auto
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.weather-current-icon {
+  width: 64px;
+  color: var(--text);
+  font-size: 3.4rem;
+  line-height: 1;
+  text-align: center;
+}
+
+.weather-temperature {
+  display: grid;
+  min-width: 100px;
+}
+
+.weather-temperature strong {
+  font-size: 2.8rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.weather-temperature span {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.weather-condition {
+  display: grid;
+  gap: 5px;
+}
+
+.weather-condition strong {
+  font-size: 0.9rem;
+}
+
+.weather-condition span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.weather-metrics {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.weather-metrics > div {
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+  border-radius: 9px;
+  background: var(--surface-soft);
+}
+
+.weather-metrics span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.weather-metrics strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.weather-forecast {
+  display: grid;
+  grid-template-columns:
+    repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.weather-day {
+  display: grid;
+  place-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px 5px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.weather-day:first-child {
+  background: var(--surface-soft);
+}
+
+.weather-day > strong {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.weather-day-icon {
+  min-height: 25px;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.weather-day-temp {
+  display: flex;
+  gap: 5px;
+  align-items: baseline;
+  font-size: 0.74rem;
+}
+
+.weather-day-temp b {
+  font-weight: 650;
+}
+
+.weather-day-temp span {
+  color: var(--muted);
+}
+
+.weather-day small {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 0.61rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weather-loading {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.weather-loading strong {
+  color: var(--text);
+}
+
+.weather-loading span {
+  margin-top: -110px;
+  font-size: 0.78rem;
+}
+
+.weather-error {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.weather-error strong {
+  color: var(--text);
+}
+
+.weather-error span {
+  margin-top: -80px;
+  font-size: 0.78rem;
+}
+
+.weather-empty {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  padding: 32px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.weather-empty strong {
+  color: var(--text);
+}
+
+.weather-empty span {
+  margin-top: -100px;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 760px) {
+  .weather-view {
+    padding: 20px;
+  }
+
+  .weather-current {
+    grid-template-columns:
+      auto
+      1fr;
+  }
+
+  .weather-condition {
+    grid-column: 1 / -1;
+  }
+
+  .weather-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .weather-forecast {
+    grid-template-columns:
+      repeat(7, 86px);
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+}
+
+@media (max-width: 460px) {
+  .weather-temperature strong {
+    font-size: 2.45rem;
+  }
+
+  .weather-current-icon {
+    width: 54px;
+    font-size: 2.8rem;
+  }
+}
