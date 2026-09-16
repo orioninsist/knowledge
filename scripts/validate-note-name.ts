@@ -35,10 +35,10 @@ console.error(
   "  lowercase English letters"
 );
 console.error(
-  "  hyphen (-) as the only separator"
+  "  numbers 0-9"
 );
 console.error(
-  "  no numbers"
+  "  hyphen (-) as the only separator"
 );
 console.error(
   "  exactly one .md suffix"
@@ -48,7 +48,7 @@ console.error(
   "Example:"
 );
 console.error(
-  "  building-second-brain.md"
+  "  building-second-brain-2.md"
 );
 
 process.exit(1);
