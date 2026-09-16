@@ -7,6 +7,8 @@
   const CLOCK_STORAGE_KEY =
     "knowledge.productivity.clocks.v1";
 
+  let clockInterval = null;
+
   const clockCatalog = [
     ["Istanbul", "Türkiye", "Europe/Istanbul"],
     ["London", "United Kingdom", "Europe/London"],
