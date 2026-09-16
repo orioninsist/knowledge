@@ -157,6 +157,12 @@
   data-visual-language="typst"
 >{{ .Inner }}</div>
 
+{{- else if eq $type "calendar" -}}
+<div
+  class="visual-note visual-calendar"
+  data-visual-language="calendar"
+>{{ .Inner }}</div>
+
 {{- else -}}
 {{ highlight .Inner .Type .Options }}
 {{- end -}}

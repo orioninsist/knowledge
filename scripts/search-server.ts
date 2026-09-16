@@ -551,6 +551,191 @@ const visualJson = async (
   return body.source;
 };
 
+type CalendarRequest = {
+  src: string;
+  view: string;
+};
+
+const CALENDAR_VIEWS =
+  new Set([
+    "day",
+    "week",
+    "month",
+    "year",
+    "schedule",
+    "4days",
+  ]);
+
+const calendarJson = async (
+  request: Request,
+): Promise<CalendarRequest> => {
+  const contentType =
+    request.headers.get(
+      "content-type"
+    ) ?? "";
+
+  if (
+    !contentType.includes(
+      "application/json"
+    )
+  ) {
+    throw new Error(
+      "Expected application/json."
+    );
+  }
+
+  const body =
+    await request.json() as {
+      src?: unknown;
+      view?: unknown;
+    };
+
+  if (
+    typeof body.src !== "string" ||
+    !body.src.trim()
+  ) {
+    throw new Error(
+      "Missing calendar src."
+    );
+  }
+
+  const src =
+    body.src.trim();
+
+  if (
+    extname(src).toLowerCase() !==
+    ".ics"
+  ) {
+    throw new Error(
+      "Calendar src must be an .ics file."
+    );
+  }
+
+  const view =
+    typeof body.view === "string"
+      ? body.view
+          .trim()
+          .toLowerCase()
+      : "week";
+
+  if (
+    !CALENDAR_VIEWS.has(view)
+  ) {
+    throw new Error(
+      `Unsupported calendar view: ${view}`
+    );
+  }
+
+  return {
+    src,
+    view,
+  };
+};
+
+const readCalendar = async (
+  src: string,
+) => {
+  const fs =
+    await import(
+      "node:fs/promises"
+    );
+
+  const ICALModule =
+    await import(
+      "ical.js"
+    );
+
+  const ICAL =
+    ICALModule.default ??
+    ICALModule;
+
+  const stat =
+    await fs.stat(src);
+
+  if (!stat.isFile()) {
+    throw new Error(
+      "Calendar src is not a file."
+    );
+  }
+
+  const source =
+    await fs.readFile(
+      src,
+      "utf8",
+    );
+
+  const jcal =
+    ICAL.parse(source);
+
+  const component =
+    new ICAL.Component(
+      jcal
+    );
+
+  const vevents =
+    component.getAllSubcomponents(
+      "vevent"
+    );
+
+  return vevents.map(
+    (
+      vevent: any,
+      index: number,
+    ) => {
+      const event =
+        new ICAL.Event(
+          vevent
+        );
+
+      const start =
+        event.startDate;
+
+      const end =
+        event.endDate;
+
+      return {
+        id:
+          event.uid ||
+          `calendar-event-${index}`,
+
+        title:
+          event.summary ||
+          "(Untitled)",
+
+        description:
+          event.description ||
+          "",
+
+        location:
+          event.location ||
+          "",
+
+        start:
+          start
+            ? start.toJSDate()
+                .toISOString()
+            : null,
+
+        end:
+          end
+            ? end.toJSDate()
+                .toISOString()
+            : null,
+
+        allDay:
+          Boolean(
+            start?.isDate
+          ),
+
+        recurring:
+          vevent.hasProperty(
+            "rrule"
+          ),
+      };
+    },
+  );
+};
+
 const visualHash = (
   language: string,
   source: string,
@@ -768,6 +953,43 @@ const server = Bun.serve({
           {
             error:
               "Visual render failed.",
+
+            detail:
+              String(error),
+          },
+          400,
+        );
+      }
+    }
+
+    if (
+      request.method === "POST" &&
+      url.pathname ===
+        "/api/render/calendar"
+    ) {
+      try {
+        const {
+          src,
+          view,
+        } =
+          await calendarJson(
+            request
+          );
+
+        const events =
+          await readCalendar(
+            src
+          );
+
+        return json({
+          view,
+          events,
+        });
+      } catch (error) {
+        return json(
+          {
+            error:
+              "Calendar render failed.",
 
             detail:
               String(error),
