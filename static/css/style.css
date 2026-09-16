@@ -2760,3 +2760,49 @@ body {
   overflow-wrap: anywhere;
 }
 
+
+/* Calendar Schedule view */
+
+.calendar-schedule-list {
+  display: grid;
+}
+
+.calendar-schedule-day {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.28fr) 1fr;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--lightgray);
+}
+
+.calendar-schedule-date {
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-transform: capitalize;
+}
+
+.calendar-schedule-events {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.calendar-schedule-event {
+  padding: 0.45rem 0.55rem;
+  border-radius: 5px;
+  background: rgba(127, 127, 127, 0.07);
+}
+
+.calendar-schedule-empty {
+  padding: 1rem 0;
+  font-size: 0.8rem;
+  opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+  .calendar-schedule-day {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+}
+

@@ -423,6 +423,179 @@ const addMonths = (
     1,
   );
 
+
+const renderCalendarSchedule = (
+  element,
+  events,
+  rangeStart,
+  rangeEnd,
+) => {
+  const sorted =
+    [...events].sort(
+      (a, b) =>
+        new Date(a.start) -
+        new Date(b.start),
+    );
+
+  const groups =
+    new Map();
+
+  for (const item of sorted) {
+    if (!item.start) {
+      continue;
+    }
+
+    const start =
+      new Date(item.start);
+
+    const key =
+      [
+        start.getFullYear(),
+        String(
+          start.getMonth() + 1
+        ).padStart(2, "0"),
+        String(
+          start.getDate()
+        ).padStart(2, "0"),
+      ].join("-");
+
+    if (!groups.has(key)) {
+      groups.set(
+        key,
+        {
+          date: start,
+          events: [],
+        },
+      );
+    }
+
+    groups.get(key)
+      .events.push(item);
+  }
+
+  const dateFormatter =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      },
+    );
+
+  const rows =
+    [...groups.values()]
+      .map(
+        (group) => {
+          const items =
+            group.events.map(
+              (item) => {
+                const start =
+                  new Date(
+                    item.start
+                  );
+
+                const end =
+                  new Date(
+                    item.end
+                  );
+
+                const time =
+                  item.allDay
+                    ? "Tüm gün"
+                    : `${start.toLocaleTimeString(
+                        "tr-TR",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}–${end.toLocaleTimeString(
+                        "tr-TR",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}`;
+
+                return `
+                  <article class="calendar-schedule-event">
+                    <div class="calendar-event-time">
+                      ${escapeHtml(time)}
+                    </div>
+
+                    <div class="calendar-event-title">
+                      ${escapeHtml(item.title)}
+                    </div>
+                  </article>
+                `;
+              },
+            ).join("");
+
+          return `
+            <section class="calendar-schedule-day">
+              <div class="calendar-schedule-date">
+                ${escapeHtml(
+                  dateFormatter.format(
+                    group.date
+                  )
+                )}
+              </div>
+
+              <div class="calendar-schedule-events">
+                ${items}
+              </div>
+            </section>
+          `;
+        },
+      ).join("");
+
+  const titleStart =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        day: "numeric",
+        month: "long",
+      },
+    ).format(rangeStart);
+
+  const visibleEnd =
+    addDays(
+      rangeEnd,
+      -1,
+    );
+
+  const titleEnd =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      },
+    ).format(visibleEnd);
+
+  element.innerHTML = `
+    <section class="calendar-render calendar-schedule-view">
+      <div class="calendar-render-title">
+        ${escapeHtml(
+          `${titleStart} – ${titleEnd}`
+        )}
+      </div>
+
+      <div class="calendar-schedule-list">
+        ${
+          rows ||
+          '<div class="calendar-schedule-empty">Bu dönemde etkinlik yok.</div>'
+        }
+      </div>
+    </section>
+  `;
+
+  element.classList.add(
+    "visual-rendered"
+  );
+};
+
 const renderCalendarMonth = (
   element,
   events,
@@ -853,7 +1026,8 @@ const renderCalendar = async (
     config.view !== "week" &&
     config.view !== "day" &&
     config.view !== "4days" &&
-    config.view !== "month"
+    config.view !== "month" &&
+    config.view !== "schedule"
   ) {
     showError(
       element,
@@ -935,7 +1109,9 @@ const renderCalendar = async (
           ? 7
           : config.view === "4days"
             ? 4
-            : 1;
+            : config.view === "schedule"
+              ? 30
+              : 1;
 
       rangeEnd =
         addDays(
@@ -1007,6 +1183,15 @@ const renderCalendar = async (
           element,
           result.events ?? [],
           normalized,
+          rangeStart,
+          rangeEnd,
+        );
+      } else if (
+        config.view === "schedule"
+      ) {
+        renderCalendarSchedule(
+          element,
+          result.events ?? [],
           rangeStart,
           rangeEnd,
         );
@@ -1096,7 +1281,9 @@ const renderCalendar = async (
                 ? 7
                 : config.view === "4days"
                   ? 4
-                  : 1;
+                  : config.view === "schedule"
+                    ? 30
+                    : 1;
 
             currentDate =
               addDays(
