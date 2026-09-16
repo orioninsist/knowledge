@@ -1487,12 +1487,8 @@ const server = Bun.serve({
       /*
        * Typed prefix:
        *
-       * Each MOC performs an indexed path range
-       * lookup and returns at most five rows.
-       *
-       * Five MOCs × maximum five rows means
-       * at most 25 candidates enter JavaScript,
-       * regardless of total note count.
+       * Search all five MOCs as one global note namespace.
+       * Return at most 20 matching filenames total.
        */
       const directories = [
         "0-Inbox",
@@ -1513,7 +1509,7 @@ const server = Bun.serve({
             path >= ?
             AND path < ?
           ORDER BY path
-          LIMIT 5
+          LIMIT 20
         `);
 
       for (
@@ -1557,7 +1553,7 @@ const server = Bun.serve({
           ),
         ]
           .sort()
-          .slice(0, 5);
+          .slice(0, 20);
 
       return new Response(
         results.length
