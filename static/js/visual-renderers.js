@@ -395,6 +395,186 @@ const renderCalendarWeek = (
 
 
 
+
+const startOfMonth = (
+  date,
+) => {
+  const result =
+    new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      1,
+    );
+
+  result.setHours(
+    0, 0, 0, 0
+  );
+
+  return result;
+};
+
+const addMonths = (
+  date,
+  months,
+) =>
+  new Date(
+    date.getFullYear(),
+    date.getMonth() + months,
+    1,
+  );
+
+const renderCalendarMonth = (
+  element,
+  events,
+  monthDate,
+  gridStart,
+  gridEnd,
+) => {
+  const today =
+    new Date();
+
+  const month =
+    monthDate.getMonth();
+
+  const weekdayFormatter =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        weekday: "short",
+      },
+    );
+
+  const title =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        month: "long",
+        year: "numeric",
+      },
+    ).format(monthDate);
+
+  const weekdays =
+    Array.from(
+      { length: 7 },
+      (_, index) =>
+        addDays(
+          startOfWeek(
+            new Date(
+              2026,
+              0,
+              5,
+            )
+          ),
+          index,
+        ),
+    ).map(
+      (day) => `
+        <div class="calendar-month-weekday">
+          ${escapeHtml(
+            weekdayFormatter.format(day)
+          )}
+        </div>
+      `,
+    ).join("");
+
+  const cells = [];
+
+  for (
+    let day =
+      new Date(gridStart);
+    day < gridEnd;
+    day =
+      addDays(day, 1)
+  ) {
+    const cellDay =
+      new Date(day);
+
+    const dayEvents =
+      events.filter(
+        (item) =>
+          sameLocalDay(
+            new Date(item.start),
+            cellDay,
+          ),
+      );
+
+    const eventHtml =
+      dayEvents.map(
+        (item) => {
+          const start =
+            new Date(item.start);
+
+          const time =
+            item.allDay
+              ? "Tüm gün"
+              : start.toLocaleTimeString(
+                  "tr-TR",
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  },
+                );
+
+          return `
+            <article class="calendar-month-event">
+              <span class="calendar-month-event-time">
+                ${escapeHtml(time)}
+              </span>
+              <span class="calendar-month-event-title">
+                ${escapeHtml(item.title)}
+              </span>
+            </article>
+          `;
+        },
+      ).join("");
+
+    const outsideClass =
+      cellDay.getMonth() !== month
+        ? " calendar-month-outside"
+        : "";
+
+    const todayClass =
+      sameLocalDay(
+        cellDay,
+        today,
+      )
+        ? " calendar-month-today"
+        : "";
+
+    cells.push(`
+      <div class="calendar-month-cell${outsideClass}${todayClass}">
+        <div class="calendar-month-date">
+          ${cellDay.getDate()}
+        </div>
+
+        <div class="calendar-month-events">
+          ${eventHtml}
+        </div>
+      </div>
+    `);
+  }
+
+  element.innerHTML = `
+    <section class="calendar-render calendar-month-view">
+      <div class="calendar-render-title">
+        ${escapeHtml(title)}
+      </div>
+
+      <div class="calendar-month-weekdays">
+        ${weekdays}
+      </div>
+
+      <div class="calendar-month-grid">
+        ${cells.join("")}
+      </div>
+    </section>
+  `;
+
+  element.classList.add(
+    "visual-rendered"
+  );
+};
+
 const renderCalendar4Days = (
   element,
   events,
@@ -672,7 +852,8 @@ const renderCalendar = async (
   if (
     config.view !== "week" &&
     config.view !== "day" &&
-    config.view !== "4days"
+    config.view !== "4days" &&
+    config.view !== "month"
   ) {
     showError(
       element,
@@ -694,6 +875,14 @@ const renderCalendar = async (
       );
     }
 
+    if (
+      config.view === "month"
+    ) {
+      return startOfMonth(
+        currentDate
+      );
+    }
+
     const result =
       new Date(currentDate);
 
@@ -705,21 +894,55 @@ const renderCalendar = async (
   };
 
   const loadCalendar = async () => {
-    const rangeStart =
+    const normalized =
       normalizeCurrent();
 
-    const rangeDays =
-      config.view === "week"
-        ? 7
-        : config.view === "4days"
-          ? 4
-          : 1;
+    let rangeStart =
+      normalized;
 
-    const rangeEnd =
-      addDays(
-        rangeStart,
-        rangeDays,
-      );
+    let rangeEnd;
+
+    if (
+      config.view === "month"
+    ) {
+      rangeStart =
+        startOfWeek(
+          normalized
+        );
+
+      const nextMonth =
+        addMonths(
+          normalized,
+          1,
+        );
+
+      const lastDay =
+        addDays(
+          nextMonth,
+          -1,
+        );
+
+      rangeEnd =
+        addDays(
+          startOfWeek(
+            lastDay
+          ),
+          7,
+        );
+    } else {
+      const rangeDays =
+        config.view === "week"
+          ? 7
+          : config.view === "4days"
+            ? 4
+            : 1;
+
+      rangeEnd =
+        addDays(
+          rangeStart,
+          rangeDays,
+        );
+    }
 
     try {
       const response =
@@ -776,6 +999,16 @@ const renderCalendar = async (
           element,
           result.events ?? [],
           rangeStart,
+        );
+      } else if (
+        config.view === "month"
+      ) {
+        renderCalendarMonth(
+          element,
+          result.events ?? [],
+          normalized,
+          rangeStart,
+          rangeEnd,
         );
       } else {
         renderCalendarDay(
@@ -842,34 +1075,36 @@ const renderCalendar = async (
             button.dataset
               .calendarAction;
 
-          const step =
-            config.view === "week"
-              ? 7
-              : config.view === "4days"
-                ? 4
-                : 1;
-
           if (
-            action === "previous"
-          ) {
-            currentDate =
-              addDays(
-                rangeStart,
-                -step,
-              );
-          } else if (
-            action === "next"
-          ) {
-            currentDate =
-              addDays(
-                rangeStart,
-                step,
-              );
-          } else if (
             action === "today"
           ) {
             currentDate =
               new Date();
+          } else if (
+            config.view === "month"
+          ) {
+            currentDate =
+              addMonths(
+                normalized,
+                action === "previous"
+                  ? -1
+                  : 1,
+              );
+          } else {
+            const step =
+              config.view === "week"
+                ? 7
+                : config.view === "4days"
+                  ? 4
+                  : 1;
+
+            currentDate =
+              addDays(
+                rangeStart,
+                action === "previous"
+                  ? -step
+                  : step,
+              );
           }
 
           await loadCalendar();
