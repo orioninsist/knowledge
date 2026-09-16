@@ -7,6 +7,7 @@
     let state = { cards: [], edges: [] };
     let drag = null;
     let connectFrom = null;
+    let connectDrag = null;
 
     const uid = () =>
       `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -47,6 +48,7 @@
         const a = cardCenter(from), b = cardCenter(to);
         return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" marker-end="url(#canvas-arrow)" />`;
       }).join("");
+      const preview = connectDrag ? `<line class="canvas-edge-preview" x1="${connectDrag.x1}" y1="${connectDrag.y1}" x2="${connectDrag.x2}" y2="${connectDrag.y2}" marker-end="url(#canvas-arrow)" />` : "";
       const cards = state.cards.map(card => `
         <article class="canvas-card" data-card-id="${card.id}" style="left:${card.x}px;top:${card.y}px;width:${card.w}px;min-height:${card.h}px">
           <button class="canvas-card-port${connectFrom === card.id ? " is-active" : ""}" data-canvas-connect="${card.id}" title="Connect card" aria-label="Connect card"></button>
@@ -59,6 +61,7 @@
           <svg class="canvas-edges" width="${width}" height="${height}" aria-hidden="true">
             <defs><marker id="canvas-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"></path></marker></defs>
             ${edges}
+            ${preview}
           </svg>
           ${cards}
         </div>`;
@@ -144,6 +147,19 @@
       });
 
       workspace.addEventListener("pointerdown", event => {
+        const port = event.target.closest("[data-canvas-connect]");
+        if (port) {
+          event.preventDefault();
+          event.stopPropagation();
+          const id = port.dataset.canvasConnect;
+          const card = state.cards.find(item => item.id === id);
+          if (!card) return;
+          const a = cardCenter(card);
+          connectDrag = { from: id, x1: a.x, y1: a.y, x2: a.x, y2: a.y };
+          port.setPointerCapture?.(event.pointerId);
+          renderBoard();
+          return;
+        }
         if (event.target.closest("input, textarea, button")) return;
         const element = event.target.closest(".canvas-card");
         if (!element) return;
@@ -154,6 +170,16 @@
       });
 
       workspace.addEventListener("pointermove", event => {
+        if (connectDrag) {
+          const board = workspace.querySelector("[data-canvas-board]");
+          if (!board) return;
+          const rect = board.getBoundingClientRect();
+          const wrap = board.parentElement;
+          connectDrag.x2 = event.clientX - rect.left + (wrap?.scrollLeft || 0);
+          connectDrag.y2 = event.clientY - rect.top + (wrap?.scrollTop || 0);
+          renderBoard();
+          return;
+        }
         if (!drag) return;
         const card = state.cards.find(item => item.id === drag.id);
         if (!card) return;
@@ -162,7 +188,22 @@
         renderBoard();
       });
 
-      workspace.addEventListener("pointerup", () => {
+      workspace.addEventListener("pointerup", event => {
+        if (connectDrag) {
+          const from = connectDrag.from;
+          const target = document.elementFromPoint(event.clientX, event.clientY);
+          const targetCard = target?.closest?.(".canvas-card");
+          const to = target?.closest?.("[data-canvas-connect]")?.dataset.canvasConnect ||
+            targetCard?.dataset.cardId;
+          connectDrag = null;
+          if (to && to !== from &&
+              !state.edges.some(edge => edge.from === from && edge.to === to)) {
+            state.edges.push({ from, to });
+            save();
+          }
+          renderBoard();
+          return;
+        }
         if (!drag) return;
         drag = null;
         save();
