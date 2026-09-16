@@ -2806,3 +2806,80 @@ body {
   }
 }
 
+
+/* Calendar Year view */
+
+.calendar-year-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 2rem 1.5rem;
+}
+
+.calendar-year-month {
+  min-width: 0;
+}
+
+.calendar-year-month-title {
+  margin-bottom: 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.calendar-year-weekdays,
+.calendar-year-days {
+  display: grid;
+  grid-template-columns:
+    repeat(7, minmax(0, 1fr));
+}
+
+.calendar-year-weekday {
+  padding: 0.2rem 0;
+  text-align: center;
+  font-size: 0.56rem;
+  opacity: 0.48;
+}
+
+.calendar-year-day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  font-size: 0.66rem;
+  border-radius: 999px;
+}
+
+.calendar-year-outside {
+  visibility: hidden;
+}
+
+.calendar-year-today {
+  outline: 2px solid currentColor;
+  font-weight: 750;
+}
+
+.calendar-year-event-dot {
+  position: absolute;
+  bottom: 0.12rem;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+@media (max-width: 900px) {
+  .calendar-year-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .calendar-year-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

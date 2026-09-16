@@ -424,6 +424,230 @@ const addMonths = (
   );
 
 
+
+const startOfYear = (
+  date,
+) => {
+  const result =
+    new Date(
+      date.getFullYear(),
+      0,
+      1,
+    );
+
+  result.setHours(
+    0, 0, 0, 0
+  );
+
+  return result;
+};
+
+const addYears = (
+  date,
+  years,
+) =>
+  new Date(
+    date.getFullYear() + years,
+    0,
+    1,
+  );
+
+const renderCalendarYear = (
+  element,
+  events,
+  yearDate,
+) => {
+  const today =
+    new Date();
+
+  const year =
+    yearDate.getFullYear();
+
+  const monthFormatter =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        month: "long",
+      },
+    );
+
+  const weekdayFormatter =
+    new Intl.DateTimeFormat(
+      "tr-TR",
+      {
+        weekday: "narrow",
+      },
+    );
+
+  const weekdayBase =
+    startOfWeek(
+      new Date(
+        2026,
+        0,
+        5,
+      )
+    );
+
+  const weekdayHeader =
+    Array.from(
+      { length: 7 },
+      (_, index) =>
+        addDays(
+          weekdayBase,
+          index,
+        ),
+    ).map(
+      (day) => `
+        <div class="calendar-year-weekday">
+          ${escapeHtml(
+            weekdayFormatter.format(day)
+          )}
+        </div>
+      `,
+    ).join("");
+
+  const months =
+    Array.from(
+      { length: 12 },
+      (_, monthIndex) => {
+        const monthStart =
+          new Date(
+            year,
+            monthIndex,
+            1,
+          );
+
+        const nextMonth =
+          new Date(
+            year,
+            monthIndex + 1,
+            1,
+          );
+
+        const gridStart =
+          startOfWeek(
+            monthStart
+          );
+
+        const lastDay =
+          addDays(
+            nextMonth,
+            -1,
+          );
+
+        const gridEnd =
+          addDays(
+            startOfWeek(
+              lastDay
+            ),
+            7,
+          );
+
+        const cells = [];
+
+        for (
+          let day =
+            new Date(gridStart);
+          day < gridEnd;
+          day =
+            addDays(day, 1)
+        ) {
+          const cellDay =
+            new Date(day);
+
+          const outside =
+            cellDay.getMonth() !==
+            monthIndex;
+
+          const isToday =
+            sameLocalDay(
+              cellDay,
+              today,
+            );
+
+          const hasEvent =
+            events.some(
+              (item) =>
+                item.start &&
+                sameLocalDay(
+                  new Date(
+                    item.start
+                  ),
+                  cellDay,
+                ),
+            );
+
+          const classes = [
+            "calendar-year-day",
+            outside
+              ? "calendar-year-outside"
+              : "",
+            isToday
+              ? "calendar-year-today"
+              : "",
+            hasEvent &&
+            !outside
+              ? "calendar-year-has-event"
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+
+          cells.push(`
+            <div class="${classes}">
+              <span>
+                ${cellDay.getDate()}
+              </span>
+
+              ${
+                hasEvent &&
+                !outside
+                  ? '<i class="calendar-year-event-dot" aria-hidden="true"></i>'
+                  : ""
+              }
+            </div>
+          `);
+        }
+
+        return `
+          <section class="calendar-year-month">
+            <div class="calendar-year-month-title">
+              ${escapeHtml(
+                monthFormatter.format(
+                  monthStart
+                )
+              )}
+            </div>
+
+            <div class="calendar-year-weekdays">
+              ${weekdayHeader}
+            </div>
+
+            <div class="calendar-year-days">
+              ${cells.join("")}
+            </div>
+          </section>
+        `;
+      },
+    ).join("");
+
+  element.innerHTML = `
+    <section class="calendar-render calendar-year-view">
+      <div class="calendar-render-title">
+        ${year}
+      </div>
+
+      <div class="calendar-year-grid">
+        ${months}
+      </div>
+    </section>
+  `;
+
+  element.classList.add(
+    "visual-rendered"
+  );
+};
+
 const renderCalendarSchedule = (
   element,
   events,
@@ -1027,7 +1251,8 @@ const renderCalendar = async (
     config.view !== "day" &&
     config.view !== "4days" &&
     config.view !== "month" &&
-    config.view !== "schedule"
+    config.view !== "schedule" &&
+    config.view !== "year"
   ) {
     showError(
       element,
@@ -1053,6 +1278,14 @@ const renderCalendar = async (
       config.view === "month"
     ) {
       return startOfMonth(
+        currentDate
+      );
+    }
+
+    if (
+      config.view === "year"
+    ) {
+      return startOfYear(
         currentDate
       );
     }
@@ -1102,6 +1335,17 @@ const renderCalendar = async (
             lastDay
           ),
           7,
+        );
+    } else if (
+      config.view === "year"
+    ) {
+      rangeStart =
+        normalized;
+
+      rangeEnd =
+        addYears(
+          normalized,
+          1,
         );
     } else {
       const rangeDays =
@@ -1195,6 +1439,14 @@ const renderCalendar = async (
           rangeStart,
           rangeEnd,
         );
+      } else if (
+        config.view === "year"
+      ) {
+        renderCalendarYear(
+          element,
+          result.events ?? [],
+          normalized,
+        );
       } else {
         renderCalendarDay(
           element,
@@ -1270,6 +1522,16 @@ const renderCalendar = async (
           ) {
             currentDate =
               addMonths(
+                normalized,
+                action === "previous"
+                  ? -1
+                  : 1,
+              );
+          } else if (
+            config.view === "year"
+          ) {
+            currentDate =
+              addYears(
                 normalized,
                 action === "previous"
                   ? -1
