@@ -93,18 +93,38 @@
   </section>
 
   <section class="home-block">
-    <h2>Daily notes</h2>
+    <h2>KN Commands</h2>
+
+    <p class="home-section-intro">
+      Terminalden not oluşturma, açma, okuma, taşıma ve silme.
+    </p>
 
     <div class="daily-grid">
 
       <div class="daily-row">
         <span class="daily-label">
-          Create / Open
+          Open / Create
         </span>
 
-        <code>
-          kn code inbox note-name.md
-        </code>
+        <div class="daily-move">
+          <code>kn code inbox note-name.md</code>
+          <span class="daily-hint">
+            Varsa mevcut dosyayı açar · yoksa seçilen MOC'ta oluşturur
+          </span>
+        </div>
+      </div>
+
+      <div class="daily-row">
+        <span class="daily-label">
+          Read
+        </span>
+
+        <div class="daily-move">
+          <code>kn glow note-name.md</code>
+          <span class="daily-hint">
+            Notu terminalde salt okunur görüntüler
+          </span>
+        </div>
       </div>
 
       <div class="daily-row">
@@ -112,9 +132,12 @@
           Delete
         </span>
 
-        <code>
-          kn rm note-name.md
-        </code>
+        <div class="daily-move">
+          <code>kn rm note-name.md</code>
+          <span class="daily-hint">
+            Silmeden önce y/N onayı ister
+          </span>
+        </div>
       </div>
 
       <div class="daily-row">
@@ -125,8 +148,21 @@
         <div class="daily-move">
           <code>kn mv note-name.md archives</code>
           <span class="daily-hint">
-            projects → archives · asks y/N before moving
+            Dosyayı hedef MOC'a taşır · y/N onayı ister
           </span>
+        </div>
+      </div>
+
+      <div class="daily-row">
+        <span class="daily-label">
+          Editors
+        </span>
+
+        <div class="moc-list">
+          <code>code</code>
+          <code>zed</code>
+          <code>nvim</code>
+          <code>hx</code>
         </div>
       </div>
 
@@ -144,6 +180,30 @@
         </div>
       </div>
 
+    </div>
+
+    <div class="home-card home-note-card">
+      <strong>Global filename selection</strong>
+
+      <p>
+        Beş MOC dosya seçiminde tek bir global havuzdur.
+        Dosya adı alanı boşken son kullanılan not önerilir.
+        Yazmaya başladığında tüm notlar birlikte filtrelenir ve
+        en fazla <strong>20 sonuç</strong> gösterilir.
+      </p>
+
+      <p>
+        <code>glow</code>,
+        <code>rm</code>,
+        <code>mv</code> ve editor open/create
+        aynı global filename completion sistemini kullanır.
+      </p>
+
+      <p>
+        Mevcut bir dosya hangi MOC'ta bulunursa bulunsun gerçek
+        konumundan açılır. Komutta verilen MOC yalnızca dosya
+        mevcut değilse yeni notun oluşturulacağı yeri belirler.
+      </p>
     </div>
   </section>
 
@@ -217,6 +277,59 @@ status: active
         <code>resources</code> ·
         <code>archives</code>
       </p>
+    </div>
+  </section>
+
+  <section class="home-block">
+    <h2>Calendar</h2>
+
+    <p class="home-section-intro">
+      Yerel bir <code>.ics</code> takvimini Markdown notunun içinde gösterir.
+    </p>
+
+    <div class="home-card calendar-guide">
+
+      <div class="calendar-guide-part">
+        <strong>Usage</strong>
+
+        <pre><code>```calendar
+src: /home/murat/Downloads/calendar.ics
+view: week
+```</code></pre>
+      </div>
+
+      <div class="calendar-guide-part">
+        <strong>Views</strong>
+
+        <div class="moc-list calendar-view-list">
+          <code>day</code>
+          <code>week</code>
+          <code>4days</code>
+          <code>month</code>
+          <code>schedule</code>
+          <code>year</code>
+        </div>
+      </div>
+
+      <div class="calendar-guide-part">
+        <strong>Event display</strong>
+
+        <p>
+          Tarih/gün + saat veya <code>Tüm gün</code> + title.
+          Gereksiz event alanları gösterilmez.
+        </p>
+      </div>
+
+      <div class="calendar-guide-part">
+        <strong>Navigation</strong>
+
+        <p>
+          <code>← Önceki</code> ·
+          <code>Bugün</code> ·
+          <code>Sonraki →</code>
+        </p>
+      </div>
+
     </div>
   </section>
 

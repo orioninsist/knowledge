@@ -2481,6 +2481,177 @@ body {
 }
 
 
+
+/* Homepage usage guides */
+
+.home-section-intro {
+  margin: -0.15rem 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+/* KN commands */
+
+.home-dashboard .daily-grid {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid rgba(127,127,127,.22);
+  border-radius: 0.65rem;
+}
+
+.home-dashboard .daily-row {
+  min-height: 3.25rem;
+  padding: 0.65rem 0.8rem;
+  border-bottom: 1px solid rgba(127,127,127,.15);
+}
+
+.home-dashboard .daily-row:last-child {
+  border-bottom: 0;
+}
+
+.home-dashboard .daily-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.home-dashboard .daily-move {
+  gap: 0.35rem 0.8rem;
+}
+
+.home-dashboard .daily-move > code {
+  display: inline-block;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid rgba(127,127,127,.18);
+  border-radius: 0.4rem;
+  white-space: nowrap;
+}
+
+.home-dashboard .daily-hint {
+  line-height: 1.4;
+}
+
+/* Global filename contract */
+
+.home-note-card {
+  display: grid;
+  justify-content: stretch;
+  align-items: stretch;
+  gap: 0.55rem;
+
+  margin-top: 0.65rem;
+  padding: 0.85rem 1rem;
+}
+
+.home-note-card > strong {
+  font-size: 0.9rem;
+}
+
+.home-note-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.home-note-card p strong {
+  color: var(--text);
+}
+
+/* Calendar homepage guide */
+
+.calendar-guide {
+  display: grid;
+  justify-content: stretch;
+  align-items: stretch;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.calendar-guide-part {
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(127,127,127,.15);
+}
+
+.calendar-guide-part:nth-child(odd) {
+  border-right: 1px solid rgba(127,127,127,.15);
+}
+
+.calendar-guide-part:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.calendar-guide-part > strong {
+  display: block;
+  margin-bottom: 0.65rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.calendar-guide-part p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.calendar-guide-part pre {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.calendar-guide-part pre code {
+  white-space: pre;
+}
+
+.calendar-view-list {
+  gap: 0.4rem;
+}
+
+/* Homepage guide responsive layout */
+
+@media (max-width: 760px) {
+  .home-dashboard .daily-row {
+    padding: 0.7rem;
+  }
+
+  .home-dashboard .daily-move {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .home-dashboard .daily-move > code {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .calendar-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-guide-part,
+  .calendar-guide-part:nth-child(odd),
+  .calendar-guide-part:nth-last-child(-n + 2) {
+    border-right: 0;
+    border-bottom: 1px solid rgba(127,127,127,.15);
+  }
+
+  .calendar-guide-part:last-child {
+    border-bottom: 0;
+  }
+}
+
 /* Knowledge Query home guide */
 
 .knowledge-query-guide {
