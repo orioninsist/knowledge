@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <meta
+    name="color-scheme"
+    content="light dark"
+  >
+
+  <title>Productivity</title>
+
+  <link
+    rel="stylesheet"
+    href="/productivity/productivity.css"
+  >
+
+  <link
+    rel="icon"
+    type="image/png"
+    href="/favicon.png"
+  >
+</head>
+
+<body>
+
+  <main class="productivity-shell">
+
+    <header class="productivity-header">
+
+      <div class="productivity-brand">
+        <a
+          class="productivity-back"
+          href="/"
+          aria-label="Knowledge home"
+        >
+          ← Knowledge
+        </a>
+
+        <div>
+          <h1>Productivity</h1>
+
+          <p>
+            Time, markets and focus tools.
+          </p>
+        </div>
+      </div>
+
+      <time
+        id="productivity-now"
+        class="productivity-now"
+      ></time>
+
+    </header>
+
+    <nav
+      class="productivity-tabs"
+      aria-label="Productivity tools"
+    >
+      <a href="#clock" data-tool="clock">
+        Clock
+      </a>
+
+      <a href="#markets" data-tool="markets">
+        Markets
+      </a>
+
+      <a href="#board" data-tool="board">
+        Board
+      </a>
+
+      <a href="#alarm" data-tool="alarm">
+        Alarm
+      </a>
+
+      <a href="#timer" data-tool="timer">
+        Timer
+      </a>
+
+      <a href="#stopwatch" data-tool="stopwatch">
+        Stopwatch
+      </a>
+
+      <a href="#pomodoro" data-tool="pomodoro">
+        Pomodoro
+      </a>
+
+      <a href="#focus" data-tool="focus">
+        Focus
+      </a>
+    </nav>
+
+    <section
+      id="productivity-workspace"
+      class="productivity-workspace"
+      aria-live="polite"
+    ></section>
+
+  </main>
+
+  <script
+    src="/productivity/productivity.js"
+    defer
+  ></script>
+
+</body>
+</html>
