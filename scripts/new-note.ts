@@ -95,13 +95,12 @@ if (
 /*
  * Markdown filename policy:
  *
- * - lowercase English letters a-z only
+ * - lowercase English letters a-z and digits 0-9
  * - hyphen is the only allowed separator
- * - no digits
  * - no spaces, underscores, uppercase, or non-ASCII letters
  */
 const validFilename =
-  /^[a-z]+(?:-[a-z]+)*\.md$/;
+  /^[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
 if (
   !validFilename.test(filename)
@@ -111,11 +110,11 @@ if (
   );
 
   console.error(
-    "Allowed: lowercase English letters (a-z) and single hyphens between words only."
+    "Allowed: lowercase English letters (a-z), digits (0-9), and single hyphens between parts only."
   );
 
   console.error(
-    "Example: openai-api.md"
+    "Example: openai-api-4.md"
   );
 
   process.exit(1);
