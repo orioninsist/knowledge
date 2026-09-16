@@ -170,6 +170,7 @@
     };
 
     shared.canvas = { render, bindEvents };
+    if (window.location.hash.slice(1).trim().toLowerCase() === "canvas") render();
   };
 
   if (window.KnowledgeProductivity) register(window.KnowledgeProductivity);
