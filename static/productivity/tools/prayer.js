@@ -3,7 +3,7 @@
   const register = shared => {
     const { workspace, escapeHtml } = shared;
     const KEY = "knowledge-productivity-prayer-v1";
-    const AUDIO = "https://cdn.aladhan.com/audio/adhans/a2.mp3";
+    const AUDIO = "https://cdn.aladhan.com/audio/adhans/a9.mp3";
     const PRAYERS = [
       ["Fajr","Sabah"],["Dhuhr","Öğle"],["Asr","İkindi"],["Maghrib","Akşam"],["Isha","Yatsı"]
     ];
@@ -52,7 +52,7 @@
         <div class="prayer-sun"><span>Güneş</span><strong>${cleanTime(today.timings.Sunrise)}</strong><span>İmsak</span><strong>${cleanTime(today.timings.Imsak)}</strong></div>
         <section class="prayer-settings">
           <form data-prayer-form><label>Şehir<input name="city" value="${escapeHtml(state.city==="Konumum"?"Istanbul":state.city)}" required></label><label>Ülke<input name="country" value="${escapeHtml(state.country.includes(",")?"Turkey":state.country)}" required></label><button class="primary-button">Vakitleri getir</button><button type="button" data-prayer-location>Konumumu kullan</button></form>
-          <div class="prayer-audio"><div><strong>Ezan sesi</strong><small>Hafız Mustafa Özcan · Türkiye. Tarayıcı ses izni için önce etkinleştir.</small></div><button type="button" data-prayer-audio>${state.audio?"Ezan açık":"Ezanı etkinleştir"}</button><button type="button" data-prayer-test>Test</button></div>
+          <div class="prayer-audio"><div><strong>Ezan sesi</strong><small>Mishary Rashid Alafasy. Tarayıcı ses izni için önce etkinleştir.</small></div><button type="button" data-prayer-audio>${state.audio?"Ezan açık":"Ezanı etkinleştir"}</button><button type="button" data-prayer-test>Test</button></div>
         </section>
         <footer class="prayer-meta">${hijri?`${escapeHtml(hijri.day)} ${escapeHtml(hijri.month?.en||"")} ${escapeHtml(hijri.year)} H · `:""}AlAdhan API · Method 13</footer>
       </div>`;
