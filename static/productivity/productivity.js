@@ -12,6 +12,7 @@
     pomodoro: { title: "Pomodoro", description: "Focus, short break ve long break döngüsünü yönet." },
     focus: { title: "Focus", description: "Tek bir çalışma hedefine odaklan." },
     canvas: { title: "Canvas", description: "Kartları görsel olarak oluştur, bağla ve Markdown'a kopyala." },
+    prayer: { title: "5 Vakit", description: "Namaz vakitlerini ve sıradaki vakti takip et." },
   };
 
   const workspace = document.querySelector("#productivity-workspace");
@@ -70,6 +71,7 @@
   productivityShared.pomodoro?.bindEvents();
   productivityShared.focus?.bindEvents();
   productivityShared.canvas?.bindEvents();
+  productivityShared.prayer?.bindEvents();
   productivityShared.alarm?.startScheduler();
   renderTool();
   renderNow();
