@@ -72,7 +72,7 @@ for (
     }
 
     const validFilename =
-      /^[a-z]+(?:-[a-z]+)*\.md$/;
+      /^[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
     if (
       !validFilename.test(entry.name)
