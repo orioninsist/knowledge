@@ -206,6 +206,16 @@ else
     fail 'Visual renderer JS syntax'
 fi
 
+for file in static/productivity/tools/*.js
+do
+    if node --check "$file"
+    then
+        pass "$file"
+    else
+        fail "$file"
+    fi
+done
+
 for file in \
     scripts/build-workspace-index.ts \
     scripts/new-note.ts \
