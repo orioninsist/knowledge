@@ -195,6 +195,34 @@ These visual languages live inside Markdown fenced code blocks.
 
 The Markdown file remains the source of truth.
 
+## Productivity Desktop
+
+Knowledge includes a deliberately small local desktop workspace built with Tauri and the existing browser stack. It is not a second note database and does not change the Markdown source-of-truth model.
+
+The interface has four fixed areas:
+
+* `Today` — current time, focus state, next actions, and daily progress
+* `Focus` — focus and break sessions
+* `Plan` — a small local next-action list
+* `Time` — local clock, countdown timer, and stopwatch
+
+Productivity state stays local in browser storage. The desktop shell is intentionally thin: window lifecycle, tray behavior, autostart, and notifications remain Tauri responsibilities while the interface stays plain HTML, CSS, and JavaScript.
+
+Development:
+
+```bash
+bun run productivity:desktop
+```
+
+The Productivity frontend intentionally remains three files:
+
+```text
+static/productivity/
+├── index.html
+├── app.css
+└── app.js
+```
+
 ## Visual Notes
 
 A single Markdown note can contain normal prose and rendered visual blocks.
