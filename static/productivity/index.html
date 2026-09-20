@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -11,17 +11,18 @@
 <body>
   <div class="app-shell">
     <aside class="sidebar">
-      <a class="brand" href="/" aria-label="Knowledge home"><span class="brand-mark">K</span><span><strong>Knowledge</strong><small>Productivity</small></span></a>
-      <nav class="nav" aria-label="Productivity">
-        <button class="nav-item is-active" data-view="today"><span>⌂</span>Today</button>
+      <a class="brand" href="/productivity/" aria-label="Productivity home"><span class="brand-mark">K</span><span><strong>Productivity</strong><small>Local workspace</small></span></a>
+      <nav class="nav" aria-label="Productivity tools">
+        <button class="nav-item is-active" data-view="clock"><span>◷</span>World Clock</button>
+        <button class="nav-item" data-view="weather"><span>☁</span>Weather</button>
+        <button class="nav-item" data-view="canvas"><span>✎</span>Canvas</button>
+        <button class="nav-item" data-view="prayer"><span>◌</span>Prayer</button>
         <button class="nav-item" data-view="focus"><span>◉</span>Focus</button>
-        <button class="nav-item" data-view="plan"><span>✓</span>Plan</button>
-        <button class="nav-item" data-view="time"><span>◷</span>Time</button>
       </nav>
       <div class="sidebar-foot"><div id="side-clock" class="side-clock"></div><small>Local-first · no account</small></div>
     </aside>
     <main class="main">
-      <header class="topbar"><div><p id="eyebrow">TODAY</p><h1 id="title">Make today clear.</h1></div><time id="now"></time></header>
+      <header class="topbar"><div><p id="eyebrow">WORLD CLOCK</p><h1 id="title">Time across your cities.</h1></div><time id="now"></time></header>
       <section id="workspace" class="workspace" aria-live="polite"></section>
     </main>
   </div>
