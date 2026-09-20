@@ -3,7 +3,7 @@ use tauri::{
     tray::TrayIconBuilder,
     Manager, WindowEvent,
 };
-use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
 #[tauri::command]
 fn show_productivity(app: tauri::AppHandle) -> Result<(), String> {
@@ -47,6 +47,10 @@ pub fn run() {
                     _ => {}
                 })
                 .build(app)?;
+
+            if let Err(error) = app.autolaunch().enable() {
+                eprintln!("could not enable Productivity autostart: {error}");
+            }
 
             if std::env::args().any(|arg| arg == "--hidden") {
                 if let Some(window) = app.get_webview_window("main") {
