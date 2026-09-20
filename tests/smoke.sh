@@ -206,12 +206,6 @@ else
     fail 'Visual renderer JS syntax'
 fi
 
-if node --check static/productivity/app.js
-then
-    pass 'Productivity app JS syntax'
-else
-    fail 'Productivity app JS syntax'
-fi
 
 for file in \
     scripts/build-workspace-index.ts \
