@@ -216,12 +216,6 @@ Development:
 bun run productivity:desktop
 ```
 
-The browser version remains available at:
-
-```text
-http://127.0.0.1:1314/productivity/
-```
-
 ## Visual Notes
 
 A single Markdown note can contain normal prose and rendered visual blocks.
