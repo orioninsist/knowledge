@@ -195,7 +195,7 @@ These visual languages live inside Markdown fenced code blocks.
 
 The Markdown file remains the source of truth.
 
-## Productivity Desktop
+## Productivity
 
 Knowledge includes a separate local productivity workspace. It does not read, write, search, or mutate the Markdown knowledge system.
 
@@ -206,11 +206,17 @@ The Productivity surface is intentionally limited to four tools:
 * `Prayer` — persistent city/adhan selection, five daily prayer times, background prayer alerts, and adhan preview/playback
 * `Focus` — configurable Pomodoro cycles plus a separate uninterrupted Focus Mode with desktop notification sound support
 
-Productivity state is stored locally in browser storage. Weather uses Open-Meteo, prayer times use AlAdhan with the Diyanet calculation method, and city lookup uses Open-Meteo geocoding. The Tauri shell remains thin and is responsible only for native window lifecycle, tray, autostart, single-instance behavior, notifications, and custom notification-sound file access.
+Productivity state is stored locally in browser storage. Weather uses Open-Meteo, prayer times use AlAdhan with the Diyanet calculation method, and city lookup uses Open-Meteo geocoding. The primary Productivity interface is the local Hugo-served web app at `http://127.0.0.1:1314/productivity/`. The optional Tauri shell uses the same frontend when native window, tray, autostart, single-instance behavior, or custom notification-sound file access is useful.
 
 The old Today, Plan, generic countdown, and stopwatch surfaces are intentionally not part of Productivity.
 
-Development:
+Primary local interface:
+
+```text
+http://127.0.0.1:1314/productivity/
+```
+
+Optional desktop shell:
 
 ```bash
 bun run productivity:desktop
