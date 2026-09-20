@@ -206,15 +206,12 @@ else
     fail 'Visual renderer JS syntax'
 fi
 
-for file in static/productivity/tools/*.js
-do
-    if node --check "$file"
-    then
-        pass "$file"
-    else
-        fail "$file"
-    fi
-done
+if node --check static/productivity/app.js
+then
+    pass 'Productivity app JS syntax'
+else
+    fail 'Productivity app JS syntax'
+fi
 
 for file in \
     scripts/build-workspace-index.ts \
