@@ -897,3 +897,33 @@ html,body { max-width:100%; overflow-x:hidden; }
   html { scroll-behavior:auto; }
   *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; }
 }
+
+/* Homepage readability pass */
+.home-dashboard{width:min(980px,100%);gap:28px}
+.home-block{padding:30px 32px;border-radius:16px;background:var(--page);box-shadow:none}
+.home-block h1,.home-block h2{margin-bottom:20px;color:var(--text);font-weight:720;letter-spacing:-.035em}
+.home-block h1{font-size:1.65rem}.home-block h2{font-size:1.35rem}
+.knowledge-stats{padding:32px}
+.stats-grid{gap:12px}
+.stats-grid span{min-height:94px;padding:16px;background:var(--surface)}
+.stats-grid strong{font-size:.72rem;letter-spacing:.045em}
+.stats-grid b{font-size:1.45rem}
+.home-inline{gap:12px}
+.home-card{padding:18px 20px;border-radius:11px;background:var(--surface)}
+.home-section-intro{margin:-8px 0 20px;font-size:.94rem;line-height:1.7}
+.daily-grid{border-radius:11px;background:var(--page)}
+.daily-row{grid-template-columns:150px minmax(0,1fr);min-height:70px;padding:16px 18px;gap:22px}
+.daily-label{font-size:.72rem}
+.daily-hint{font-size:.9rem;line-height:1.6}
+.daily-move>code,.moc-list code{padding:6px 9px}
+.home-note-card{margin-top:16px;padding:20px 22px;gap:13px}
+.home-note-card>strong{font-size:1rem}
+.home-note-card p,.calendar-guide-part p{font-size:.92rem;line-height:1.75}
+.knowledge-query-guide{gap:18px;padding:22px}
+.knowledge-query-guide p{font-size:.94rem;line-height:1.75}
+.home-card pre,.calendar-guide-part pre,.knowledge-query-guide pre{padding:16px 17px;line-height:1.65}
+.calendar-guide-part{padding:22px}
+.calendar-guide-part>strong{margin-bottom:14px;font-size:.73rem}
+.home-productivity-link{margin-top:14px;padding:18px 20px}
+@media(max-width:820px){.home-dashboard{gap:18px}.home-block,.knowledge-stats{padding:22px}.daily-row{grid-template-columns:1fr;gap:7px;min-height:0}.home-block h1{font-size:1.45rem}.home-block h2{font-size:1.22rem}}
+@media(max-width:520px){.home-block,.knowledge-stats{padding:18px}.stats-grid span{min-height:80px;padding:12px}.home-card{padding:15px 16px}}
