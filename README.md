@@ -197,16 +197,19 @@ The Markdown file remains the source of truth.
 
 ## Productivity Desktop
 
-Knowledge includes a deliberately small local desktop workspace built with Tauri and the existing browser stack. It is not a second note database and does not change the Markdown source-of-truth model.
+Knowledge includes a separate local productivity workspace. It does not read, write, search, or mutate the Markdown knowledge system.
 
-The interface has four fixed areas:
+The Productivity surface is intentionally limited to five tools:
 
-* `Today` — current time, focus state, next actions, and daily progress
-* `Focus` — focus and break sessions
-* `Plan` — a small local next-action list
-* `Time` — local clock, countdown timer, and stopwatch
+* `World Clock` — saved cities with live local times
+* `Weather` — city-based current conditions and seven-day forecast
+* `Canvas` — a persistent local freehand scratch canvas
+* `Prayer` — five daily prayer times for a selected city
+* `Focus` — Pomodoro focus/break sessions with desktop notification sound support
 
-Productivity state stays local in browser storage. The desktop shell is intentionally thin: window lifecycle, tray behavior, autostart, and notifications remain Tauri responsibilities while the interface stays plain HTML, CSS, and JavaScript.
+Productivity state is stored locally in browser storage. Weather uses Open-Meteo, prayer times use AlAdhan with the Diyanet calculation method, and city lookup uses Open-Meteo geocoding. The Tauri shell remains thin and is responsible only for native window lifecycle, tray, autostart, single-instance behavior, notifications, and custom notification-sound file access.
+
+The old Today, Plan, generic countdown, and stopwatch surfaces are intentionally not part of Productivity.
 
 Development:
 
@@ -214,13 +217,10 @@ Development:
 bun run productivity:desktop
 ```
 
-The Productivity frontend intentionally remains three files:
+The browser version remains available at:
 
 ```text
-static/productivity/
-├── index.html
-├── app.css
-└── app.js
+http://127.0.0.1:1314/productivity/
 ```
 
 ## Visual Notes
