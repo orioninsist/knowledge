@@ -199,11 +199,10 @@ The Markdown file remains the source of truth.
 
 Knowledge includes a separate local productivity workspace. It does not read, write, search, or mutate the Markdown knowledge system.
 
-The Productivity surface is intentionally limited to five tools:
+The Productivity surface is intentionally limited to four tools:
 
 * `World Clock` — saved cities with live local times
 * `Weather` — city-based current conditions and seven-day forecast
-* `Canvas` — a persistent local card board with draggable cards and directed connections
 * `Prayer` — five daily prayer times, prayer notifications, and selectable adhan playback
 * `Focus` — Pomodoro focus/break sessions with desktop notification sound support
 
