@@ -1,5 +1,6 @@
 (()=>{"use strict";
 const KEY="knowledge.productivity.v2";
+const NOTIFICATION_SOUND="/productivity/notification.wav";
 const defaults={tasks:[],focus:{mode:"focus",remaining:1500,running:false,endAt:null},timer:{remaining:600,running:false,endAt:null,preset:600},stopwatch:{elapsed:0,running:false,startAt:null,laps:[]}};
 let state;try{const raw=JSON.parse(localStorage.getItem(KEY)||"{}");state={...defaults,...raw,focus:{...defaults.focus,...raw.focus},timer:{...defaults.timer,...raw.timer},stopwatch:{...defaults.stopwatch,...raw.stopwatch},tasks:Array.isArray(raw.tasks)?raw.tasks:[]}}catch{state=JSON.parse(JSON.stringify(defaults))}
 const $=s=>document.querySelector(s),workspace=$("#workspace"),title=$("#title"),eyebrow=$("#eyebrow");
@@ -9,7 +10,8 @@ const fmtStop=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000);return String(M
 const currentCountdown=x=>x.running?Math.max(0,Math.ceil((x.endAt-Date.now())/1000)):x.remaining;
 const currentFocus=()=>currentCountdown(state.focus),currentTimer=()=>currentCountdown(state.timer);
 const currentStop=()=>state.stopwatch.elapsed+(state.stopwatch.running?Date.now()-state.stopwatch.startAt:0);
-function notify(body){if(!("Notification"in window))return;if(Notification.permission==="granted")new Notification("Knowledge Productivity",{body});else if(Notification.permission==="default")Notification.requestPermission()}
+function playNotificationSound(){const audio=new Audio(NOTIFICATION_SOUND);audio.play().catch(()=>{})}
+function notify(body){playNotificationSound();if(!("Notification"in window))return;if(Notification.permission==="granted")new Notification("Knowledge Productivity",{body});else if(Notification.permission==="default")Notification.requestPermission()}
 function tickClock(){const d=new Date();$("#side-clock").textContent=d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});$("#now").textContent=d.toLocaleDateString([],{weekday:"long",day:"numeric",month:"long"})}
 const doneCount=()=>state.tasks.filter(x=>x.done).length;
 const focusLabel=()=>({focus:"Focus session",short:"Short break",long:"Long break"}[state.focus.mode]);
