@@ -12,7 +12,20 @@ const CITY_GROUPS=[
 {name:"United States",cities:["New York","Washington DC","Los Angeles","Chicago","San Francisco","Seattle","Boston","Miami","Denver","Austin","Portland Oregon"]},
 {name:"World",cities:["Istanbul","Tokyo","Dubai","Singapore","Sydney","Toronto","Vancouver","Mexico City","São Paulo","Buenos Aires","Cape Town","Cairo","Seoul","Hong Kong","Mumbai"]}
 ];
-const ADHAN={makkah:{name:"Makkah",src:"https://www.islamcan.com/audio/adhan/azan1.mp3"},madinah:{name:"Madinah",src:"https://www.islamcan.com/audio/adhan/azan2.mp3"},aqsa:{name:"Al-Aqsa",src:"https://www.islamcan.com/audio/adhan/azan3.mp3"}};let adhanAudio=null,prayerToday=null;
+const ADHAN={
+makkah:{name:"Makkah",src:"https://www.islamcan.com/audio/adhan/azan1.mp3"},
+madinah:{name:"Madinah",src:"https://www.islamcan.com/audio/adhan/azan2.mp3"},
+aqsa:{name:"Al-Aqsa",src:"https://www.islamcan.com/audio/adhan/azan3.mp3"},
+mishary:{name:"Mishary Rashid Alafasy",src:"https://www.islamcan.com/audio/adhan/azan4.mp3"},
+abdulbasit:{name:"Abdul Basit Abdus Samad",src:"https://www.islamcan.com/audio/adhan/azan5.mp3"},
+husary:{name:"Mahmoud Khalil Al-Husary",src:"https://www.islamcan.com/audio/adhan/azan6.mp3"},
+minshawi:{name:"Mohamed Siddiq Al-Minshawi",src:"https://www.islamcan.com/audio/adhan/azan7.mp3"},
+shuraim:{name:"Saud Al-Shuraim",src:"https://www.islamcan.com/audio/adhan/azan8.mp3"},
+sudais:{name:"Abdul Rahman Al-Sudais",src:"https://www.islamcan.com/audio/adhan/azan9.mp3"},
+ayyub:{name:"Muhammad Ayyub",src:"https://www.islamcan.com/audio/adhan/azan10.mp3"},
+ibrahimakhbar:{name:"Ibrahim Al-Akhdar",src:"https://www.islamcan.com/audio/adhan/azan11.mp3"},
+ali_jaber:{name:"Ali Jaber",src:"https://www.islamcan.com/audio/adhan/azan12.mp3"}
+};let adhanAudio=null,prayerToday=null;
 let audio=null,audioUrl=null;
 function stopSound(){if(audio){audio.pause();audio.currentTime=0;audio=null}if(audioUrl){URL.revokeObjectURL(audioUrl);audioUrl=null}}
 async function playSound(){try{stopSound();const bytes=await invoke("notification_sound");if(!bytes?.length)return;audioUrl=URL.createObjectURL(new Blob([new Uint8Array(bytes)]));audio=new Audio(audioUrl);audio.addEventListener("ended",stopSound,{once:true});await audio.play()}catch{stopSound()}}
