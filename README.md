@@ -203,8 +203,8 @@ The Productivity surface is intentionally limited to five tools:
 
 * `World Clock` — saved cities with live local times
 * `Weather` — city-based current conditions and seven-day forecast
-* `Canvas` — a persistent local freehand scratch canvas
-* `Prayer` — five daily prayer times for a selected city
+* `Canvas` — a persistent local card board with draggable cards and directed connections
+* `Prayer` — five daily prayer times, prayer notifications, and selectable adhan playback
 * `Focus` — Pomodoro focus/break sessions with desktop notification sound support
 
 Productivity state is stored locally in browser storage. Weather uses Open-Meteo, prayer times use AlAdhan with the Diyanet calculation method, and city lookup uses Open-Meteo geocoding. The Tauri shell remains thin and is responsible only for native window lifecycle, tray, autostart, single-instance behavior, notifications, and custom notification-sound file access.
