@@ -40,34 +40,91 @@ function renderClocks(){const el=$("#clock-list");if(!el)return;const now=new Da
 async function weather(){setHead("WEATHER","Weather across your saved cities.");workspace.innerHTML='<div class="weather-layout"><aside class="weather-add card"><p class="kicker">ADD A CITY</p><h2>Weather cities</h2><p class="muted">Add the cities you want to follow. Your list is saved automatically.</p><form id="weather-form" class="add-form city-search"><input id="weather-input" class="field" placeholder="Search any city…" autocomplete="off"><button class="btn primary">Add</button></form>'+cityPicker("weather")+'</aside><section class="weather-saved"><div class="section-head"><div><p class="kicker">MY WEATHER</p><h2>Saved cities</h2></div><span class="count-pill">'+state.weatherCities.length+'</span></div><div id="weather-grid" class="weather-grid">'+state.weatherCities.map((c,i)=>'<article class="weather-card" data-weather-index="'+i+'"><div class="weather-card-head"><div><h3>'+esc(c.name)+'</h3><p>'+esc(c.country)+'</p></div><button class="icon-btn" data-weather-remove="'+i+'" aria-label="Remove '+esc(c.name)+'">×</button></div><div class="weather-card-body"><div class="empty">Loading weather…</div></div></article>').join("")+'</div></section></div>';await Promise.all(state.weatherCities.map((c,i)=>loadWeather(c,i)))}
 async function loadWeather(c,index){const u="https://api.open-meteo.com/v1/forecast?latitude="+c.latitude+"&longitude="+c.longitude+"&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone="+encodeURIComponent(c.timezone)+"&forecast_days=7";let d;const key=c.name+"|"+c.timezone;try{d=await getJson(u);cache.weather=cache.weather||{};cache.weather[key]={at:Date.now(),data:d};cacheSave()}catch{const hit=cache.weather?.[key];if(hit&&Date.now()-hit.at<21600000)d=hit.data;else throw Error("Weather unavailable. Check your connection.")}const labels={0:"Clear",1:"Mostly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",51:"Drizzle",53:"Drizzle",55:"Drizzle",61:"Rain",63:"Rain",65:"Heavy rain",71:"Snow",73:"Snow",75:"Heavy snow",80:"Showers",81:"Showers",82:"Heavy showers",95:"Thunderstorm"},cur=d.current,days=d.daily,card=document.querySelector('[data-weather-index="'+index+'"] .weather-card-body');if(!card)return;card.innerHTML='<div class="weather-now compact-weather"><div class="weather-temp">'+Math.round(cur.temperature_2m)+'°</div><div class="weather-meta"><h2>'+esc(labels[cur.weather_code]||"Conditions")+'</h2><div class="muted">Feels '+Math.round(cur.apparent_temperature)+'° · Wind '+Math.round(cur.wind_speed_10m)+' km/h</div></div></div><div class="forecast compact-forecast">'+days.time.map((x,i)=>'<div class="forecast-row"><span>'+new Date(x+"T12:00:00").toLocaleDateString([],{weekday:"short"})+'</span><span class="muted">'+esc(labels[days.weather_code[i]]||"")+'</span><strong>'+Math.round(days.temperature_2m_max[i])+'° / '+Math.round(days.temperature_2m_min[i])+'°</strong></div>').join("")+'</div>'}
 async function prayer(background=false){const c=state.prayerCity;if(!background){setHead("PRAYER TIMES","Five daily prayer times.");workspace.innerHTML='<div class="prayer-shell"><section class="prayer-main card"><div class="prayer-city-bar"><div><p class="kicker">LOCATION</p><strong>'+esc(c.name)+'</strong><span>'+esc(c.country)+'</span></div><details class="prayer-location"><summary class="btn">Change city</summary><div class="prayer-location-panel">'+cityPicker("prayer")+'<form id="prayer-form" class="add-form"><input id="prayer-input" class="field" placeholder="Choose city…" value="'+esc(c.name)+'" autocomplete="off"><input id="prayer-country" class="field" placeholder="Country" value="'+esc(c.country)+'" autocomplete="off"><button class="btn primary">Update</button></form></div></details></div><div id="prayer-body"><div class="empty">Loading prayer times…</div></div></section><aside class="prayer-settings card"><p class="kicker">ADHAN</p><label class="compact-label">General<select id="adhan-select" class="field">'+Object.entries(ADHAN).map(([k,v])=>'<option value="'+k+'" '+(state.prayer.adhan===k?'selected':'')+'>'+esc(v.name)+'</option>').join("")+'</select></label><div class="actions compact-actions"><button class="btn primary" data-adhan-test>Play</button><button class="btn" data-adhan-stop>Stop</button></div><details class="adhan-advanced"><summary>Per-prayer overrides</summary><div class="adhan-overrides">'+["Fajr","Dhuhr","Asr","Maghrib","Isha"].map(name=>'<div class="adhan-override-row"><label>'+name+'</label><select class="field" data-adhan-override="'+name+'"><option value="">General</option>'+Object.entries(ADHAN).map(([k,v])=>'<option value="'+k+'" '+(state.prayer.overrides?.[name]===k?'selected':'')+'>'+esc(v.name)+'</option>').join("")+'</select><button class="btn" type="button" data-adhan-preview="'+name+'">Play</button></div>').join("")+'</div></details></aside></div>';}try{const u="https://api.aladhan.com/v1/timingsByCity?city="+encodeURIComponent(c.name)+"&country="+encodeURIComponent(c.country)+"&method=13";let d;try{d=await getJson(u);cache.prayer={at:Date.now(),city:c.name,data:d};cacheSave()}catch{if(cache.prayer?.city===c.name&&Date.now()-cache.prayer.at<86400000)d=cache.prayer.data;else throw Error("Prayer times unavailable. Check your connection.")}const t=d.data?.timings;if(!t)throw Error("Prayer times unavailable");prayerToday={timings:t,date:d.data?.date?.gregorian?.date||"",city:c.name};const names=[["Fajr","Fajr"],["Dhuhr","Dhuhr"],["Asr","Asr"],["Maghrib","Maghrib"],["Isha","Isha"]];const zone=c.timezone||"Europe/Istanbul",parts=new Intl.DateTimeFormat("en-GB",{timeZone:zone,hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date()),mins=Number(parts.find(p=>p.type==="hour")?.value||0)*60+Number(parts.find(p=>p.type==="minute")?.value||0);let next=names.find(x=>{const [h,m]=t[x[0]].split(":").map(Number);return h*60+m>mins});const nextText=next?next[1]+" · "+t[next[0]]:"Fajr · tomorrow";if(background)return;$("#prayer-body").innerHTML='<div class="next-prayer-hero"><p class="kicker">NEXT</p><strong>'+esc(nextText)+'</strong></div><div class="prayer-grid">'+names.map(x=>'<div class="prayer-slot"><span>'+x[1]+'</span><strong>'+esc(t[x[0]])+'</strong></div>').join("")+'</div><p class="muted prayer-method">Diyanet İşleri Başkanlığı · method 13</p>'}catch(e){if(!background&&$("#prayer-body"))$("#prayer-body").innerHTML='<div class="error">'+esc(e.message)+'</div>'}}
-let focusAudioCtx=null,focusAudioNodes=[];
-function stopFocusSound(){
-    for(const node of focusAudioNodes){try{node.stop()}catch{}}
-    focusAudioNodes=[];
-    if(focusAudioCtx){focusAudioCtx.close().catch(()=>{});focusAudioCtx=null}
+const FOCUS_AUDIO_DB="knowledge.productivity.audio.v1";
+const FOCUS_AUDIO_STORE="audio";
+let focusAudio=null;
+
+function focusAudioDb(){
+    return new Promise((resolve,reject)=>{
+        const req=indexedDB.open(FOCUS_AUDIO_DB,1);
+        req.onupgradeneeded=()=>req.result.createObjectStore(FOCUS_AUDIO_STORE);
+        req.onsuccess=()=>resolve(req.result);
+        req.onerror=()=>reject(req.error);
+    });
 }
+
+async function getFocusAudio(){
+    const db=await focusAudioDb();
+    return new Promise((resolve,reject)=>{
+        const tx=db.transaction(FOCUS_AUDIO_STORE,"readonly");
+        const req=tx.objectStore(FOCUS_AUDIO_STORE).get("completion");
+        req.onsuccess=()=>resolve(req.result||null);
+        req.onerror=()=>reject(req.error);
+        tx.oncomplete=()=>db.close();
+    });
+}
+
+async function saveFocusAudio(file){
+    const db=await focusAudioDb();
+    await new Promise((resolve,reject)=>{
+        const tx=db.transaction(FOCUS_AUDIO_STORE,"readwrite");
+        tx.objectStore(FOCUS_AUDIO_STORE).put({
+            blob:file,
+            name:file.name,
+            type:file.type,
+            savedAt:Date.now()
+        },"completion");
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error);
+    });
+    db.close();
+}
+
+async function removeFocusAudio(){
+    stopFocusSound();
+    const db=await focusAudioDb();
+    await new Promise((resolve,reject)=>{
+        const tx=db.transaction(FOCUS_AUDIO_STORE,"readwrite");
+        tx.objectStore(FOCUS_AUDIO_STORE).delete("completion");
+        tx.oncomplete=resolve;
+        tx.onerror=()=>reject(tx.error);
+    });
+    db.close();
+}
+
+function stopFocusSound(){
+    if(focusAudio){
+        focusAudio.pause();
+        focusAudio.currentTime=0;
+        if(focusAudio.dataset.objectUrl)URL.revokeObjectURL(focusAudio.dataset.objectUrl);
+        focusAudio=null;
+    }
+}
+
 async function playFocusSound(){
     stopFocusSound();
-    const AudioContext=window.AudioContext||window.webkitAudioContext;
-    if(!AudioContext)return false;
-    const ctx=new AudioContext();
-    focusAudioCtx=ctx;
-    await ctx.resume();
-    let at=ctx.currentTime+.03;
-    for(const [freq,duration] of [[659,.16],[784,.16],[1047,.2],[1319,.55]]){
-        const osc=ctx.createOscillator(),gain=ctx.createGain();
-        osc.type="sine";
-        osc.frequency.value=freq;
-        gain.gain.setValueAtTime(.0001,at);
-        gain.gain.exponentialRampToValueAtTime(.22,at+.015);
-        gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start(at);
-        osc.stop(at+duration+.02);
-        focusAudioNodes.push(osc);
-        at+=duration;
-    }
+    const saved=await getFocusAudio();
+    if(!saved?.blob)return false;
+    const url=URL.createObjectURL(saved.blob);
+    focusAudio=new Audio(url);
+    focusAudio.dataset.objectUrl=url;
+    focusAudio.onended=()=>{
+        URL.revokeObjectURL(url);
+        focusAudio=null;
+    };
+    await focusAudio.play();
     return true;
+}
+
+async function refreshFocusAudioName(){
+    const el=document.querySelector("[data-focus-audio-name]");
+    if(!el)return;
+    try{
+        const saved=await getFocusAudio();
+        el.textContent=saved?.name||"No music selected";
+    }catch{
+        el.textContent="Audio storage unavailable";
+    }
 }
 const focusTimerDuration=()=>Math.max(1,(Math.max(0,+state.focus.focusMinutes||0)*60)+Math.max(0,Math.min(59,+state.focus.focusSeconds||0)));
 const focusDurations=()=>({focus:Math.max(1,+state.focus.pomodoro.focus||25)*60,short:Math.max(1,+state.focus.pomodoro.short||5)*60,long:Math.max(1,+state.focus.pomodoro.long||15)*60});
@@ -92,13 +149,14 @@ function focus(){
         +(state.focus.kind==="pomodoro"
             ?'<div class="settings-row"><label>Focus<input class="field compact" type="number" min="1" data-pomo-setting="focus" value="'+p.focus+'"></label><label>Short<input class="field compact" type="number" min="1" data-pomo-setting="short" value="'+p.short+'"></label><label>Long<input class="field compact" type="number" min="1" data-pomo-setting="long" value="'+p.long+'"></label><label>Long every<input class="field compact" type="number" min="1" data-pomo-setting="longEvery" value="'+p.longEvery+'"></label></div>'
             :'<div class="focus-duration-parts"><label>Minutes<input class="field compact" type="number" min="0" data-focus-minutes value="'+state.focus.focusMinutes+'"></label><label>Seconds<input class="field compact" type="number" min="0" max="59" data-focus-seconds value="'+state.focus.focusSeconds+'"></label></div>')
-        +'<div class="focus-sound"><p class="kicker">COMPLETION SOUND</p><div class="actions compact-actions"><button class="btn primary" data-focus-sound-play>Play</button><button class="btn" data-focus-sound-stop>Stop</button></div><p class="kicker focus-notification-label">DESKTOP NOTIFICATION</p><div class="actions compact-actions"><button class="btn" data-notification-test>Test notification</button></div></div></div></details></section></div>';
+        +'<div class="focus-sound"><p class="kicker">COMPLETION MUSIC</p><div class="focus-audio-file"><strong data-focus-audio-name>No music selected</strong><span>MP3 or WAV · saved on this device</span></div><input type="file" accept="audio/mpeg,audio/wav,.mp3,.wav" data-focus-audio-file hidden><div class="actions compact-actions"><button class="btn" data-focus-audio-choose>Choose MP3 / WAV</button><button class="btn primary" data-focus-sound-play>Play</button><button class="btn" data-focus-sound-stop>Stop</button><button class="btn danger" data-focus-audio-remove>Remove</button></div><p class="kicker focus-notification-label">DESKTOP NOTIFICATION</p><div class="actions compact-actions"><button class="btn" data-notification-test>Test notification</button></div></div></div></details></section></div>';
+    refreshFocusAudioName();
 }
 const views={clock,weather,prayer,focus};let active="clock";
 function render(name=active){active=views[name]?name:"clock";location.hash=active==="clock"?"":active;document.querySelectorAll("[data-view]").forEach(x=>x.classList.toggle("is-active",x.dataset.view===active));views[active]()}
 document.addEventListener("submit",async e=>{e.preventDefault();try{if(e.target.id==="city-form"){const c=await geocode($("#city-input").value.trim());if(!state.cities.some(x=>x.timezone===c.timezone&&x.name===c.name))state.cities.push(c);save();clock()}else if(e.target.id==="weather-form"){const c=await geocode($("#weather-input").value.trim());if(!state.weatherCities.some(x=>x.name===c.name&&x.timezone===c.timezone))state.weatherCities.push(c);save();weather()}else if(e.target.id==="prayer-form"){const g=await geocode($("#prayer-input").value.trim());state.prayerCity={name:g.name,country:$("#prayer-country").value.trim()||g.country,timezone:g.timezone};save();prayer()}}catch(err){alert(err.message)}});
-document.addEventListener("change",e=>{if(e.target.id==="adhan-select"){state.prayer.adhan=e.target.value;save()}const ao=e.target.closest("[data-adhan-override]");if(ao){state.prayer.overrides[ao.dataset.adhanOverride]=ao.value;save()}const ps=e.target.closest("[data-pomo-setting]");if(ps){state.focus.pomodoro[ps.dataset.pomoSetting]=Math.max(1,+ps.value||1);state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;state.focus.remaining=focusDurations()[state.focus.mode];save();focus()}if(e.target.matches("[data-focus-minutes]")){state.focus.focusMinutes=Math.max(0,+e.target.value||0);state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;state.focus.remaining=focusTimerDuration();save();focus()}if(e.target.matches("[data-focus-seconds]")){state.focus.focusSeconds=Math.max(0,Math.min(59,+e.target.value||0));state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;state.focus.remaining=focusTimerDuration();save();focus()}});
-document.addEventListener("click",async e=>{const preset=e.target.closest("[data-city-preset]");if(preset){try{const c=await geocode(preset.dataset.cityPreset),target=preset.dataset.cityTarget;if(target==="clock"){if(!state.cities.some(x=>x.name===c.name&&x.timezone===c.timezone))state.cities.push(c);save();clock()}else if(target==="weather"){if(!state.weatherCities.some(x=>x.name===c.name&&x.timezone===c.timezone))state.weatherCities.push(c);save();weather()}else{state.prayerCity={name:c.name,country:c.country,timezone:c.timezone};save();prayer()}}catch(err){alert(err.message)}return}const nav=e.target.closest("[data-view]");if(nav){render(nav.dataset.view);return}const rm=e.target.closest("[data-city-remove]");if(rm){state.cities.splice(+rm.dataset.cityRemove,1);save();renderClocks();return}const wr=e.target.closest("[data-weather-remove]");if(wr){state.weatherCities.splice(+wr.dataset.weatherRemove,1);save();weather();return}const kind=e.target.closest("[data-focus-kind]");if(kind){state.focus.kind=kind.dataset.focusKind;state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;state.focus.remaining=state.focus.kind==="timer"?focusTimerDuration():focusDurations()[state.focus.mode];save();focus();return}const mode=e.target.closest("[data-mode]");if(mode){state.focus.mode=mode.dataset.mode;state.focus.remaining=focusDurations()[state.focus.mode];state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;save();focus();return}if(e.target.closest("[data-focus-toggle]")){if(state.focus.running){state.focus.remaining=currentFocus();state.focus.running=false;state.focus.endAt=null}else{if(currentFocus()<=0)state.focus.remaining=state.focus.kind==="timer"?focusTimerDuration():focusDurations()[state.focus.mode];state.focus.running=true;state.focus.endAt=Date.now()+state.focus.remaining*1000}save();focus();return}if(e.target.closest("[data-focus-continue]")){stopFocusSound();if(state.focus.kind==="pomodoro"){state.focus.mode=state.focus.nextMode||"focus";state.focus.remaining=focusDurations()[state.focus.mode]}else state.focus.remaining=focusTimerDuration();state.focus.completed=null;state.focus.nextMode=null;state.focus.running=false;state.focus.endAt=null;save();focus();return}if(e.target.closest("[data-focus-reset]")){state.focus.remaining=state.focus.kind==="timer"?focusTimerDuration():focusDurations()[state.focus.mode];state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;save();focus();return}const preview=e.target.closest("[data-adhan-preview]");if(preview){const key=state.prayer.overrides?.[preview.dataset.adhanPreview]||state.prayer.adhan,a=ADHAN[key]||ADHAN.makkah;if(adhanAudio)adhanAudio.pause();adhanAudio=new Audio(a.src);adhanAudio.play().catch(()=>alert("Adhan audio could not be played."));return}if(e.target.closest("[data-adhan-test]")){const a=ADHAN[state.prayer.adhan]||ADHAN.makkah;if(adhanAudio){adhanAudio.pause()}adhanAudio=new Audio(a.src);adhanAudio.play().catch(()=>alert("Adhan audio could not be played."));return}if(e.target.closest("[data-adhan-stop]")){if(adhanAudio){adhanAudio.pause();adhanAudio.currentTime=0}return}if(e.target.closest("[data-focus-sound-play]")){playFocusSound().catch(()=>alert("Focus sound could not be played."));return}if(e.target.closest("[data-focus-sound-stop]")){stopFocusSound();return}if(e.target.closest("[data-notification-test]")){notify("Desktop notification test.");return}});
+document.addEventListener("change",async e=>{if(e.target.matches("[data-focus-audio-file]")){const file=e.target.files?.[0];if(!file)return;const ok=file.type==="audio/mpeg"||file.type==="audio/wav"||/\.(mp3|wav)$/i.test(file.name);if(!ok){alert("Choose an MP3 or WAV file.");e.target.value="";return}try{await saveFocusAudio(file);await refreshFocusAudioName()}catch{alert("Music could not be saved.")}e.target.value="";return}if(e.target.id==="adhan-select"){state.prayer.adhan=e.target.value;save()}const ao=e.target.closest("[data-adhan-override]");if(ao){state.prayer.overrides[ao.dataset.adhanOverride]=ao.value;save()}const ps=e.target.closest("[data-pomo-setting]");if(ps){state.focus.pomodoro[ps.dataset.pomoSetting]=Math.max(1,+ps.value||1);state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;state.focus.remaining=focusDurations()[state.focus.mode];save();focus()}if(e.target.matches("[data-focus-minutes]")){state.focus.focusMinutes=Math.max(0,+e.target.value||0);state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;state.focus.remaining=focusTimerDuration();save();focus()}if(e.target.matches("[data-focus-seconds]")){state.focus.focusSeconds=Math.max(0,Math.min(59,+e.target.value||0));state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;state.focus.remaining=focusTimerDuration();save();focus()}});
+document.addEventListener("click",async e=>{const preset=e.target.closest("[data-city-preset]");if(preset){try{const c=await geocode(preset.dataset.cityPreset),target=preset.dataset.cityTarget;if(target==="clock"){if(!state.cities.some(x=>x.name===c.name&&x.timezone===c.timezone))state.cities.push(c);save();clock()}else if(target==="weather"){if(!state.weatherCities.some(x=>x.name===c.name&&x.timezone===c.timezone))state.weatherCities.push(c);save();weather()}else{state.prayerCity={name:c.name,country:c.country,timezone:c.timezone};save();prayer()}}catch(err){alert(err.message)}return}const nav=e.target.closest("[data-view]");if(nav){render(nav.dataset.view);return}const rm=e.target.closest("[data-city-remove]");if(rm){state.cities.splice(+rm.dataset.cityRemove,1);save();renderClocks();return}const wr=e.target.closest("[data-weather-remove]");if(wr){state.weatherCities.splice(+wr.dataset.weatherRemove,1);save();weather();return}const kind=e.target.closest("[data-focus-kind]");if(kind){state.focus.kind=kind.dataset.focusKind;state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;state.focus.remaining=state.focus.kind==="timer"?focusTimerDuration():focusDurations()[state.focus.mode];save();focus();return}const mode=e.target.closest("[data-mode]");if(mode){state.focus.mode=mode.dataset.mode;state.focus.remaining=focusDurations()[state.focus.mode];state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;save();focus();return}if(e.target.closest("[data-focus-toggle]")){if(state.focus.running){state.focus.remaining=currentFocus();state.focus.running=false;state.focus.endAt=null}else{if(currentFocus()<=0)state.focus.remaining=state.focus.kind==="timer"?focusTimerDuration():focusDurations()[state.focus.mode];state.focus.running=true;state.focus.endAt=Date.now()+state.focus.remaining*1000}save();focus();return}if(e.target.closest("[data-focus-continue]")){stopFocusSound();if(state.focus.kind==="pomodoro"){state.focus.mode=state.focus.nextMode||"focus";state.focus.remaining=focusDurations()[state.focus.mode]}else state.focus.remaining=focusTimerDuration();state.focus.completed=null;state.focus.nextMode=null;state.focus.running=false;state.focus.endAt=null;save();focus();return}if(e.target.closest("[data-focus-reset]")){state.focus.remaining=state.focus.kind==="timer"?focusTimerDuration():focusDurations()[state.focus.mode];state.focus.running=false;state.focus.endAt=null;state.focus.completed=null;state.focus.nextMode=null;save();focus();return}const preview=e.target.closest("[data-adhan-preview]");if(preview){const key=state.prayer.overrides?.[preview.dataset.adhanPreview]||state.prayer.adhan,a=ADHAN[key]||ADHAN.makkah;if(adhanAudio)adhanAudio.pause();adhanAudio=new Audio(a.src);adhanAudio.play().catch(()=>alert("Adhan audio could not be played."));return}if(e.target.closest("[data-adhan-test]")){const a=ADHAN[state.prayer.adhan]||ADHAN.makkah;if(adhanAudio){adhanAudio.pause()}adhanAudio=new Audio(a.src);adhanAudio.play().catch(()=>alert("Adhan audio could not be played."));return}if(e.target.closest("[data-adhan-stop]")){if(adhanAudio){adhanAudio.pause();adhanAudio.currentTime=0}return}if(e.target.closest("[data-focus-audio-choose]")){document.querySelector("[data-focus-audio-file]")?.click();return}if(e.target.closest("[data-focus-audio-remove]")){try{await removeFocusAudio();await refreshFocusAudioName()}catch{alert("Music could not be removed.")}return}if(e.target.closest("[data-focus-sound-play]")){playFocusSound().then(ok=>{if(!ok)alert("Choose an MP3 or WAV file first.")}).catch(()=>alert("Focus music could not be played."));return}if(e.target.closest("[data-focus-sound-stop]")){stopFocusSound();return}if(e.target.closest("[data-notification-test]")){notify("Desktop notification test.");return}});
 setInterval(()=>{
     tickClock();
     checkPrayerAlert();

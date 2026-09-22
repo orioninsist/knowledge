@@ -27,3 +27,8 @@
 .focus-complete{display:grid;gap:7px;margin:26px 0 0;text-align:center}
 .focus-complete strong{font-size:1rem;letter-spacing:.12em}
 .focus-complete span{color:var(--muted);font-size:.78rem}
+
+/* Custom Focus completion audio */
+.focus-audio-file{display:grid;gap:3px;margin-top:9px}
+.focus-audio-file strong{font-size:.8rem;overflow-wrap:anywhere}
+.focus-audio-file span{color:var(--muted);font-size:.68rem}
