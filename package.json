@@ -1,13 +1,8 @@
 {
-  "scripts": {
-    "productivity:desktop": "tauri dev",
-    "productivity:build": "tauri build"
-  },
+  "scripts": {},
   "dependencies": {
     "ical.js": "^2.2.1",
     "mermaid": "^12.0.0"
   },
-  "devDependencies": {
-    "@tauri-apps/cli": "^2.8.4"
-  }
+  "devDependencies": {}
 }

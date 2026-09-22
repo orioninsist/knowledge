@@ -204,9 +204,9 @@ The Productivity surface is intentionally limited to four tools:
 * `World Clock` — persistent saved cities with live local times and quick city presets
 * `Weather` — persistent city selection, current conditions, and seven-day forecast
 * `Prayer` — persistent city/adhan selection, five daily prayer times, background prayer alerts, and adhan preview/playback
-* `Focus` — configurable Pomodoro cycles plus a separate uninterrupted Focus Mode with desktop notification sound support
+* `Focus` — configurable Pomodoro cycles plus a separate uninterrupted Focus Mode with desktop notification support
 
-Productivity state is stored locally in browser storage. Weather uses Open-Meteo, prayer times use AlAdhan with the Diyanet calculation method, and city lookup uses Open-Meteo geocoding. The primary Productivity interface is the local Hugo-served web app at `http://127.0.0.1:1314/productivity/`. The optional Tauri shell uses the same frontend when native window, tray, autostart, single-instance behavior, or custom notification-sound file access is useful.
+Productivity state is stored locally in browser storage. Weather uses Open-Meteo, prayer times use AlAdhan with the Diyanet calculation method, and city lookup uses Open-Meteo geocoding. The Productivity interface is the local Hugo-served web app at `http://127.0.0.1:1314/productivity/`. Productivity state is kept in browser storage and desktop alerts use the browser Notification API.
 
 The old Today, Plan, generic countdown, and stopwatch surfaces are intentionally not part of Productivity.
 
