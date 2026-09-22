@@ -14,31 +14,31 @@
 
 /* Timer-first Focus */
 /* Unified Focus selector */
-.focus-unified-modes{display:flex;flex-wrap:wrap;gap:6px}
-.focus-unified-modes .btn{white-space:nowrap}
 
-.focus-shell{max-width:1120px;margin:auto}.focus-stage{min-height:620px;display:flex;flex-direction:column;align-items:center;padding:8px 0 28px}.focus-topline{width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px}.focus-topline .mode-tabs{margin:0}.focus-stats{color:var(--muted);font-size:.72rem}.focus-stats strong{color:var(--text)}.focus-timer-hero{margin:72px 0 0;font-size:clamp(5.2rem,11vw,9rem);line-height:.88;font-weight:620;letter-spacing:-.085em;font-variant-numeric:tabular-nums;text-align:center;white-space:nowrap}.focus-progress-wrap{width:min(520px,72vw);margin-top:30px;text-align:center}.focus-progress{height:6px;margin:0;background:var(--soft)}.focus-progress>span{transition:width .45s linear}.focus-progress-label{display:block;margin-top:9px;color:var(--muted);font-size:.66rem;font-variant-numeric:tabular-nums}.focus-stage .timer-sub{margin:22px 0 0}.focus-actions{margin:15px 0 0}.focus-actions .btn{padding:11px 18px}.focus-settings{width:min(760px,100%);margin-top:auto;padding-top:44px;text-align:center}.focus-settings>summary{display:inline-block;cursor:pointer;color:var(--muted);font-size:.72rem;font-weight:700;list-style:none}.focus-settings>summary::-webkit-details-marker{display:none}.focus-settings-body{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);text-align:left}.focus-sound{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-@media(max-width:900px){.prayer-shell{grid-template-columns:1fr}.prayer-grid{grid-template-columns:repeat(5,minmax(100px,1fr));overflow:auto}.focus-timer-hero{font-size:clamp(4.8rem,13vw,7.5rem)}}@media(max-width:600px){.prayer-location-panel{position:fixed;inset:16px 16px 82px;width:auto;overflow:auto}.prayer-grid{grid-template-columns:1fr}.prayer-slot{grid-template-columns:1fr auto;border-right:0;border-bottom:1px solid var(--line)}.prayer-slot:last-child{border-bottom:0}.focus-stage{min-height:70vh}.focus-topline{align-items:flex-start}.focus-stats{max-width:100px;text-align:right}.focus-timer-hero{margin-top:52px;font-size:clamp(4.4rem,22vw,6.4rem)}.focus-progress-wrap{width:min(88vw,420px);margin-top:24px}}
 
-.focus-notification-label{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+
+
+@media(max-width:900px){.prayer-shell{grid-template-columns:1fr}.prayer-grid{grid-template-columns:repeat(5,minmax(100px,1fr));overflow:auto}}@media(max-width:600px){.prayer-location-panel{position:fixed;inset:16px 16px 82px;width:auto;overflow:auto}.prayer-grid{grid-template-columns:1fr}.prayer-slot{grid-template-columns:1fr auto;border-right:0;border-bottom:1px solid var(--line)}.prayer-slot:last-child{border-bottom:0}}
+
+
 
 /* Focus completion state */
-.focus-duration-parts{display:grid;grid-template-columns:repeat(2,minmax(0,180px));gap:8px;margin-top:14px}
-.focus-duration-parts label{display:grid;gap:6px;color:var(--muted);font-size:.68rem}
-.focus-complete{display:grid;gap:7px;margin:26px 0 0;text-align:center}
-.focus-complete strong{font-size:1rem;letter-spacing:.12em}
-.focus-complete span{color:var(--muted);font-size:.78rem}
+
+
+
+
+
 
 /* Custom Focus completion audio */
-.focus-audio-file{display:grid;gap:3px;margin-top:9px}
-.focus-audio-file strong{font-size:.8rem;overflow-wrap:anywhere}
-.focus-audio-file span{color:var(--muted);font-size:.68rem}
+
+
+
 
 
 /* Unified Focus selector mobile */
 @media(max-width:600px){
-  .focus-unified-modes{max-width:300px}
-  .focus-unified-modes .btn{flex:1 1 auto}
+
+
 }
 
 
@@ -429,4 +429,247 @@
   padding:10px 2px;
   color:var(--muted);
   font-size:.66rem;
+}
+
+/* =========================================================
+   Focus / Pomodoro
+   ========================================================= */
+
+.focus-shell{
+  width:100%;
+  max-width:900px;
+  margin:0 auto;
+}
+
+.focus-stage{
+  min-height:650px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  padding:4px 0 24px;
+}
+
+.focus-tool-tabs{
+  display:inline-flex;
+  gap:3px;
+  padding:3px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--soft);
+}
+
+.focus-tool-tab{
+  border:0;
+  border-radius:8px;
+  padding:8px 14px;
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:.72rem;
+  font-weight:700;
+}
+
+.focus-tool-tab:hover{
+  color:var(--text);
+}
+
+.focus-tool-tab.is-active{
+  background:var(--panel);
+  color:var(--text);
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+
+.focus-process-meta{
+  min-height:18px;
+  margin-top:42px;
+  color:var(--muted);
+  font-size:.68rem;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.focus-timer-hero{
+  margin-top:16px;
+  font-size:clamp(6rem,15vw,10.5rem);
+  line-height:.88;
+  font-weight:620;
+  letter-spacing:-.09em;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+
+.focus-progress-wrap{
+  width:min(560px,72vw);
+  margin-top:38px;
+}
+
+.focus-progress{
+  height:5px;
+  margin:0;
+  background:var(--soft);
+}
+
+.focus-progress>span{
+  transition:width .45s linear;
+}
+
+.focus-progress-label{
+  display:block;
+  margin-top:9px;
+  color:var(--muted);
+  font-size:.64rem;
+  font-variant-numeric:tabular-nums;
+}
+
+.focus-stage .timer-sub{
+  min-height:18px;
+  margin:25px 0 0;
+}
+
+.focus-actions{
+  margin:15px 0 0;
+}
+
+.focus-actions .btn{
+  min-width:82px;
+  padding:10px 17px;
+}
+
+.focus-complete{
+  min-height:54px;
+  display:grid;
+  place-content:center;
+  gap:6px;
+  margin-top:20px;
+}
+
+.focus-complete strong{
+  font-size:.82rem;
+  letter-spacing:.13em;
+}
+
+.focus-complete span{
+  color:var(--muted);
+  font-size:.72rem;
+}
+
+.focus-next{
+  margin-top:18px;
+  color:var(--muted);
+  font-size:.68rem;
+}
+
+.focus-today{
+  margin-top:42px;
+  color:var(--muted);
+  font-size:.7rem;
+  font-variant-numeric:tabular-nums;
+}
+
+.focus-settings{
+  width:min(720px,100%);
+  margin-top:auto;
+  padding-top:46px;
+}
+
+.focus-settings>summary{
+  display:inline-block;
+  list-style:none;
+  cursor:pointer;
+  color:var(--muted);
+  font-size:.7rem;
+  font-weight:700;
+}
+
+.focus-settings>summary:hover{
+  color:var(--text);
+}
+
+.focus-settings>summary::-webkit-details-marker{
+  display:none;
+}
+
+.focus-settings-body{
+  margin-top:14px;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel);
+  text-align:left;
+}
+
+.focus-duration-parts{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,180px));
+  gap:8px;
+}
+
+.focus-duration-parts label,
+.focus-settings .settings-row label{
+  display:grid;
+  gap:6px;
+  color:var(--muted);
+  font-size:.68rem;
+}
+
+.focus-sound{
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
+
+.focus-audio-file{
+  display:grid;
+  gap:3px;
+  margin-top:9px;
+}
+
+.focus-audio-file strong{
+  font-size:.8rem;
+  overflow-wrap:anywhere;
+}
+
+.focus-audio-file span{
+  color:var(--muted);
+  font-size:.68rem;
+}
+
+.focus-notification-label{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
+
+@media(max-width:600px){
+  .focus-stage{
+    min-height:72vh;
+  }
+
+  .focus-process-meta{
+    margin-top:34px;
+  }
+
+  .focus-timer-hero{
+    margin-top:14px;
+    font-size:clamp(5rem,25vw,7rem);
+  }
+
+  .focus-progress-wrap{
+    width:min(88vw,440px);
+    margin-top:30px;
+  }
+
+  .focus-today{
+    margin-top:34px;
+  }
+
+  .focus-settings{
+    padding-top:38px;
+  }
+
+  .focus-settings .settings-row{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
 }
