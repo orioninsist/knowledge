@@ -41,17 +41,21 @@ TYPST="$(command -v typst)"
 
 echo 'PASS: External dependencies.'
 
-if [ ! -f workspace.toml ]; then
+WORKSPACE_CONFIG="$HOME/.config/knowledge/workspaces.toml"
+
+if [ ! -f "$WORKSPACE_CONFIG" ]; then
+  mkdir -p "$(dirname "$WORKSPACE_CONFIG")"
+
   if [ -f workspace.example.toml ]; then
-    cp workspace.example.toml workspace.toml
+    cp workspace.example.toml "$WORKSPACE_CONFIG"
 
     echo
-    echo 'ERROR: workspace.toml was created from workspace.example.toml.'
-    echo 'Edit workspace.toml and run ./install.sh again.'
+    echo "ERROR: $WORKSPACE_CONFIG was created from workspace.example.toml."
+    echo 'Edit it and run ./install.sh again.'
     exit 1
   fi
 
-  echo 'ERROR: workspace.toml is missing.'
+  echo "ERROR: $WORKSPACE_CONFIG is missing."
   exit 1
 fi
 
