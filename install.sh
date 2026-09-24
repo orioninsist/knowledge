@@ -34,10 +34,8 @@ do
   need "$cmd"
 done
 
-BUN="$(command -v bun)"
 HUGO="$(command -v hugo)"
 D2="$(command -v d2)"
-TYPST="$(command -v typst)"
 
 echo 'PASS: External dependencies.'
 
@@ -70,7 +68,7 @@ echo 'PASS: npm dependencies installed.'
 echo
 echo '--- Runtime ---'
 
-"$BUN" \
+"$HOME/.bun/bin/bun" \
   scripts/prepare-workspace-runtime.ts \
   personal
 
@@ -80,7 +78,7 @@ echo 'PASS: Runtime generated.'
 echo
 echo '--- Initial index ---'
 
-"$BUN" \
+"$HOME/.bun/bin/bun" \
   scripts/build-workspace-index.ts \
   personal
 
@@ -123,10 +121,8 @@ install_unit() {
 
   sed \
     -e "s|@PROJECT_DIR@|$PROJECT_DIR|g" \
-    -e "s|@BUN@|$BUN|g" \
     -e "s|@HUGO@|$HUGO|g" \
     -e "s|@D2@|$D2|g" \
-    -e "s|@TYPST@|$TYPST|g" \
     "$source" \
     > "$target"
 }
