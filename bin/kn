@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PROJECT="/mnt/projects/knowledge"
+PROJECT="/home/murat/Media/6-Project/knowledge"
 
 # Local-only version history for personal Markdown notes.
 # This repository must never have a remote.

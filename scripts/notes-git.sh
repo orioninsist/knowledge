@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-NOTES_ROOT="/mnt/projects/Knowledge"
+NOTES_ROOT="/home/murat/Media/5-Documentation/Knowledge"
 
 notes_git_assert() {
     if [ ! -d "$NOTES_ROOT/.git" ]; then
