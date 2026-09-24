@@ -1,6 +1,5 @@
 [Unit]
 Description=Knowledge Personal Search API
-After=default.target
 
 [Service]
 Type=simple
