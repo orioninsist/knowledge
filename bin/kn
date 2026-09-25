@@ -102,6 +102,11 @@ MOC:
 HELP
 }
 
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ]; then
+    usage
+    exit 0
+fi
+
 find_note() {
     local name="$1"
 
@@ -332,16 +337,7 @@ if [ "${1:-}" = "glow" ]; then
         exit 1
     fi
 
-    if ! command -v zeditor >/dev/null 2>&1; then
-        echo
-        echo "ERROR: Zed CLI (zeditor) is not available."
-        exit 1
-    fi
-
     remember_note "$NAME"
-
-    export EDITOR="zeditor --wait"
-    export VISUAL="zeditor --wait"
 
     exec glow -t "$FOUND"
 fi
