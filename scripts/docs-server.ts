@@ -1,4 +1,5 @@
 import {
+  existsSync,
   readdirSync,
   readFileSync,
   statSync,
@@ -29,6 +30,16 @@ const ROOT = resolve(
   "/home/murat/Media/5-Documentation",
 );
 
+const PROJECT_ROOT =
+  process.cwd();
+
+const STATIC_ROOT =
+  join(PROJECT_ROOT, "static");
+
+const RENDER_API =
+  process.env.KNOWLEDGE_RENDER_API ??
+  "http://127.0.0.1:8788";
+
 const IGNORES = String(
   process.env.KNOWLEDGE_DOCS_IGNORE ??
   join(ROOT, "Knowledge"),
@@ -48,8 +59,7 @@ const isInside = (
 
   return Boolean(rel) &&
     rel !== ".." &&
-    !rel.startsWith(`..${sep}`) &&
-    !resolve(child).startsWith(`..${sep}`);
+    !rel.startsWith(`..${sep}`);
 };
 
 const isIgnored = (
@@ -274,6 +284,68 @@ const text = (
     },
   );
 
+const contentType = (
+  path: string,
+): string => {
+  const extension = extname(path).toLowerCase();
+
+  if (extension === ".css") return "text/css; charset=utf-8";
+  if (extension === ".js" || extension === ".mjs") return "text/javascript; charset=utf-8";
+  if (extension === ".png") return "image/png";
+  if (extension === ".svg") return "image/svg+xml; charset=utf-8";
+  if (extension === ".json") return "application/json; charset=utf-8";
+
+  return "application/octet-stream";
+};
+
+const staticResponse = (
+  pathname: string,
+): Response | null => {
+  const clean = pathname
+    .replace(/^\/+/, "")
+    .replaceAll("\\", "/");
+
+  if (
+    !clean ||
+    clean.includes("../") ||
+    clean === ".."
+  ) {
+    return null;
+  }
+
+  const absolutePath = resolve(
+    STATIC_ROOT,
+    clean,
+  );
+
+  if (
+    absolutePath !== STATIC_ROOT &&
+    !isInside(STATIC_ROOT, absolutePath)
+  ) {
+    return null;
+  }
+
+  if (!existsSync(absolutePath)) {
+    return null;
+  }
+
+  const stat = statSync(absolutePath);
+
+  if (!stat.isFile()) {
+    return null;
+  }
+
+  return new Response(
+    readFileSync(absolutePath),
+    {
+      headers: {
+        "Content-Type": contentType(absolutePath),
+        "Cache-Control": "public, max-age=3600",
+      },
+    },
+  );
+};
+
 const searchDocs = (
   url: URL,
 ) => {
@@ -286,6 +358,12 @@ const searchDocs = (
   const filename = normalize(
     url.searchParams.get("filename"),
   );
+  const titleFilter = normalize(
+    url.searchParams.get("title"),
+  );
+  const description = normalize(
+    url.searchParams.get("description"),
+  );
   const offset = Math.max(
     0,
     Number(url.searchParams.get("offset") ?? 0) || 0,
@@ -297,6 +375,8 @@ const searchDocs = (
 
   const scored = docs
     .map((doc) => {
+      const title = normalize(doc.title);
+      const path = normalize(doc.path);
       const haystack = normalize(
         [
           doc.path,
@@ -322,6 +402,20 @@ const searchDocs = (
       }
 
       if (
+        titleFilter &&
+        !title.includes(titleFilter)
+      ) {
+        return null;
+      }
+
+      if (
+        description &&
+        !normalize(doc.summary).includes(description)
+      ) {
+        return null;
+      }
+
+      if (
         terms.some(
           (term) => !haystack.includes(term),
         )
@@ -330,21 +424,11 @@ const searchDocs = (
       }
 
       let score = 0;
-      const title = normalize(doc.title);
-      const path = normalize(doc.path);
 
       for (const term of terms) {
-        if (title.includes(term)) {
-          score += 10;
-        }
-
-        if (path.includes(term)) {
-          score += 5;
-        }
-
-        if (haystack.includes(term)) {
-          score += 1;
-        }
+        if (title.includes(term)) score += 10;
+        if (path.includes(term)) score += 5;
+        if (haystack.includes(term)) score += 1;
       }
 
       return {
@@ -377,8 +461,8 @@ const searchDocs = (
     filters: {
       folders: folder ? [folder] : [],
       filename,
-      title: "",
-      description: "",
+      title: titleFilter,
+      description,
       statuses: [],
       aliases: [],
       tags: [],
@@ -396,7 +480,7 @@ const searchDocs = (
     results: page.map(({ doc }) => ({
       title: doc.title,
       url: `/?path=${encodeURIComponent(doc.path)}`,
-      section: doc.folder || "root",
+      section: doc.folder || "Documentation",
       status: "",
       aliases: [],
       tags: [],
@@ -406,47 +490,167 @@ const searchDocs = (
   };
 };
 
-const pageHTML = () => `<!doctype html>
+const markedRenderer =
+  new marked.Renderer();
+
+markedRenderer.code = ({
+  text,
+  lang,
+}: {
+  text: string;
+  lang?: string;
+}) => {
+  const language =
+    String(lang ?? "")
+      .trim()
+      .split(/\s+/)[0]
+      .toLowerCase();
+
+  if (
+    [
+      "mermaid",
+      "d2",
+      "typst",
+      "calendar",
+      "canvas",
+    ].includes(language)
+  ) {
+    return `<div class="visual-note visual-${language}" data-visual-language="${language}">${escapeHTML(text)}</div>`;
+  }
+
+  return `<pre><code>${escapeHTML(text)}</code></pre>`;
+};
+
+const docHTML = (
+  doc: Doc,
+): string =>
+  marked.parse(
+    doc.content,
+    {
+      async: false,
+      renderer: markedRenderer,
+    },
+  ) as string;
+
+const pageHTML = (
+  selectedDoc: Doc | null,
+) => {
+  const title = selectedDoc
+    ? `${selectedDoc.title} · Documentation`
+    : "Documentation";
+
+  const body = selectedDoc
+    ? `
+      <article class="note">
+        <header class="note-header">
+          <div class="note-header-row">
+            <nav class="breadcrumbs" aria-label="Breadcrumb">
+              <a class="breadcrumb-home" href="/">Documentation</a>
+              <span class="breadcrumb-separator" aria-hidden="true">/</span>
+              <span class="breadcrumb-section">${escapeHTML(selectedDoc.folder || "root")}</span>
+            </nav>
+            <button class="copy-note-link" type="button" data-copy-note-link title="Copy document link" aria-label="Copy document link">Copy link</button>
+          </div>
+          <h1>${escapeHTML(selectedDoc.title)}</h1>
+          <div class="note-info">
+            <span class="note-stat">${escapeHTML(selectedDoc.filename)}</span>
+            <span class="note-stat-separator" aria-hidden="true">·</span>
+            <span class="note-stat">${Math.max(1, Math.round(selectedDoc.size / 1024))} KB</span>
+            <span class="note-stat-separator" aria-hidden="true">·</span>
+            <time class="note-stat note-updated" datetime="${new Date(selectedDoc.mtimeMs).toISOString()}">Updated ${escapeHTML(new Date(selectedDoc.mtimeMs).toLocaleString("tr-TR"))}</time>
+          </div>
+          <p class="note-description">${escapeHTML(selectedDoc.path)}</p>
+        </header>
+        <div class="prose">${docHTML(selectedDoc)}</div>
+      </article>
+    `
+    : `
+      <section class="section-page">
+        <header class="section-header">
+          <h1>Documentation</h1>
+        </header>
+        <p class="section-static-message">Use Alt + K to search read-only Markdown documentation.</p>
+        <div class="home-card home-note-card">
+          <strong>Read-only</strong>
+          <p>This browser indexes Markdown files under <code>${escapeHTML(ROOT)}</code> and ignores <code>${escapeHTML(IGNORES.join(", "))}</code>.</p>
+          <p>Create, edit, move, and delete operations are disabled.</p>
+        </div>
+      </section>
+    `;
+
+  return `<!doctype html>
 <html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Documentation Browser</title>
-  <style>
-    :root{color-scheme:light dark;font-family:Inter,ui-sans-serif,system-ui,sans-serif;--bg:#f7f7f5;--fg:#171717;--muted:#666;--line:#ddd;--panel:#fff;--accent:#0f766e;}
-    @media (prefers-color-scheme: dark){:root{--bg:#101112;--fg:#f3f3f0;--muted:#a4a4a0;--line:#333;--panel:#181a1b;--accent:#5eead4;}}
-    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg)}.shell{display:grid;grid-template-columns:minmax(320px,420px) 1fr;min-height:100vh}.side{border-right:1px solid var(--line);background:var(--panel);padding:18px;position:sticky;top:0;height:100vh;overflow:auto}.brand{font-weight:800;font-size:18px;margin-bottom:12px}.root{font-size:12px;color:var(--muted);word-break:break-all;margin-bottom:14px}.search{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg);font-size:15px}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 14px}.filters input{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--fg)}.summary{font-size:12px;color:var(--muted);margin-bottom:8px}.results{display:grid;gap:8px}.result{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:8px;padding:10px;background:color-mix(in srgb,var(--panel),var(--bg) 20%)}.result:hover,.result.is-active{border-color:var(--accent)}.result strong{display:block;font-size:14px}.result small{display:block;color:var(--muted);font-size:12px;margin:3px 0}.result span{font-size:13px;color:var(--muted)}.doc{max-width:980px;padding:34px 42px 80px}.doc-path{color:var(--muted);font-size:13px;word-break:break-all}.doc h1,.doc h2,.doc h3{line-height:1.2}.doc pre{overflow:auto;border:1px solid var(--line);border-radius:8px;padding:14px;background:var(--panel)}.doc code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.doc img{max-width:100%}.empty{color:var(--muted);padding:24px;border:1px dashed var(--line);border-radius:8px}@media(max-width:820px){.shell{display:block}.side{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}.doc{padding:24px 18px 60px}}
-  </style>
+  <meta name="color-scheme" content="light dark">
+  <meta name="knowledge-search-api" content="http://${HOST}:${PORT}">
+  <title>${escapeHTML(title)}</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tags.css">
+  <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 <body>
-  <div class="shell">
-    <aside class="side">
-      <div class="brand">Documentation Browser</div>
-      <div class="root">${escapeHTML(ROOT)}<br>Ignoring: ${escapeHTML(IGNORES.join(", "))}</div>
-      <input id="q" class="search" type="search" placeholder="Search documentation..." autocomplete="off" autofocus>
-      <div class="filters">
-        <input id="folder" placeholder="Folder filter">
-        <input id="filename" placeholder="Filename filter">
+  <main class="main">${body}</main>
+
+  <div id="command-search" class="command-search" hidden>
+    <div class="command-search-backdrop" data-command-search-close></div>
+    <section class="command-search-panel" role="dialog" aria-modal="true" aria-label="Search documentation">
+      <label class="visually-hidden" for="knowledge-search">Search documentation</label>
+      <input id="knowledge-search" class="search-input command-search-input" type="search" placeholder="Search documentation..." autocomplete="off" spellcheck="false" aria-label="Search documentation">
+      <details id="search-filters" class="search-filters">
+        <summary>Filters</summary>
+        <div class="search-filter-fields">
+          <label>Folder<input id="search-filter-folder" type="text" autocomplete="off"></label>
+          <label>Filename<input id="search-filter-filename" type="text" autocomplete="off"></label>
+          <label>Title<input id="search-filter-title" type="text" autocomplete="off"></label>
+          <label>Description<input id="search-filter-description" type="text" autocomplete="off"></label>
+          <label>Status<input id="search-filter-status" type="text" autocomplete="off" disabled></label>
+          <label>Alias<input id="search-filter-alias" type="text" autocomplete="off" disabled></label>
+          <label>Tag<input id="search-filter-tag" type="text" autocomplete="off" disabled></label>
+          <button id="search-filter-clear" type="button">Clear filters</button>
+        </div>
+      </details>
+      <div id="search-results" class="search-results command-search-results" hidden>
+        <div id="search-summary" class="search-summary" hidden></div>
+        <div id="search-results-list" class="search-results-list"></div>
       </div>
-      <div id="summary" class="summary"></div>
-      <div id="results" class="results"></div>
-    </aside>
-    <main id="doc" class="doc"><div class="empty">Search, then open a Markdown document. This browser is read-only.</div></main>
+    </section>
   </div>
-  <script>
-    const q=document.getElementById('q'), folder=document.getElementById('folder'), filename=document.getElementById('filename'), results=document.getElementById('results'), summary=document.getElementById('summary'), doc=document.getElementById('doc');
-    let timer=null, active=-1;
-    const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
-    async function search(){const u=new URL('/api/search',location.origin); if(q.value.trim())u.searchParams.set('q',q.value.trim()); if(folder.value.trim())u.searchParams.set('folder',folder.value.trim()); if(filename.value.trim())u.searchParams.set('filename',filename.value.trim()); const r=await fetch(u,{cache:'no-store'}); const p=await r.json(); summary.textContent=p.total+' result'+(p.total===1?'':'s'); results.innerHTML=(p.results||[]).map(x=>'<a class="result" href="'+esc(x.url)+'" data-path="'+esc(new URL(x.url, location.origin).searchParams.get('path'))+'"><strong>'+esc(x.title)+'</strong><small>'+esc(x.section)+'</small><span>'+esc(x.summary)+'</span></a>').join('') || '<div class="empty">No matching documents.</div>'; active=-1; }
-    function schedule(){clearTimeout(timer); timer=setTimeout(search,80)}
-    async function openPath(path){if(!path)return; const u=new URL('/api/doc',location.origin); u.searchParams.set('path',path); const r=await fetch(u,{cache:'no-store'}); const p=await r.json(); if(!r.ok){doc.innerHTML='<div class="empty">'+esc(p.error||'Document unavailable')+'</div>'; return;} doc.innerHTML='<div class="doc-path">'+esc(p.path)+'</div>'+p.html; history.replaceState(null,'','/?path='+encodeURIComponent(path)); document.title=p.title+' · Documentation Browser';}
-    q.addEventListener('input',schedule); folder.addEventListener('input',schedule); filename.addEventListener('input',schedule);
-    results.addEventListener('click',e=>{const a=e.target.closest('a[data-path]'); if(!a)return; e.preventDefault(); openPath(a.dataset.path);});
-    q.addEventListener('keydown',e=>{const links=[...results.querySelectorAll('.result')]; if(!links.length)return; if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault(); active=e.key==='ArrowDown'?active+1:active-1; if(active<0)active=links.length-1; if(active>=links.length)active=0; links.forEach(x=>x.classList.remove('is-active')); links[active].classList.add('is-active'); links[active].scrollIntoView({block:'nearest'});} if(e.key==='Enter'&&active>=0){e.preventDefault(); links[active].click();}});
-    search(); openPath(new URL(location.href).searchParams.get('path'));
-  </script>
+
+  <script src="/js/search.js" defer></script>
+  <script src="/js/note-preview.js" defer></script>
+  <script src="/js/copy-link.js" defer></script>
+  <script src="/js/keyboard-shortcuts.js" defer></script>
+  <script src="/js/reading-progress.js" defer></script>
+  <script src="/js/visual-renderers.js" defer></script>
+  <script src="/js/canvas-renderer.js" defer></script>
 </body>
 </html>`;
+};
+
+const proxyRender = async (
+  request: Request,
+  pathname: string,
+): Promise<Response> => {
+  const upstream =
+    await fetch(
+      `${RENDER_API}${pathname}`,
+      {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      },
+    );
+
+  return new Response(
+    upstream.body,
+    {
+      status: upstream.status,
+      headers: upstream.headers,
+    },
+  );
+};
 
 buildIndex();
 
@@ -461,10 +665,21 @@ const server = Bun.serve({
         status: 204,
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type",
         },
       });
+    }
+
+    if (
+      request.method === "POST" &&
+      (
+        url.pathname === "/api/render/d2" ||
+        url.pathname === "/api/render/typst" ||
+        url.pathname === "/api/render/calendar"
+      )
+    ) {
+      return proxyRender(request, url.pathname);
     }
 
     if (request.method !== "GET") {
@@ -474,8 +689,11 @@ const server = Bun.serve({
       }, 405);
     }
 
-    if (url.pathname === "/" || url.pathname === "/docs") {
-      return text(pageHTML(), "text/html; charset=utf-8");
+    const staticFile =
+      staticResponse(url.pathname);
+
+    if (staticFile) {
+      return staticFile;
     }
 
     if (url.pathname === "/health") {
@@ -502,24 +720,25 @@ const server = Bun.serve({
         return json({ error: "Document not found." }, 404);
       }
 
-      const html = marked.parse(
-        doc.content,
-        {
-          async: false,
-        },
-      ) as string;
-
       return json({
         title: doc.title,
         path: doc.path,
         folder: doc.folder,
         filename: doc.filename,
         updatedAt: doc.mtimeMs,
-        html,
+        html: docHTML(doc),
       });
     }
 
-    return text(pageHTML(), "text/html; charset=utf-8");
+    const selectedDoc =
+      getDoc(
+        String(url.searchParams.get("path") ?? ""),
+      );
+
+    return text(
+      pageHTML(selectedDoc),
+      "text/html; charset=utf-8",
+    );
   },
 });
 
