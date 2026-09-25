@@ -12,6 +12,45 @@ http://127.0.0.1:1320/              Read-only documentation browser
 
 Everything is designed around one rule: Markdown files are the source of truth. Runtime databases, generated Hugo configuration, visual render caches, and systemd units are disposable and can be rebuilt.
 
+## Project Goal
+
+Knowledge exists to be a stable, zero-cost personal knowledge environment built from native local tools. The goal is not to become a large custom platform. The goal is to connect the right simple tools in the right order so daily notes, large Markdown documentation sets, search, reading, visual rendering, and small productivity workflows all work locally without proprietary lock-in.
+
+The project should stay boring, portable, and maintainable:
+
+- Markdown files remain the permanent data.
+- The application code stays in this repository.
+- Personal notes stay outside this repository.
+- Runtime state stays disposable.
+- Browser pages are for reading and searching.
+- Terminal commands are for deliberate note operations.
+- Documentation browsing is read-only by design.
+- New code is added only when it removes real manual work or replaces fragile manual steps.
+
+## Current Features
+
+- Local-first personal Markdown notes.
+- Five fixed MOC folders: Inbox, Projects, Areas, Resources, and Archives.
+- Browser home page with personal note statistics.
+- Browser command search with `Alt + K`.
+- SQLite FTS5 search for personal notes.
+- SQLite FTS5 search for external documentation Markdown.
+- Separate read-only documentation browser on port `1320`.
+- Documentation indexer separated from the browser server.
+- Documentation watcher service for refreshing the docs index.
+- `kn` terminal command for opening, creating, reading, moving, and deleting personal notes.
+- Global filename completion across all five personal note MOCs.
+- Confirmation before move and delete operations.
+- Read-only review before delete operations.
+- Local-only Git history for personal notes.
+- Protection against accidentally adding a remote to the personal notes Git repository.
+- Hugo-based personal note rendering.
+- Mermaid, D2, Typst, Canvas, and calendar visual blocks.
+- Local productivity page with World Clock, Weather, Prayer, and Focus tools.
+- systemd user services for the web server, search API, note watcher, docs browser, and docs watcher.
+- Reproducible installer with smoke tests.
+- Catppuccin Mocha based visual theme.
+
 ## What It Does
 
 - Keeps personal notes in five fixed Markdown folders.
