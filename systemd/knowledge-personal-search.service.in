@@ -7,7 +7,7 @@ WorkingDirectory=@PROJECT_DIR@
 Environment=KNOWLEDGE_API_PORT=8788
 Environment=KNOWLEDGE_DB_PATH=@PROJECT_DIR@/.runtime/personal/knowledge.db
 Environment=KNOWLEDGE_D2_BIN=@D2@
-Environment=KNOWLEDGE_TYPST_BIN=%h/.local/bin/typst
+Environment=KNOWLEDGE_TYPST_BIN=@TYPST@
 ExecStart=%h/.bun/bin/bun scripts/search-server.ts
 Restart=on-failure
 RestartSec=2

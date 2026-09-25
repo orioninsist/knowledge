@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+
+if command -v readlink >/dev/null 2>&1; then
+  SCRIPT_PATH="$(
+    readlink -f "$SCRIPT_PATH" 2>/dev/null ||
+      printf '%s\n' "$SCRIPT_PATH"
+  )"
+fi
+
+PROJECT_DIR="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
 BIN_DIR="$HOME/.local/bin"
 
 mkdir -p "$BIN_DIR"

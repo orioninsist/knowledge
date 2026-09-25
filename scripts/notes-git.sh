@@ -1,8 +1,39 @@
 #!/usr/bin/env bash
 
-NOTES_ROOT="/home/murat/Media/5-Documentation/Knowledge"
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+
+if command -v readlink >/dev/null 2>&1; then
+    SCRIPT_PATH="$(
+        readlink -f "$SCRIPT_PATH" 2>/dev/null ||
+            printf '%s\n' "$SCRIPT_PATH"
+    )"
+fi
+
+PROJECT="$(
+    cd "$(dirname "$SCRIPT_PATH")/.." &&
+        pwd
+)"
+
+RUNTIME_ENV="${KNOWLEDGE_RUNTIME_ENV:-$PROJECT/.runtime/personal/runtime.env}"
+NOTES_ROOT="${KNOWLEDGE_NOTES_ROOT:-}"
+
+if [ -z "$NOTES_ROOT" ] && [ -r "$RUNTIME_ENV" ]; then
+    NOTES_ROOT="$(
+        sed -n \
+            's/^WORKSPACE_ROOT=//p' \
+            "$RUNTIME_ENV" |
+        head -1
+    )"
+fi
 
 notes_git_assert() {
+    if [ -z "$NOTES_ROOT" ]; then
+        echo
+        echo "ERROR: Notes root is not configured."
+        echo "Runtime environment: $RUNTIME_ENV"
+        return 1
+    fi
+
     if [ ! -d "$NOTES_ROOT/.git" ]; then
         echo
         echo "ERROR: Local Notes Git repository is missing."
@@ -20,6 +51,11 @@ notes_git_assert() {
 
 notes_git_relative_path() {
     local path="$1"
+
+    if [ -z "$NOTES_ROOT" ]; then
+        echo "ERROR: Notes root is not configured." >&2
+        return 1
+    fi
 
     case "$path" in
         "$NOTES_ROOT"/*)

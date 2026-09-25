@@ -198,13 +198,19 @@ else
     fail 'KN command shell syntax'
 fi
 
-if bash -n \
-    scripts/live-workspace-sync.sh
-then
-    pass 'Watcher shell syntax'
-else
-    fail 'Watcher shell syntax'
-fi
+for shell_file in \
+    install.sh \
+    scripts/install-local-links.sh \
+    scripts/live-workspace-sync.sh \
+    scripts/notes-git.sh
+do
+    if bash -n "$shell_file"
+    then
+        pass "$shell_file syntax"
+    else
+        fail "$shell_file syntax"
+    fi
+done
 
 if node --check \
     static/js/visual-renderers.js
