@@ -131,54 +131,87 @@ Rules:
 * exactly one `.md` suffix
 * filenames are globally unique across all five MOCs
 
-## Command-Line Workflow
+## KN Commands
 
-The `kn` command is the main terminal entry point for reading, opening, creating, moving, and deleting notes.
+Use `kn` from the terminal to create, open, read, move, and delete Markdown notes.
 
-Open or create a note with an editor, MOC, and filename:
-
-```bash
-kn <editor> <moc> <filename.md>
-```
-
-Examples:
+### Open / Create
 
 ```bash
-kn nvim inbox linux-notes.md
-kn code projects project-plan.md
-kn zed resources reading-list.md
+kn code inbox note-name.md
 ```
 
-The `.md` suffix is optional for the open/create workflow. This command creates `linux-notes.md` if it does not already exist:
+If the note already exists, `kn` opens it from its real location. If it does not exist, `kn` creates it in the selected MOC.
+
+The `.md` suffix is optional for open/create commands:
 
 ```bash
-kn nvim inbox linux-notes
+kn nvim inbox note-name
 ```
 
-When arguments are omitted, `kn` becomes interactive. With `fzf` installed, it opens a picker for the missing value:
+Interactive forms are also supported:
 
 ```bash
 kn nvim
+kn nvim inbox
 ```
 
-This prompts for one of the five MOC sections, then lists Markdown files from that section. Selecting an existing file opens it. If no file is selected, `kn` asks for a filename, creates the note when needed, and opens it in the chosen editor.
+With `fzf` installed, missing values are selected from a terminal picker. Without `fzf`, `kn` falls back to the first available candidate or asks for a filename.
 
-Bash completion supports the same workflow:
+### Read
 
 ```bash
-kn nvim <Tab>
-kn nvim inbox <Tab>
+kn glow note-name.md
 ```
 
-The first completion lists MOCs. The second lists Markdown files from the selected MOC, with an API-backed completion source when the local runtime is available and a filesystem fallback when it is not.
+Shows the note in the terminal as a read-only view.
 
-Other supported commands:
+### Delete
 
 ```bash
-kn glow <filename.md>
-kn mv <filename.md> <moc>
-kn rm <filename.md>
+kn rm note-name.md
 ```
+
+Opens the note for review first, then asks for `y/N` confirmation before deleting it.
+
+### Move MOC
+
+```bash
+kn mv note-name.md archives
+```
+
+Moves the file to the target MOC after `y/N` confirmation.
+
+### Editors
+
+```text
+code
+zed
+nvim
+hx
+```
+
+Any executable editor command can be used, but these are the expected primary editors.
+
+### MOCs
+
+```text
+inbox
+projects
+areas
+resources
+archives
+```
+
+### Global Filename Selection
+
+The five MOC directories behave as one global filename pool for note selection.
+
+When the filename field is empty, completion returns the last used note if it still exists. When typing starts, completion filters all notes across all five MOCs together and returns at most 20 results.
+
+The `glow`, `rm`, `mv`, and editor open/create flows all use the same global filename completion system.
+
+Existing notes are always opened from their real location, regardless of which MOC is typed in the command. The MOC argument only decides where a new note is created when the filename does not already exist.
 
 ## Architecture
 

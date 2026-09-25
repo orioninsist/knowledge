@@ -52,6 +52,8 @@ Usage:
 
   Open/create:
     kn <editor> <moc> <filename.md>
+    kn <editor> <moc>
+    kn <editor>
 
   Move:
     kn mv <filename.md> <moc>
@@ -67,9 +69,18 @@ Examples:
     kn zed projects project-note.md
     kn hx resources linux-notes.md
     kn nvim areas german-notes.md
+    kn nvim inbox linux-notes
+    kn nvim
 
     kn mv linux-notes.md archives
     kn rm linux-notes.md
+
+Editors:
+
+    code
+    zed
+    nvim
+    hx
 
 MOC:
 
@@ -120,6 +131,56 @@ choose_from_list() {
     sed -n '1p'
 }
 
+api_base() {
+    local api_port
+
+    api_port="$(
+        sed -n \
+            's/^API_PORT=//p' \
+            "$RUNTIME_ENV" |
+        head -1
+    )"
+
+    [ -n "$api_port" ] || return 1
+
+    printf 'http://127.0.0.1:%s\n' "$api_port"
+}
+
+global_note_candidates() {
+    local prefix="${1:-}"
+    local api
+
+    api="$(api_base)" || return 0
+
+    curl \
+        -fsS \
+        --get \
+        --data-urlencode \
+        "prefix=$prefix" \
+        "$api/api/complete" \
+        2>/dev/null \
+        || true
+}
+
+global_note_filesystem_candidates() {
+    local prefix="${1:-}"
+
+    find \
+        "$ROOT/0-Inbox" \
+        "$ROOT/1-Projects" \
+        "$ROOT/2-Areas" \
+        "$ROOT/3-Resources" \
+        "$ROOT/4-Archives" \
+        -maxdepth 1 \
+        -type f \
+        -name "${prefix}*.md" \
+        -printf '%f\n' \
+        2>/dev/null \
+        | sort \
+        | awk 'NF && !seen[$0]++' \
+        | sed -n '1,20p'
+}
+
 choose_moc() {
     printf '%s\n' \
         inbox \
@@ -131,18 +192,13 @@ choose_moc() {
 }
 
 choose_note_name() {
-    local target_dir="$1"
     local selected=""
 
     selected="$(
-        find "$target_dir" \
-            -maxdepth 1 \
-            -type f \
-            -name '*.md' \
-            -printf '%f\n' \
-            2>/dev/null \
-            | sort \
-            | choose_from_list "filename"
+        {
+            global_note_candidates ""
+            global_note_filesystem_candidates ""
+        } | awk 'NF && !seen[$0]++' | choose_from_list "filename"
     )" || true
 
     if [ -n "$selected" ]; then
@@ -492,7 +548,7 @@ if [ -z "$TARGET_DIR" ]; then
 fi
 
 if [ -z "$NAME" ]; then
-    NAME="$(choose_note_name "$TARGET_DIR")"
+    NAME="$(choose_note_name)"
 fi
 
 if [ -z "$NAME" ]; then
