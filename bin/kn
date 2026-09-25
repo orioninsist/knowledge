@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-PROJECT="/home/murat/Media/6-Project/knowledge"
+PROJECT="$(
+    cd "$(dirname "${BASH_SOURCE[0]}")/.." &&
+        pwd
+)"
 
 # Local-only version history for personal Markdown notes.
 # This repository must never have a remote.
