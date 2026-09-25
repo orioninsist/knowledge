@@ -1,5 +1,6 @@
 import {
   existsSync,
+  mkdirSync,
   readdirSync,
   readFileSync,
   statSync,
@@ -14,6 +15,10 @@ import {
   resolve,
   sep,
 } from "node:path";
+
+import {
+  Database,
+} from "bun:sqlite";
 
 import {
   marked,
@@ -35,6 +40,12 @@ const PROJECT_ROOT =
 
 const STATIC_ROOT =
   join(PROJECT_ROOT, "static");
+
+const RUNTIME_DIR =
+  join(PROJECT_ROOT, ".runtime", "docs");
+
+const DB_PATH =
+  join(RUNTIME_DIR, "docs.db");
 
 const RENDER_API =
   process.env.KNOWLEDGE_RENDER_API ??
@@ -128,20 +139,184 @@ const firstHeading = (
 ): string =>
   body.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? "";
 
-type Doc = {
+const compactSummary = (
+  body: string,
+): string =>
+  body
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/[#>*_`\[\]()!-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 260);
+
+type DocRow = {
   path: string;
-  absolutePath: string;
+  absolute_path: string;
   folder: string;
   filename: string;
   title: string;
-  content: string;
   summary: string;
-  mtimeMs: number;
+  mtime_ms: number;
   size: number;
 };
 
-let docs: Doc[] = [];
-let indexedAt = 0;
+mkdirSync(
+  RUNTIME_DIR,
+  {
+    recursive: true,
+  },
+);
+
+const db = new Database(
+  DB_PATH,
+  {
+    create: true,
+  },
+);
+
+db.run("PRAGMA journal_mode = WAL");
+db.run("PRAGMA synchronous = NORMAL");
+db.run("PRAGMA temp_store = MEMORY");
+
+db.run(`
+CREATE TABLE IF NOT EXISTS docs_meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS documents (
+  path TEXT PRIMARY KEY,
+  absolute_path TEXT NOT NULL,
+  folder TEXT NOT NULL,
+  filename TEXT NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  content TEXT NOT NULL,
+  mtime_ms INTEGER NOT NULL,
+  size INTEGER NOT NULL,
+  scan_generation INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS documents_folder_idx
+ON documents(folder);
+
+CREATE INDEX IF NOT EXISTS documents_filename_idx
+ON documents(filename);
+
+CREATE INDEX IF NOT EXISTS documents_mtime_idx
+ON documents(mtime_ms);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+  title,
+  path,
+  folder,
+  filename,
+  summary,
+  content,
+  content='documents',
+  content_rowid='rowid',
+  tokenize='unicode61 remove_diacritics 2'
+);
+
+CREATE TRIGGER IF NOT EXISTS documents_fts_insert
+AFTER INSERT ON documents
+BEGIN
+  INSERT INTO documents_fts(
+    rowid,
+    title,
+    path,
+    folder,
+    filename,
+    summary,
+    content
+  )
+  VALUES (
+    new.rowid,
+    new.title,
+    new.path,
+    new.folder,
+    new.filename,
+    new.summary,
+    new.content
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS documents_fts_delete
+AFTER DELETE ON documents
+BEGIN
+  INSERT INTO documents_fts(
+    documents_fts,
+    rowid,
+    title,
+    path,
+    folder,
+    filename,
+    summary,
+    content
+  )
+  VALUES (
+    'delete',
+    old.rowid,
+    old.title,
+    old.path,
+    old.folder,
+    old.filename,
+    old.summary,
+    old.content
+  );
+END;
+
+CREATE TRIGGER IF NOT EXISTS documents_fts_update
+AFTER UPDATE OF
+  title,
+  path,
+  folder,
+  filename,
+  summary,
+  content
+ON documents
+BEGIN
+  INSERT INTO documents_fts(
+    documents_fts,
+    rowid,
+    title,
+    path,
+    folder,
+    filename,
+    summary,
+    content
+  )
+  VALUES (
+    'delete',
+    old.rowid,
+    old.title,
+    old.path,
+    old.folder,
+    old.filename,
+    old.summary,
+    old.content
+  );
+
+  INSERT INTO documents_fts(
+    rowid,
+    title,
+    path,
+    folder,
+    filename,
+    summary,
+    content
+  )
+  VALUES (
+    new.rowid,
+    new.title,
+    new.path,
+    new.folder,
+    new.filename,
+    new.summary,
+    new.content
+  );
+END;
+`);
 
 const walk = (
   dir: string,
@@ -186,56 +361,150 @@ const walk = (
   }
 };
 
+const existingQuery =
+  db.query(`
+    SELECT
+      mtime_ms,
+      size
+    FROM documents
+    WHERE path = ?
+  `);
+
+const touchQuery =
+  db.query(`
+    UPDATE documents
+    SET scan_generation = ?
+    WHERE path = ?
+  `);
+
+const upsertQuery =
+  db.query(`
+    INSERT INTO documents (
+      path,
+      absolute_path,
+      folder,
+      filename,
+      title,
+      summary,
+      content,
+      mtime_ms,
+      size,
+      scan_generation
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(path)
+    DO UPDATE SET
+      absolute_path = excluded.absolute_path,
+      folder = excluded.folder,
+      filename = excluded.filename,
+      title = excluded.title,
+      summary = excluded.summary,
+      content = excluded.content,
+      mtime_ms = excluded.mtime_ms,
+      size = excluded.size,
+      scan_generation = excluded.scan_generation
+  `);
+
+const indexDocument = (
+  absolutePath: string,
+  generation: number,
+) => {
+  const stat = statSync(absolutePath);
+  const mtimeMs = Math.trunc(stat.mtimeMs);
+  const size = stat.size;
+  const path = toRelative(absolutePath);
+
+  const current = existingQuery.get(
+    path,
+  ) as
+    | {
+        mtime_ms: number;
+        size: number;
+      }
+    | null;
+
+  if (
+    current &&
+    current.mtime_ms === mtimeMs &&
+    current.size === size
+  ) {
+    touchQuery.run(
+      generation,
+      path,
+    );
+    return;
+  }
+
+  const source = readFileSync(
+    absolutePath,
+    "utf8",
+  );
+  const body = stripFrontmatter(source);
+  const folder = dirname(path) === "."
+    ? ""
+    : dirname(path).split(sep).join("/");
+  const filename = basename(path);
+  const title = firstHeading(body) ||
+    basename(path, extname(path));
+  const summary = compactSummary(body);
+
+  upsertQuery.run(
+    path,
+    absolutePath,
+    folder,
+    filename,
+    title,
+    summary,
+    body,
+    mtimeMs,
+    size,
+    generation,
+  );
+};
+
 const buildIndex = () => {
+  const generation = Date.now();
   const files: string[] = [];
   walk(ROOT, files);
 
-  docs = files
-    .map((absolutePath) => {
-      const stat = statSync(absolutePath);
-      const source = readFileSync(absolutePath, "utf8");
-      const body = stripFrontmatter(source);
-      const path = toRelative(absolutePath);
-      const title = firstHeading(body) ||
-        basename(path, extname(path));
-      const compact = body
-        .replace(/```[\s\S]*?```/g, " ")
-        .replace(/[#>*_`\[\]()!-]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+  const tx = db.transaction(
+    () => {
+      for (const file of files) {
+        indexDocument(file, generation);
+      }
 
-      return {
-        path,
-        absolutePath,
-        folder:
-          dirname(path) === "."
-            ? ""
-            : dirname(path).split(sep).join("/"),
-        filename:
-          basename(path),
-        title,
-        content: body,
-        summary:
-          compact.slice(0, 260),
-        mtimeMs:
-          Math.trunc(stat.mtimeMs),
-        size:
-          stat.size,
-      };
-    })
-    .sort((a, b) =>
-      a.path.localeCompare(
-        b.path,
-        "tr",
-      ),
-    );
+      db.query(`
+        DELETE FROM documents
+        WHERE scan_generation != ?
+      `).run(generation);
 
-  indexedAt = Date.now();
+      db.query(`
+        INSERT INTO docs_meta(key, value)
+        VALUES('indexed_at', ?)
+        ON CONFLICT(key)
+        DO UPDATE SET value = excluded.value
+      `).run(String(generation));
+    },
+  );
+
+  tx();
+};
+
+const getIndexedAt = (): number => {
+  const row = db.query(`
+    SELECT value
+    FROM docs_meta
+    WHERE key = 'indexed_at'
+  `).get() as
+    | { value: string }
+    | null;
+
+  return Number(row?.value ?? 0);
 };
 
 const getDoc = (
   path: string,
-): Doc | null => {
+): DocRow | null => {
   const normalized = path
     .replaceAll("\\", "/")
     .replace(/^\/+/, "");
@@ -248,9 +517,40 @@ const getDoc = (
     return null;
   }
 
-  return docs.find(
-    (doc) => doc.path === normalized,
-  ) ?? null;
+  return db.query(`
+    SELECT
+      path,
+      absolute_path,
+      folder,
+      filename,
+      title,
+      summary,
+      mtime_ms,
+      size
+    FROM documents
+    WHERE path = ?
+    LIMIT 1
+  `).get(normalized) as DocRow | null;
+};
+
+const readDocContent = (
+  doc: DocRow,
+): string => {
+  if (
+    !isInside(ROOT, doc.absolute_path) ||
+    isIgnored(doc.absolute_path)
+  ) {
+    throw new Error(
+      "Document path is outside the documentation root.",
+    );
+  }
+
+  return stripFrontmatter(
+    readFileSync(
+      doc.absolute_path,
+      "utf8",
+    ),
+  );
 };
 
 const json = (
@@ -346,6 +646,18 @@ const staticResponse = (
   );
 };
 
+const escapeFTSTerm = (
+  value: string,
+): string =>
+  `"${value.replaceAll('"', '""')}"`;
+
+const buildFTSQuery = (
+  terms: string[],
+): string =>
+  terms
+    .map((term) => `${escapeFTSTerm(term)}*`)
+    .join(" AND ");
+
 const searchDocs = (
   url: URL,
 ) => {
@@ -369,92 +681,121 @@ const searchDocs = (
     Number(url.searchParams.get("offset") ?? 0) || 0,
   );
 
-  const terms = query
+  const rawTerms = query
     .split(/\s+/)
     .filter(Boolean);
 
-  const scored = docs
-    .map((doc) => {
-      const title = normalize(doc.title);
-      const path = normalize(doc.path);
-      const haystack = normalize(
-        [
-          doc.path,
-          doc.folder,
-          doc.filename,
-          doc.title,
-          doc.content,
-        ].join("\n"),
-      );
+  const where: string[] = [];
+  const params: Array<string | number> = [];
 
-      if (
-        folder &&
-        !normalize(doc.folder).includes(folder)
-      ) {
-        return null;
-      }
-
-      if (
-        filename &&
-        !normalize(doc.filename).includes(filename)
-      ) {
-        return null;
-      }
-
-      if (
-        titleFilter &&
-        !title.includes(titleFilter)
-      ) {
-        return null;
-      }
-
-      if (
-        description &&
-        !normalize(doc.summary).includes(description)
-      ) {
-        return null;
-      }
-
-      if (
-        terms.some(
-          (term) => !haystack.includes(term),
-        )
-      ) {
-        return null;
-      }
-
-      let score = 0;
-
-      for (const term of terms) {
-        if (title.includes(term)) score += 10;
-        if (path.includes(term)) score += 5;
-        if (haystack.includes(term)) score += 1;
-      }
-
-      return {
-        doc,
-        score,
-      };
-    })
-    .filter(Boolean) as Array<{
-      doc: Doc;
-      score: number;
-    }>;
-
-  scored.sort(
-    (a, b) =>
-      b.score - a.score ||
-      b.doc.mtimeMs - a.doc.mtimeMs ||
-      a.doc.path.localeCompare(
-        b.doc.path,
-        "tr",
-      ),
+  const ftsTerms = rawTerms.filter(
+    (term) => term.length >= 2,
   );
+  const prefixTerms = rawTerms.filter(
+    (term) => term.length < 2,
+  );
+  const ftsQuery = buildFTSQuery(ftsTerms);
+  const hasFts = Boolean(ftsQuery);
 
-  const page = scored.slice(
+  if (hasFts) {
+    where.push("documents_fts MATCH ?");
+    params.push(ftsQuery);
+  }
+
+  for (const term of prefixTerms) {
+    where.push(`(
+      d.title LIKE ? OR
+      d.path LIKE ? OR
+      d.filename LIKE ? OR
+      d.folder LIKE ?
+    )`);
+    params.push(
+      `${term}%`,
+      `%/${term}%`,
+      `${term}%`,
+      `${term}%`,
+    );
+  }
+
+  if (folder) {
+    where.push("d.folder LIKE ?");
+    params.push(`%${folder}%`);
+  }
+
+  if (filename) {
+    where.push("d.filename LIKE ?");
+    params.push(`%${filename}%`);
+  }
+
+  if (titleFilter) {
+    where.push("d.title LIKE ?");
+    params.push(`%${titleFilter}%`);
+  }
+
+  if (description) {
+    where.push("d.summary LIKE ?");
+    params.push(`%${description}%`);
+  }
+
+  const from = hasFts
+    ? `
+      FROM documents_fts
+      JOIN documents AS d
+        ON d.rowid = documents_fts.rowid
+    `
+    : `
+      FROM documents AS d
+    `;
+
+  const whereSQL = where.length
+    ? `WHERE ${where.join(" AND ")}`
+    : "";
+
+  const ranking = hasFts
+    ? `
+      bm25(
+        documents_fts,
+        10.0,
+        6.0,
+        4.0,
+        4.0,
+        2.0,
+        1.0
+      ) ASC,
+    `
+    : "";
+
+  const countRow = db.query(`
+    SELECT COUNT(*) AS total
+    ${from}
+    ${whereSQL}
+  `).get(...params) as { total: number };
+
+  const rows = db.query(`
+    SELECT
+      d.path,
+      d.absolute_path,
+      d.folder,
+      d.filename,
+      d.title,
+      d.summary,
+      d.mtime_ms,
+      d.size
+    ${from}
+    ${whereSQL}
+    ORDER BY
+      ${ranking}
+      d.mtime_ms DESC,
+      d.path COLLATE NOCASE ASC
+    LIMIT ?
+    OFFSET ?
+  `).all(
+    ...params,
+    PAGE_SIZE,
     offset,
-    offset + PAGE_SIZE,
-  );
+  ) as DocRow[];
+
+  const total = Number(countRow?.total ?? 0);
 
   return {
     query,
@@ -467,17 +808,17 @@ const searchDocs = (
       aliases: [],
       tags: [],
     },
-    total: scored.length,
-    count: page.length,
+    total,
+    count: rows.length,
     offset,
     pageSize: PAGE_SIZE,
     hasMore:
-      offset + page.length < scored.length,
+      offset + rows.length < total,
     nextOffset:
-      offset + page.length < scored.length
-        ? offset + page.length
+      offset + rows.length < total
+        ? offset + rows.length
         : null,
-    results: page.map(({ doc }) => ({
+    results: rows.map((doc) => ({
       title: doc.title,
       url: `/?path=${encodeURIComponent(doc.path)}`,
       section: doc.folder || "Documentation",
@@ -485,7 +826,7 @@ const searchDocs = (
       aliases: [],
       tags: [],
       summary: doc.summary,
-      updatedAt: doc.mtimeMs,
+      updatedAt: doc.mtime_ms,
     })),
   };
 };
@@ -500,11 +841,10 @@ markedRenderer.code = ({
   text: string;
   lang?: string;
 }) => {
-  const language =
-    String(lang ?? "")
-      .trim()
-      .split(/\s+/)[0]
-      .toLowerCase();
+  const language = String(lang ?? "")
+    .trim()
+    .split(/\s+/)[0]
+    .toLowerCase();
 
   if (
     [
@@ -522,10 +862,10 @@ markedRenderer.code = ({
 };
 
 const docHTML = (
-  doc: Doc,
+  doc: DocRow,
 ): string =>
   marked.parse(
-    doc.content,
+    readDocContent(doc),
     {
       async: false,
       renderer: markedRenderer,
@@ -533,7 +873,7 @@ const docHTML = (
   ) as string;
 
 const pageHTML = (
-  selectedDoc: Doc | null,
+  selectedDoc: DocRow | null,
 ) => {
   const title = selectedDoc
     ? `${selectedDoc.title} · Documentation`
@@ -557,7 +897,7 @@ const pageHTML = (
             <span class="note-stat-separator" aria-hidden="true">·</span>
             <span class="note-stat">${Math.max(1, Math.round(selectedDoc.size / 1024))} KB</span>
             <span class="note-stat-separator" aria-hidden="true">·</span>
-            <time class="note-stat note-updated" datetime="${new Date(selectedDoc.mtimeMs).toISOString()}">Updated ${escapeHTML(new Date(selectedDoc.mtimeMs).toLocaleString("tr-TR"))}</time>
+            <time class="note-stat note-updated" datetime="${new Date(selectedDoc.mtime_ms).toISOString()}">Updated ${escapeHTML(new Date(selectedDoc.mtime_ms).toLocaleString("tr-TR"))}</time>
           </div>
           <p class="note-description">${escapeHTML(selectedDoc.path)}</p>
         </header>
@@ -569,12 +909,7 @@ const pageHTML = (
         <header class="section-header">
           <h1>Documentation</h1>
         </header>
-        <p class="section-static-message">Use Alt + K to search read-only Markdown documentation.</p>
-        <div class="home-card home-note-card">
-          <strong>Read-only</strong>
-          <p>This browser indexes Markdown files under <code>${escapeHTML(ROOT)}</code> and ignores <code>${escapeHTML(IGNORES.join(", "))}</code>.</p>
-          <p>Create, edit, move, and delete operations are disabled.</p>
-        </div>
+        <p class="section-static-message">Use Alt + K to search documentation.</p>
       </section>
     `;
 
@@ -633,15 +968,14 @@ const proxyRender = async (
   request: Request,
   pathname: string,
 ): Promise<Response> => {
-  const upstream =
-    await fetch(
-      `${RENDER_API}${pathname}`,
-      {
-        method: request.method,
-        headers: request.headers,
-        body: request.body,
-      },
-    );
+  const upstream = await fetch(
+    `${RENDER_API}${pathname}`,
+    {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+    },
+  );
 
   return new Response(
     upstream.body,
@@ -689,20 +1023,26 @@ const server = Bun.serve({
       }, 405);
     }
 
-    const staticFile =
-      staticResponse(url.pathname);
+    const staticFile = staticResponse(
+      url.pathname,
+    );
 
     if (staticFile) {
       return staticFile;
     }
 
     if (url.pathname === "/health") {
+      const row = db.query(`
+        SELECT COUNT(*) AS count
+        FROM documents
+      `).get() as { count: number };
+
       return json({
         ok: true,
         root: ROOT,
         ignores: IGNORES,
-        indexedDocs: docs.length,
-        indexedAt,
+        indexedDocs: row.count,
+        indexedAt: getIndexedAt(),
         readOnly: true,
       });
     }
@@ -725,15 +1065,14 @@ const server = Bun.serve({
         path: doc.path,
         folder: doc.folder,
         filename: doc.filename,
-        updatedAt: doc.mtimeMs,
+        updatedAt: doc.mtime_ms,
         html: docHTML(doc),
       });
     }
 
-    const selectedDoc =
-      getDoc(
-        String(url.searchParams.get("path") ?? ""),
-      );
+    const selectedDoc = getDoc(
+      String(url.searchParams.get("path") ?? ""),
+    );
 
     return text(
       pageHTML(selectedDoc),
@@ -747,4 +1086,4 @@ console.log(
 );
 console.log(`root=${ROOT}`);
 console.log(`ignored=${IGNORES.join(":")}`);
-console.log(`indexed=${docs.length}`);
+console.log(`database=${DB_PATH}`);
