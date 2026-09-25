@@ -99,6 +99,62 @@ find_note() {
         2>/dev/null
 }
 
+normalize_note_name() {
+    local name="$1"
+
+    if [[ "$name" != *.md ]]; then
+        name="$name.md"
+    fi
+
+    printf '%s\n' "$name"
+}
+
+choose_from_list() {
+    local prompt="$1"
+
+    if command -v fzf >/dev/null 2>&1; then
+        fzf --prompt="$prompt> "
+        return
+    fi
+
+    sed -n '1p'
+}
+
+choose_moc() {
+    printf '%s\n' \
+        inbox \
+        projects \
+        areas \
+        resources \
+        archives \
+        | choose_from_list "moc"
+}
+
+choose_note_name() {
+    local target_dir="$1"
+    local selected=""
+
+    selected="$(
+        find "$target_dir" \
+            -maxdepth 1 \
+            -type f \
+            -name '*.md' \
+            -printf '%f\n' \
+            2>/dev/null \
+            | sort \
+            | choose_from_list "filename"
+    )" || true
+
+    if [ -n "$selected" ]; then
+        printf '%s\n' "$selected"
+        return
+    fi
+
+    printf 'filename.md> ' >&2
+    read -r selected
+    printf '%s\n' "$selected"
+}
+
 validate_note_name() {
     local filename="$1"
 
@@ -408,16 +464,24 @@ fi
 # NORMAL OPEN / CREATE
 #
 
-if [ "$#" -ne 3 ]; then
+if [ "$#" -lt 1 ] || [ "$#" -gt 3 ]; then
     usage
     exit 1
 fi
 
 EDITOR_CMD="$1"
-MOC="$2"
-NAME="$3"
+MOC="${2:-}"
+NAME="${3:-}"
 
-validate_note_name "$NAME" || exit 1
+if [ -z "$MOC" ]; then
+    MOC="$(choose_moc)"
+fi
+
+if [ -z "$MOC" ]; then
+    echo
+    echo "ERROR: MOC is required."
+    exit 1
+fi
 
 TARGET_DIR="$(moc_dir "$MOC")"
 
@@ -426,6 +490,20 @@ if [ -z "$TARGET_DIR" ]; then
     echo "ERROR: Unknown MOC: $MOC"
     exit 1
 fi
+
+if [ -z "$NAME" ]; then
+    NAME="$(choose_note_name "$TARGET_DIR")"
+fi
+
+if [ -z "$NAME" ]; then
+    echo
+    echo "ERROR: Filename is required."
+    exit 1
+fi
+
+NAME="$(normalize_note_name "$NAME")"
+
+validate_note_name "$NAME" || exit 1
 
 if ! command -v "$EDITOR_CMD" >/dev/null 2>&1; then
     echo

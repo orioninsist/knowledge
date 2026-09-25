@@ -131,6 +131,55 @@ Rules:
 * exactly one `.md` suffix
 * filenames are globally unique across all five MOCs
 
+## Command-Line Workflow
+
+The `kn` command is the main terminal entry point for reading, opening, creating, moving, and deleting notes.
+
+Open or create a note with an editor, MOC, and filename:
+
+```bash
+kn <editor> <moc> <filename.md>
+```
+
+Examples:
+
+```bash
+kn nvim inbox linux-notes.md
+kn code projects project-plan.md
+kn zed resources reading-list.md
+```
+
+The `.md` suffix is optional for the open/create workflow. This command creates `linux-notes.md` if it does not already exist:
+
+```bash
+kn nvim inbox linux-notes
+```
+
+When arguments are omitted, `kn` becomes interactive. With `fzf` installed, it opens a picker for the missing value:
+
+```bash
+kn nvim
+```
+
+This prompts for one of the five MOC sections, then lists Markdown files from that section. Selecting an existing file opens it. If no file is selected, `kn` asks for a filename, creates the note when needed, and opens it in the chosen editor.
+
+Bash completion supports the same workflow:
+
+```bash
+kn nvim <Tab>
+kn nvim inbox <Tab>
+```
+
+The first completion lists MOCs. The second lists Markdown files from the selected MOC, with an API-backed completion source when the local runtime is available and a filesystem fallback when it is not.
+
+Other supported commands:
+
+```bash
+kn glow <filename.md>
+kn mv <filename.md> <moc>
+kn rm <filename.md>
+```
+
 ## Architecture
 
 ```text
