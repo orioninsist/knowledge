@@ -191,6 +191,14 @@ echo
 echo '--- Syntax ---'
 
 if bash -n \
+    bin/kn
+then
+    pass 'KN command shell syntax'
+else
+    fail 'KN command shell syntax'
+fi
+
+if bash -n \
     scripts/live-workspace-sync.sh
 then
     pass 'Watcher shell syntax'
