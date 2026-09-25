@@ -1,31 +1,39 @@
 # Knowledge
 
-A local-first, Markdown-first Second Brain system built around plain files, Hugo, SQLite FTS5, Bun, and a small set of text-based visual renderers.
+Knowledge is a local-first Markdown knowledge system. It keeps permanent notes as plain files, serves them in the browser with Hugo, indexes them with SQLite FTS5, and provides a small terminal command named `kn` for daily note work.
 
-The core idea is simple:
+The project has three local surfaces:
 
-> Your notes are Markdown files. Everything else is replaceable infrastructure.
+```text
+http://127.0.0.1:1314/              Personal notes home and search
+http://127.0.0.1:1314/productivity/ Productivity tools
+http://127.0.0.1:1320/              Read-only documentation browser
+```
 
-Knowledge does not store notes in a proprietary database. The filesystem is the source of truth, while search indexes, rendered diagrams, runtime files, and caches are derived data that can be rebuilt.
+Everything is designed around one rule: Markdown files are the source of truth. Runtime databases, generated Hugo configuration, visual render caches, and systemd units are disposable and can be rebuilt.
 
-## Design Goals
+## What It Does
 
-- Plain Markdown as the permanent knowledge format
-- Local-first and application-independent
-- No plugin ecosystem required
-- No proprietary note database
-- Incremental indexing instead of filesystem-wide rescans
-- Fast browser-based reading and search
-- Portable command-line workflow
-- Reproducible installation
-- Minimal maintenance
-- Disposable runtime state
-- Git-friendly source code
-- Long-term data ownership
+- Keeps personal notes in five fixed Markdown folders.
+- Opens, creates, reads, moves, and deletes notes from the terminal with `kn`.
+- Searches notes from the browser with SQLite FTS5.
+- Serves personal notes with Hugo at `http://127.0.0.1:1314/`.
+- Serves external documentation Markdown as a separate read-only browser at `http://127.0.0.1:1320/`.
+- Renders Mermaid, D2, Typst, Canvas, and calendar blocks inside notes.
+- Provides a local productivity page for clock, weather, prayer times, and focus timers.
+- Uses systemd user services so everything starts and restarts locally.
 
-## Knowledge Structure
+## Repository Role
 
-A workspace contains exactly five MOC directories:
+This GitHub repository stores the Knowledge application code only.
+
+Personal Markdown notes live outside the project directory. The notes workspace is local-only and may have its own local Git history, but it must not have a remote.
+
+The installed `kn` command at `~/.local/bin/kn` is only a symlink to this repository's `bin/kn`. The real source stays in the project directory.
+
+## Personal Notes Workspace
+
+A personal workspace must contain exactly five folders:
 
 ```text
 Knowledge/
@@ -34,71 +42,27 @@ Knowledge/
 ├── 2-Areas/
 ├── 3-Resources/
 └── 4-Archives/
-````
-
-Only Markdown files belong inside these directories.
-
-The five sections follow an Inbox + PARA-style organization model:
-
-* `Inbox` — captured notes waiting to be organized
-* `Projects` — active outcomes and projects
-* `Areas` — ongoing responsibilities and interests
-* `Resources` — reference material
-* `Archives` — inactive or completed material
-
-Notes can move between these sections without changing their identity.
-
-## Source of Truth
-
-The permanent data model is intentionally small:
-
-```text
-Markdown files
-+
-filesystem location
-+
-front matter
-+
-links
 ```
 
-SQLite is not the source of truth.
+Section meaning:
 
-Rendered SVG files are not the source of truth.
+- `0-Inbox` captures new notes.
+- `1-Projects` stores active project notes.
+- `2-Areas` stores ongoing responsibilities and interests.
+- `3-Resources` stores reference material.
+- `4-Archives` stores inactive or completed notes.
 
-Hugo output is not the source of truth.
+Only Markdown files belong in these folders. The folder decides the MOC; front matter does not duplicate MOC state.
 
-Runtime configuration is not the source of truth.
+## Filename Rules
 
-All of those can be rebuilt from the Markdown workspace.
-
-## Canonical Front Matter
-
-New notes use the following template:
-
-```yaml
----
-title:
-description:
-status:
-aliases: []
-tags: []
----
-```
-
-MOC information is not duplicated in front matter.
-
-The physical directory determines whether a note belongs to Inbox, Projects, Areas, Resources, or Archives.
-
-## Filename Contract
-
-Markdown filenames follow one strict rule:
+Personal note filenames must match this pattern:
 
 ```text
 ^[a-z0-9]+(?:-[a-z0-9]+)*\.md$
 ```
 
-Examples:
+Valid examples:
 
 ```text
 linux.md
@@ -108,7 +72,7 @@ note1.md
 project-2026.md
 ```
 
-Rejected examples:
+Invalid examples:
 
 ```text
 Linux.md
@@ -121,212 +85,309 @@ note-.md
 note--name.md
 ```
 
-Rules:
+Filenames are globally unique across all five MOCs.
 
-* lowercase English letters only
-* numbers `0-9` are allowed
-* hyphen is the only separator
-* no spaces
-* no underscores
-* exactly one `.md` suffix
-* filenames are globally unique across all five MOCs
+## Front Matter
 
-## KN Commands
+New notes use this shape:
 
-Use `kn` from the terminal to create, open, read, move, and delete Markdown notes.
-
-### Open / Create
-
-```bash
-kn code inbox note-name.md
+```yaml
+---
+title:
+description:
+status:
+aliases: []
+tags: []
+---
 ```
 
-If the note already exists, `kn` opens it from its real location. If it does not exist, `kn` creates it in the selected MOC.
+Supported `status` values are free text, but the UI is prepared for:
 
-The `.md` suffix is optional for open/create commands:
+```text
+todo
+in-progress
+review
+done
+```
+
+## Install
+
+Configure the notes workspace in:
+
+```text
+~/.config/knowledge/workspaces.toml
+```
+
+Example:
+
+```toml
+[[workspace]]
+root = "/home/murat/Media/5-Documentation/Knowledge"
+```
+
+Then run:
+
+```bash
+cd /home/murat/Media/6-Project/knowledge
+./install.sh
+```
+
+The installer:
+
+- installs npm dependencies with `npm ci`;
+- generates runtime Hugo config under `.runtime/personal/`;
+- builds the personal note index;
+- builds the documentation browser index;
+- links `~/.local/bin/kn` to `bin/kn`;
+- links Bash completion;
+- installs and restarts systemd user services;
+- runs the smoke test.
+
+## Services
+
+The installer manages these user services:
+
+```text
+knowledge-personal-search.service   Bun API for personal notes
+knowledge-personal-web.service      Hugo web server on port 1314
+knowledge-personal-watch.service    inotify-based personal note index sync
+knowledge-docs-browser.service      read-only docs browser on port 1320
+knowledge-docs-watch.service        documentation index refresh watcher
+```
+
+Useful checks:
+
+```bash
+systemctl --user status knowledge-personal-search.service
+systemctl --user status knowledge-personal-web.service
+systemctl --user status knowledge-docs-browser.service
+systemctl --user status knowledge-docs-watch.service
+```
+
+## KN Command
+
+Use `kn` for personal notes.
+
+Open or create a note:
+
+```bash
+kn nvim inbox note-name.md
+kn code projects project-note.md
+kn hx resources linux-notes.md
+```
+
+The `.md` suffix is optional for open/create:
 
 ```bash
 kn nvim inbox note-name
 ```
 
-Interactive forms are also supported:
+Interactive usage:
 
 ```bash
 kn nvim
 kn nvim inbox
 ```
 
-With `fzf` installed, missing values are selected from a terminal picker. Without `fzf`, `kn` falls back to the first available candidate or asks for a filename.
-
-### Read
+Read a note in the terminal:
 
 ```bash
 kn glow note-name.md
 ```
 
-Shows the note in the terminal as a read-only view.
-
-### Delete
-
-```bash
-kn rm note-name.md
-```
-
-Opens the note for review first, then asks for `y/N` confirmation before deleting it.
-
-### Move MOC
+Move a note between MOCs:
 
 ```bash
 kn mv note-name.md archives
 ```
 
-Moves the file to the target MOC after `y/N` confirmation.
+Delete a note:
 
-### Editors
-
-```text
-code
-zed
-nvim
-hx
+```bash
+kn rm note-name.md
 ```
 
-Any executable editor command can be used, but these are the expected primary editors.
+Move and delete ask for confirmation. Delete opens the note read-only first for review.
 
-### MOCs
+## Global Filename Selection
 
-```text
-inbox
-projects
-areas
-resources
-archives
-```
+All five MOC folders are treated as one filename pool.
 
-### Global Filename Selection
+- `kn glow`, `kn rm`, `kn mv`, and editor open/create use the same global filename completion.
+- Empty filename completion returns the last used note if it still exists.
+- Typed filename completion searches all five MOCs and returns up to 20 results.
+- Existing notes always open from their real location.
+- The MOC argument only decides where a new note is created.
 
-The five MOC directories behave as one global filename pool for note selection.
+## Browser Search
 
-When the filename field is empty, completion returns the last used note if it still exists. When typing starts, completion filters all notes across all five MOCs together and returns at most 20 results.
-
-The `glow`, `rm`, `mv`, and editor open/create flows all use the same global filename completion system.
-
-Existing notes are always opened from their real location, regardless of which MOC is typed in the command. The MOC argument only decides where a new note is created when the filename does not already exist.
-
-## Architecture
+Personal notes are searched at:
 
 ```text
-Markdown workspace
-        │
-        ▼
-Filesystem events
-        │
-        ▼
-Incremental indexer
-        │
-        ▼
-SQLite FTS5
-        │
-        ▼
-Bun / TypeScript API
-        │
-        ├── Search
-        ├── Completion
-        ├── Last note
-        ├── D2 rendering
-        └── Typst rendering
-        │
-        ▼
-Hugo
-        │
-        ▼
-Browser
+http://127.0.0.1:1314/
 ```
 
-The live filesystem watcher processes individual file events.
+Use `Alt + K` to open search. Search returns clickable note results. Filters are available for folder, filename, title, description, status, alias, and tag.
 
-Create, edit, delete, and move operations do not require a complete workspace rescan.
+The home page intentionally shows only note statistics and links to the three local surfaces.
 
-## Technology Stack
+## Documentation Browser
 
-### Core
+External Markdown documentation is served at:
 
-* Markdown — permanent note format
-* Hugo — web rendering
-* Goldmark — Markdown rendering through Hugo
-* Bun — TypeScript runtime
-* TypeScript — indexing, runtime API, workspace logic, note creation
-* SQLite FTS5 — search index
-* Bash — watcher and command-line integration
-* systemd user services — process management
-* inotify — filesystem event monitoring
+```text
+http://127.0.0.1:1320/
+```
 
-### Browser
+By default it scans:
 
-* JavaScript
-* HTML
-* CSS
+```text
+/home/murat/Media/5-Documentation
+```
 
-### Visual Languages
+and ignores the personal Knowledge workspace:
 
-* Mermaid
-* D2
-* Typst
+```text
+/home/murat/Media/5-Documentation/Knowledge
+```
 
-These visual languages live inside Markdown fenced code blocks.
+The documentation browser is read-only. It supports search and reading only. Create, edit, move, and delete operations are rejected by the server.
 
-The Markdown file remains the source of truth.
+The documentation index is built by:
+
+```bash
+bun scripts/build-docs-index.ts
+```
+
+and refreshed by:
+
+```text
+knowledge-docs-watch.service
+```
 
 ## Productivity
 
-Knowledge includes a separate local productivity workspace. It does not read, write, search, or mutate the Markdown knowledge system.
-
-The Productivity surface is intentionally limited to four tools:
-
-* `World Clock` — persistent saved cities with live local times and quick city presets
-* `Weather` — persistent city selection, current conditions, and seven-day forecast
-* `Prayer` — persistent city/adhan selection, five daily prayer times, background prayer alerts, and adhan preview/playback
-* `Focus` — configurable Pomodoro cycles plus a separate uninterrupted Focus Mode with desktop notification support
-
-Productivity state is stored locally in browser storage. Weather uses Open-Meteo, prayer times use AlAdhan with the Diyanet calculation method, and city lookup uses Open-Meteo geocoding. The Productivity interface is the local Hugo-served web app at `http://127.0.0.1:1314/productivity/`. Productivity state is kept in browser storage and desktop alerts use the browser Notification API.
-
-The old Today, Plan, generic countdown, and stopwatch surfaces are intentionally not part of Productivity.
-
-Primary local interface:
+The productivity page is separate from the Markdown knowledge system:
 
 ```text
 http://127.0.0.1:1314/productivity/
 ```
 
-Optional desktop shell:
+It includes:
 
-```bash
-bun run productivity:desktop
-```
+- World Clock
+- Weather
+- Prayer Times
+- Focus
 
-## Visual Notes
+State is stored in browser storage. Weather and city lookup use Open-Meteo. Prayer times use AlAdhan with the Diyanet calculation method. The productivity page does not read, write, move, delete, or index Markdown notes.
 
-A single Markdown note can contain normal prose and rendered visual blocks.
+## Visual Blocks
 
-### Mermaid
+Markdown notes can contain visual fenced code blocks.
+
+Mermaid:
 
 ````markdown
 ```mermaid
 flowchart LR
-    Capture --> Organize
-    Organize --> Distill
-    Distill --> Express
+  Capture --> Organize
+  Organize --> Distill
+  Distill --> Express
 ```
 ````
 
-Mermaid renders in the browser.
-
-### D2
+D2:
 
 ````markdown
 ```d2
 client -> api
 api -> database
-api -> cache
 ```
 ````
+
+Typst:
+
+````markdown
+```typst
+#set page(width: auto, height: auto)
+Hello from Typst
+```
+````
+
+Calendar:
+
+````markdown
+```calendar
+src: /absolute/path/to/calendar.ics
+view: week
+```
+````
+
+## Local Checks
+
+Run the full installer and smoke test:
+
+```bash
+./install.sh
+```
+
+Run smoke directly:
+
+```bash
+tests/smoke.sh
+```
+
+Check docs health:
+
+```bash
+curl -fsS http://127.0.0.1:1320/health
+```
+
+Check personal search:
+
+```bash
+curl -fsS 'http://127.0.0.1:8788/api/search?q=linux'
+```
+
+Check docs search:
+
+```bash
+curl -fsS 'http://127.0.0.1:1320/api/search?q=markdown'
+```
+
+## Architecture
+
+```text
+Personal Markdown workspace
+        │
+        ├── inotify watcher
+        │       └── incremental SQLite FTS5 index
+        │
+        ├── Hugo web server
+        │       └── browser UI on 1314
+        │
+        └── kn terminal command
+
+External documentation Markdown
+        │
+        ├── docs indexer / docs watcher
+        │       └── SQLite FTS5 docs index
+        │
+        └── read-only docs browser on 1320
+```
+
+Permanent data stays in Markdown files. Runtime data stays under `.runtime/` and can be rebuilt.
+
+## Maintenance Rule
+
+Prefer native local tools over custom infrastructure:
+
+- Hugo for note pages
+- SQLite FTS5 for search
+- Bun for small local APIs and indexers
+- systemd user services for process management
+- inotify for filesystem change detection
+- Git for source control and local note history
+
+Do not add a database or service unless it replaces real complexity.

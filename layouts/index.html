@@ -6,344 +6,84 @@
     class="home-block knowledge-stats"
     id="knowledge-stats"
   >
-    <h1>Statistics</h1>
+    <div class="home-headline">
+      <div>
+        <p class="eyebrow">Local Knowledge</p>
+        <h1>Statistics</h1>
+      </div>
+
+      <div class="home-routes" aria-label="Knowledge routes">
+        <a href="/">Notes</a>
+        <a href="/productivity/">Productivity</a>
+        <a href="http://127.0.0.1:1320/">Documentation</a>
+      </div>
+    </div>
 
     <div class="stats-grid">
       <span>
         <strong>Total</strong>
-        <b id="stat-total-notes">—</b>
+        <b id="stat-total-notes">-</b>
       </span>
 
       <span>
         <strong>Inbox</strong>
-        <b id="stat-inbox">—</b>
+        <b id="stat-inbox">-</b>
       </span>
 
       <span>
         <strong>Projects</strong>
-        <b id="stat-projects">—</b>
+        <b id="stat-projects">-</b>
       </span>
 
       <span>
         <strong>Areas</strong>
-        <b id="stat-areas">—</b>
+        <b id="stat-areas">-</b>
       </span>
 
       <span>
         <strong>Resources</strong>
-        <b id="stat-resources">—</b>
+        <b id="stat-resources">-</b>
       </span>
 
       <span>
         <strong>Archives</strong>
-        <b id="stat-archives">—</b>
+        <b id="stat-archives">-</b>
       </span>
 
       <span>
         <strong>Tags</strong>
-        <b id="stat-unique-tags">—</b>
+        <b id="stat-unique-tags">-</b>
       </span>
 
       <span>
         <strong>Tag Uses</strong>
-        <b id="stat-tag-uses">—</b>
+        <b id="stat-tag-uses">-</b>
       </span>
 
       <span>
         <strong>Todo</strong>
-        <b id="stat-status-todo">—</b>
+        <b id="stat-status-todo">-</b>
       </span>
 
       <span>
         <strong>In Progress</strong>
-        <b id="stat-status-in-progress">—</b>
+        <b id="stat-status-in-progress">-</b>
       </span>
 
       <span>
         <strong>Review</strong>
-        <b id="stat-status-review">—</b>
+        <b id="stat-status-review">-</b>
       </span>
 
       <span>
         <strong>Done</strong>
-        <b id="stat-status-done">—</b>
+        <b id="stat-status-done">-</b>
       </span>
 
       <span>
         <strong>Size</strong>
-        <b id="stat-total-size">—</b>
+        <b id="stat-total-size">-</b>
       </span>
-    </div>
-  </section>
-
-  <section class="home-block">
-    <h2>Shortcuts</h2>
-
-    <div class="home-inline">
-      <div class="home-card">
-        <strong>Alt + K</strong>
-        <span>Search</span>
-      </div>
-
-      <div class="home-card">
-        <strong>Alt + H</strong>
-        <span>Home</span>
-      </div>
-    </div>
-
-    <a
-      class="home-productivity-link"
-      href="/productivity/"
-    >
-      <span>
-        <strong>Productivity</strong>
-        <small>
-          Today · Focus · Plan · Time
-        </small>
-      </span>
-
-      <b aria-hidden="true">→</b>
-    </a>
-  </section>
-
-  <section class="home-block">
-    <h2>KN Commands</h2>
-
-    <p class="home-section-intro">
-      Terminalden not oluşturma, açma, okuma, taşıma ve silme.
-    </p>
-
-    <div class="daily-grid">
-
-      <div class="daily-row">
-        <span class="daily-label">
-          Open / Create
-        </span>
-
-        <div class="daily-move">
-          <code>kn code inbox note-name.md</code>
-          <span class="daily-hint">
-            Varsa mevcut dosyayı açar · yoksa seçilen MOC'ta oluşturur
-          </span>
-        </div>
-      </div>
-
-      <div class="daily-row">
-        <span class="daily-label">
-          Read
-        </span>
-
-        <div class="daily-move">
-          <code>kn glow note-name.md</code>
-          <span class="daily-hint">
-            Notu terminalde salt okunur görüntüler
-          </span>
-        </div>
-      </div>
-
-      <div class="daily-row">
-        <span class="daily-label">
-          Delete
-        </span>
-
-        <div class="daily-move">
-          <code>kn rm note-name.md</code>
-          <span class="daily-hint">
-            Silmeden önce y/N onayı ister
-          </span>
-        </div>
-      </div>
-
-      <div class="daily-row">
-        <span class="daily-label">
-          Move MOC
-        </span>
-
-        <div class="daily-move">
-          <code>kn mv note-name.md archives</code>
-          <span class="daily-hint">
-            Dosyayı hedef MOC'a taşır · y/N onayı ister
-          </span>
-        </div>
-      </div>
-
-      <div class="daily-row">
-        <span class="daily-label">
-          Editors
-        </span>
-
-        <div class="moc-list">
-          <code>code</code>
-          <code>zed</code>
-          <code>nvim</code>
-          <code>hx</code>
-        </div>
-      </div>
-
-      <div class="daily-row">
-        <span class="daily-label">
-          MOCs
-        </span>
-
-        <div class="moc-list">
-          <code>inbox</code>
-          <code>projects</code>
-          <code>areas</code>
-          <code>resources</code>
-          <code>archives</code>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="home-card home-note-card">
-      <strong>Global filename selection</strong>
-
-      <p>
-        Beş MOC dosya seçiminde tek bir global havuzdur.
-        Dosya adı alanı boşken son kullanılan not önerilir.
-        Yazmaya başladığında tüm notlar birlikte filtrelenir ve
-        en fazla <strong>20 sonuç</strong> gösterilir.
-      </p>
-
-      <p>
-        <code>glow</code>,
-        <code>rm</code>,
-        <code>mv</code> ve editor open/create
-        aynı global filename completion sistemini kullanır.
-      </p>
-
-      <p>
-        Mevcut bir dosya hangi MOC'ta bulunursa bulunsun gerçek
-        konumundan açılır. Komutta verilen MOC yalnızca dosya
-        mevcut değilse yeni notun oluşturulacağı yeri belirler.
-      </p>
-    </div>
-  </section>
-
-  <section class="home-block">
-    <h2>Frontmatter</h2>
-
-    <div class="home-card">
-      <pre><code>---
-title: AI Music
-description: AI music production notes
-status: in-progress
-aliases:
-  - AI Music
-  - Music AI
-tags:
-  - ai
-  - music
-</code></pre>
-
-        <p>
-          <strong>Status:</strong>
-          <code>todo</code> ·
-          <code>in-progress</code> ·
-          <code>review</code> ·
-          <code>done</code> ·
-          <span>boş bırakılabilir</span>
-        </p>
-    </div>
-  </section>
-
-  <section class="home-block">
-    <h2>Knowledge Query</h2>
-
-    <div class="home-card knowledge-query-guide">
-      <p>
-        Mevcut notları filtreler ve eşleşen notları tıklanabilir linkler olarak listeler.
-        Yeni not oluşturmaz veya mevcut notları değiştirmez.
-      </p>
-
-      <pre><code>```knowledge
-filename: krizim-geldi
-```</code></pre>
-
-      <p>
-        <strong>Filters:</strong>
-        <code>filename</code> ·
-        <code>content</code> ·
-        <code>title</code> ·
-        <code>moc</code> ·
-        <code>tags</code> ·
-        <code>description</code> ·
-        <code>status</code> ·
-        <code>aliases</code>
-      </p>
-
-      <p>
-        Birden fazla filtre aynı blokta kullanılırsa <strong>AND</strong> olarak uygulanır.
-      </p>
-
-      <pre><code>```knowledge
-moc: areas
-tags: krizimgeldi
-status: active
-```</code></pre>
-
-      <p>
-        <strong>MOCs:</strong>
-        <code>inbox</code> ·
-        <code>projects</code> ·
-        <code>areas</code> ·
-        <code>resources</code> ·
-        <code>archives</code>
-      </p>
-    </div>
-  </section>
-
-  <section class="home-block">
-    <h2>Calendar</h2>
-
-    <p class="home-section-intro">
-      Yerel bir <code>.ics</code> takvimini Markdown notunun içinde gösterir.
-    </p>
-
-    <div class="home-card calendar-guide">
-
-      <div class="calendar-guide-part">
-        <strong>Usage</strong>
-
-        <pre><code>```calendar
-src: /absolute/path/to/calendar.ics
-view: week
-```</code></pre>
-      </div>
-
-      <div class="calendar-guide-part">
-        <strong>Views</strong>
-
-        <div class="moc-list calendar-view-list">
-          <code>day</code>
-          <code>week</code>
-          <code>4days</code>
-          <code>month</code>
-          <code>schedule</code>
-          <code>year</code>
-        </div>
-      </div>
-
-      <div class="calendar-guide-part">
-        <strong>Event display</strong>
-
-        <p>
-          Tarih/gün + saat veya <code>Tüm gün</code> + title.
-          Gereksiz event alanları gösterilmez.
-        </p>
-      </div>
-
-      <div class="calendar-guide-part">
-        <strong>Navigation</strong>
-
-        <p>
-          <code>← Önceki</code> ·
-          <code>Bugün</code> ·
-          <code>Sonraki →</code>
-        </p>
-      </div>
-
     </div>
   </section>
 
