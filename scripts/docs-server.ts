@@ -1,7 +1,5 @@
 import {
   existsSync,
-  mkdirSync,
-  readdirSync,
   readFileSync,
   statSync,
 } from "node:fs";
@@ -17,12 +15,10 @@ import {
 } from "node:path";
 
 import {
-  Database,
-} from "bun:sqlite";
-
-import {
   marked,
 } from "marked";
+
+import { openDocsDatabase } from "./docs-indexer";
 
 const HOST = "127.0.0.1";
 const PORT = Number(
@@ -160,394 +156,7 @@ type DocRow = {
   size: number;
 };
 
-mkdirSync(
-  RUNTIME_DIR,
-  {
-    recursive: true,
-  },
-);
-
-const db = new Database(
-  DB_PATH,
-  {
-    create: true,
-  },
-);
-
-db.run("PRAGMA journal_mode = WAL");
-db.run("PRAGMA synchronous = NORMAL");
-db.run("PRAGMA temp_store = MEMORY");
-
-db.run(`
-CREATE TABLE IF NOT EXISTS docs_meta (
-  key TEXT PRIMARY KEY,
-  value TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS documents (
-  path TEXT PRIMARY KEY,
-  absolute_path TEXT NOT NULL,
-  folder TEXT NOT NULL,
-  filename TEXT NOT NULL,
-  title TEXT NOT NULL,
-  summary TEXT NOT NULL,
-  content TEXT NOT NULL,
-  mtime_ms INTEGER NOT NULL,
-  size INTEGER NOT NULL,
-  scan_generation INTEGER NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS documents_folder_idx
-ON documents(folder);
-
-CREATE INDEX IF NOT EXISTS documents_filename_idx
-ON documents(filename);
-
-CREATE INDEX IF NOT EXISTS documents_mtime_idx
-ON documents(mtime_ms);
-
-CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
-  title,
-  path,
-  folder,
-  filename,
-  summary,
-  content,
-  content='documents',
-  content_rowid='rowid',
-  tokenize='unicode61 remove_diacritics 2'
-);
-
-DROP TRIGGER IF EXISTS documents_fts_insert;
-DROP TRIGGER IF EXISTS documents_fts_delete;
-DROP TRIGGER IF EXISTS documents_fts_update;
-
-CREATE TRIGGER documents_fts_insert
-AFTER INSERT ON documents
-BEGIN
-  INSERT INTO documents_fts(
-    rowid,
-    title,
-    path,
-    folder,
-    filename,
-    summary,
-    content
-  )
-  VALUES (
-    new.rowid,
-    new.title,
-    new.path,
-    new.folder,
-    new.filename,
-    new.summary,
-    new.content
-  );
-END;
-
-CREATE TRIGGER documents_fts_delete
-AFTER DELETE ON documents
-BEGIN
-  INSERT INTO documents_fts(
-    documents_fts,
-    rowid,
-    title,
-    path,
-    folder,
-    filename,
-    summary,
-    content
-  )
-  VALUES (
-    'delete',
-    old.rowid,
-    old.title,
-    old.path,
-    old.folder,
-    old.filename,
-    old.summary,
-    old.content
-  );
-END;
-
-CREATE TRIGGER documents_fts_update
-AFTER UPDATE OF
-  title,
-  path,
-  folder,
-  filename,
-  summary,
-  content
-ON documents
-BEGIN
-  INSERT INTO documents_fts(
-    documents_fts,
-    rowid,
-    title,
-    path,
-    folder,
-    filename,
-    summary,
-    content
-  )
-  VALUES (
-    'delete',
-    old.rowid,
-    old.title,
-    old.path,
-    old.folder,
-    old.filename,
-    old.summary,
-    old.content
-  );
-
-  INSERT INTO documents_fts(
-    rowid,
-    title,
-    path,
-    folder,
-    filename,
-    summary,
-    content
-  )
-  VALUES (
-    new.rowid,
-    new.title,
-    new.path,
-    new.folder,
-    new.filename,
-    new.summary,
-    new.content
-  );
-END;
-`);
-
-const walk = (
-  dir: string,
-  output: string[],
-) => {
-  if (isIgnored(dir)) {
-    return;
-  }
-
-  const entries = readdirSync(
-    dir,
-    {
-      withFileTypes: true,
-    },
-  );
-
-  for (const entry of entries) {
-    if (
-      entry.name === ".git" ||
-      entry.name === "node_modules"
-    ) {
-      continue;
-    }
-
-    const absolutePath = join(dir, entry.name);
-
-    if (isIgnored(absolutePath)) {
-      continue;
-    }
-
-    if (entry.isDirectory()) {
-      walk(absolutePath, output);
-      continue;
-    }
-
-    if (
-      entry.isFile() &&
-      entry.name.toLowerCase().endsWith(".md")
-    ) {
-      output.push(absolutePath);
-    }
-  }
-};
-
-const existingQuery =
-  db.query(`
-    SELECT
-      mtime_ms,
-      size
-    FROM documents
-    WHERE path = ?
-  `);
-
-const touchQuery =
-  db.query(`
-    UPDATE documents
-    SET scan_generation = ?
-    WHERE path = ?
-  `);
-
-const upsertQuery =
-  db.query(`
-    INSERT INTO documents (
-      path,
-      absolute_path,
-      folder,
-      filename,
-      title,
-      summary,
-      content,
-      mtime_ms,
-      size,
-      scan_generation
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(path)
-    DO UPDATE SET
-      absolute_path = excluded.absolute_path,
-      folder = excluded.folder,
-      filename = excluded.filename,
-      title = excluded.title,
-      summary = excluded.summary,
-      content = excluded.content,
-      mtime_ms = excluded.mtime_ms,
-      size = excluded.size,
-      scan_generation = excluded.scan_generation
-  `);
-
-const indexDocument = (
-  absolutePath: string,
-  generation: number,
-) => {
-  const stat = statSync(absolutePath);
-  const mtimeMs = Math.trunc(stat.mtimeMs);
-  const size = stat.size;
-  const path = toRelative(absolutePath);
-
-  const current = existingQuery.get(
-    path,
-  ) as
-    | {
-        mtime_ms: number;
-        size: number;
-      }
-    | null;
-
-  if (
-    current &&
-    current.mtime_ms === mtimeMs &&
-    current.size === size
-  ) {
-    touchQuery.run(
-      generation,
-      path,
-    );
-    return;
-  }
-
-  const source = readFileSync(
-    absolutePath,
-    "utf8",
-  );
-  const body = stripFrontmatter(source);
-  const folder = dirname(path) === "."
-    ? ""
-    : dirname(path).split(sep).join("/");
-  const filename = basename(path);
-  const title = firstHeading(body) ||
-    basename(path, extname(path));
-  const summary = compactSummary(body);
-
-  upsertQuery.run(
-    path,
-    absolutePath,
-    folder,
-    filename,
-    title,
-    summary,
-    body,
-    mtimeMs,
-    size,
-    generation,
-  );
-};
-
-type IndexState = {
-  running: boolean;
-  startedAt: number;
-  finishedAt: number;
-  scanned: number;
-  indexed: number;
-  error: string;
-};
-
-const indexState: IndexState = {
-  running: false,
-  startedAt: 0,
-  finishedAt: 0,
-  scanned: 0,
-  indexed: 0,
-  error: "",
-};
-
-const buildIndex = async () => {
-  if (indexState.running) {
-    return;
-  }
-
-  const generation = Date.now();
-  const files: string[] = [];
-
-  indexState.running = true;
-  indexState.startedAt = generation;
-  indexState.finishedAt = 0;
-  indexState.scanned = 0;
-  indexState.indexed = 0;
-  indexState.error = "";
-
-  try {
-    walk(ROOT, files);
-
-    for (const file of files) {
-      db.transaction(
-        () => {
-          indexDocument(file, generation);
-        },
-      )();
-
-      indexState.scanned += 1;
-
-      if (indexState.scanned % 100 === 0) {
-        await Bun.sleep(0);
-      }
-    }
-
-    db.transaction(
-      () => {
-        db.query(`
-          DELETE FROM documents
-          WHERE scan_generation != ?
-        `).run(generation);
-
-        db.query(`
-          INSERT INTO docs_meta(key, value)
-          VALUES('indexed_at', ?)
-          ON CONFLICT(key)
-          DO UPDATE SET value = excluded.value
-        `).run(String(generation));
-      },
-    )();
-
-    const row = db.query(`
-      SELECT COUNT(*) AS count
-      FROM documents
-    `).get() as { count: number };
-
-    indexState.indexed = row.count;
-    indexState.finishedAt = Date.now();
-  } catch (error) {
-    indexState.error = error instanceof Error
-      ? error.message
-      : String(error);
-    console.error(error);
-  } finally {
-    indexState.running = false;
-  }
-};
+const db = openDocsDatabase(DB_PATH, true);
 
 const getIndexedAt = (): number => {
   const row = db.query(`
@@ -778,22 +387,22 @@ const searchDocs = (
 
   if (folder) {
     where.push("d.folder LIKE ?");
-    params.push(`%${folder}%`);
+    params.push(`${folder}%`);
   }
 
   if (filename) {
     where.push("d.filename LIKE ?");
-    params.push(`%${filename}%`);
+    params.push(`${filename}%`);
   }
 
   if (titleFilter) {
     where.push("d.title LIKE ?");
-    params.push(`%${titleFilter}%`);
+    params.push(`${titleFilter}%`);
   }
 
   if (description) {
     where.push("d.summary LIKE ?");
-    params.push(`%${description}%`);
+    params.push(`${description}%`);
   }
 
   const from = hasFts
@@ -824,12 +433,6 @@ const searchDocs = (
     `
     : "";
 
-  const countRow = db.query(`
-    SELECT COUNT(*) AS total
-    ${from}
-    ${whereSQL}
-  `).get(...params) as { total: number };
-
   const rows = db.query(`
     SELECT
       d.path,
@@ -850,11 +453,13 @@ const searchDocs = (
     OFFSET ?
   `).all(
     ...params,
-    PAGE_SIZE,
+    PAGE_SIZE + 1,
     offset,
   ) as DocRow[];
 
-  const total = Number(countRow?.total ?? 0);
+  const hasMore = rows.length > PAGE_SIZE;
+  const pageRows = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  const visibleTotal = offset + pageRows.length + (hasMore ? 1 : 0);
 
   return {
     query,
@@ -867,17 +472,15 @@ const searchDocs = (
       aliases: [],
       tags: [],
     },
-    total,
-    count: rows.length,
+    total: visibleTotal,
+    count: pageRows.length,
     offset,
     pageSize: PAGE_SIZE,
-    hasMore:
-      offset + rows.length < total,
-    nextOffset:
-      offset + rows.length < total
-        ? offset + rows.length
-        : null,
-    results: rows.map((doc) => ({
+    hasMore,
+    nextOffset: hasMore
+      ? offset + pageRows.length
+      : null,
+    results: pageRows.map((doc) => ({
       title: doc.title,
       url: `/?path=${encodeURIComponent(doc.path)}`,
       section: doc.folder || "Documentation",
@@ -1100,11 +703,6 @@ const server = Bun.serve({
         ignores: IGNORES,
         indexedDocs: row.count,
         indexedAt: getIndexedAt(),
-        indexing: indexState.running,
-        indexStartedAt: indexState.startedAt,
-        indexFinishedAt: indexState.finishedAt,
-        indexScanned: indexState.scanned,
-        indexError: indexState.error,
         readOnly: true,
       });
     }
@@ -1150,6 +748,3 @@ console.log(`root=${ROOT}`);
 console.log(`ignored=${IGNORES.join(":")}`);
 console.log(`database=${DB_PATH}`);
 
-setTimeout(() => {
-  void buildIndex();
-}, 0);

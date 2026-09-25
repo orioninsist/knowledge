@@ -104,6 +104,17 @@ echo
 echo 'PASS: Initial index generated.'
 
 echo
+echo '--- Documentation index ---'
+
+KNOWLEDGE_DOCS_ROOT="$DOCS_ROOT" \
+KNOWLEDGE_DOCS_IGNORE="$DOCS_IGNORE" \
+  "$HOME/.bun/bin/bun" \
+  scripts/build-docs-index.ts
+
+echo
+echo 'PASS: Documentation index generated.'
+
+echo
 echo '--- KN command ---'
 
 mkdir -p "$HOME/.local/bin"
@@ -164,6 +175,10 @@ install_unit \
   systemd/knowledge-docs-browser.service.in \
   "$SYSTEMD_DIR/knowledge-docs-browser.service"
 
+install_unit \
+  systemd/knowledge-docs-watch.service.in \
+  "$SYSTEMD_DIR/knowledge-docs-watch.service"
+
 systemctl --user daemon-reload
 
 systemctl --user enable \
@@ -171,6 +186,7 @@ systemctl --user enable \
   knowledge-personal-watch.service \
   knowledge-personal-web.service \
   knowledge-docs-browser.service \
+  knowledge-docs-watch.service \
   >/dev/null
 
 systemctl --user restart \
@@ -184,6 +200,9 @@ systemctl --user restart \
 
 systemctl --user restart \
   knowledge-docs-browser.service
+
+systemctl --user restart \
+  knowledge-docs-watch.service
 
 sleep 2
 

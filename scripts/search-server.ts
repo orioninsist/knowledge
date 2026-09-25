@@ -170,6 +170,16 @@ const splitStoredList = (
     .map((item) => item.trim())
     .filter(Boolean);
 
+const isAllowedOrigin = (request: Request): boolean => {
+  const origin = request.headers.get("origin");
+
+  return !origin ||
+    origin === "http://127.0.0.1:1314" ||
+    origin === "http://localhost:1314" ||
+    origin === "http://127.0.0.1:1320" ||
+    origin === "http://localhost:1320";
+};
+
 const json = (
   data: unknown,
   status = 200,
@@ -364,27 +374,8 @@ const search = (
     OFFSET ?
   `;
 
-  const countSQL = `
-    SELECT COUNT(*) AS total
-    ${from}
-    ${whereSQL}
-  `;
-
-  const countParams =
-    params.slice();
-
-  const countRow =
-    db.query(countSQL).get(
-      ...countParams,
-    ) as {
-      total: number;
-    };
-
-  const total =
-    Number(countRow?.total ?? 0);
-
   params.push(
-    PAGE_SIZE,
+    PAGE_SIZE + 1,
     offset,
   );
 
@@ -402,6 +393,10 @@ const search = (
       content: string;
       mtime_ms: number;
     }>;
+
+  const hasMore = rows.length > PAGE_SIZE;
+  const pageRows = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+  const visibleTotal = offset + pageRows.length + (hasMore ? 1 : 0);
 
   return {
     query: rawQuery,
@@ -429,23 +424,22 @@ const search = (
         filters.tags,
     },
 
-    total,
+    total: visibleTotal,
 
-    count: rows.length,
+    count: pageRows.length,
 
     offset,
 
     pageSize: PAGE_SIZE,
 
-    hasMore:
-      offset + rows.length < total,
+    hasMore,
 
     nextOffset:
-      offset + rows.length < total
-        ? offset + rows.length
+      hasMore
+        ? offset + pageRows.length
         : null,
 
-    results: rows.map(
+    results: pageRows.map(
       (row) => {
         const description =
           row.description.trim();
@@ -1031,6 +1025,10 @@ const server = Bun.serve({
           "/api/render/typst"
       )
     ) {
+      if (!isAllowedOrigin(request)) {
+        return json({ error: "Origin is not allowed." }, 403);
+      }
+
       try {
         const language =
           url.pathname.endsWith(
@@ -1072,6 +1070,10 @@ const server = Bun.serve({
       url.pathname ===
         "/api/render/calendar"
     ) {
+      if (!isAllowedOrigin(request)) {
+        return json({ error: "Origin is not allowed." }, 403);
+      }
+
       try {
         const {
           src,
@@ -1186,11 +1188,11 @@ const server = Bun.serve({
 
       const SECTION_FOLDERS:
         Record<string, string> = {
-          inbox: "1-Inbox",
-          projects: "2-Projects",
-          areas: "3-Areas",
-          resources: "4-Resources",
-          archives: "5-Archives",
+          inbox: "0-Inbox",
+          projects: "1-Projects",
+          areas: "2-Areas",
+          resources: "3-Resources",
+          archives: "4-Archives",
         };
 
       const folder =

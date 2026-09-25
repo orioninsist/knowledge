@@ -25,7 +25,8 @@ for service in \
     knowledge-personal-search.service \
     knowledge-personal-watch.service \
     knowledge-personal-web.service \
-    knowledge-docs-browser.service
+    knowledge-docs-browser.service \
+    knowledge-docs-watch.service
 do
     if systemctl --user is-active \
         --quiet "$service"
@@ -221,6 +222,7 @@ for shell_file in \
     install.sh \
     scripts/install-local-links.sh \
     scripts/live-workspace-sync.sh \
+    scripts/docs-watch.sh \
     scripts/notes-git.sh
 do
     if bash -n "$shell_file"
@@ -242,6 +244,8 @@ fi
 
 for file in \
     scripts/build-workspace-index.ts \
+    scripts/build-docs-index.ts \
+    scripts/docs-indexer.ts \
     scripts/docs-server.ts \
     scripts/new-note.ts \
     scripts/search-server.ts \
