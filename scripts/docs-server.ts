@@ -218,7 +218,11 @@ CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
   tokenize='unicode61 remove_diacritics 2'
 );
 
-CREATE TRIGGER IF NOT EXISTS documents_fts_insert
+DROP TRIGGER IF EXISTS documents_fts_insert;
+DROP TRIGGER IF EXISTS documents_fts_delete;
+DROP TRIGGER IF EXISTS documents_fts_update;
+
+CREATE TRIGGER documents_fts_insert
 AFTER INSERT ON documents
 BEGIN
   INSERT INTO documents_fts(
@@ -241,7 +245,7 @@ BEGIN
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS documents_fts_delete
+CREATE TRIGGER documents_fts_delete
 AFTER DELETE ON documents
 BEGIN
   INSERT INTO documents_fts(
@@ -266,7 +270,7 @@ BEGIN
   );
 END;
 
-CREATE TRIGGER IF NOT EXISTS documents_fts_update
+CREATE TRIGGER documents_fts_update
 AFTER UPDATE OF
   title,
   path,
@@ -462,32 +466,87 @@ const indexDocument = (
   );
 };
 
-const buildIndex = () => {
+type IndexState = {
+  running: boolean;
+  startedAt: number;
+  finishedAt: number;
+  scanned: number;
+  indexed: number;
+  error: string;
+};
+
+const indexState: IndexState = {
+  running: false,
+  startedAt: 0,
+  finishedAt: 0,
+  scanned: 0,
+  indexed: 0,
+  error: "",
+};
+
+const buildIndex = async () => {
+  if (indexState.running) {
+    return;
+  }
+
   const generation = Date.now();
   const files: string[] = [];
-  walk(ROOT, files);
 
-  const tx = db.transaction(
-    () => {
-      for (const file of files) {
-        indexDocument(file, generation);
+  indexState.running = true;
+  indexState.startedAt = generation;
+  indexState.finishedAt = 0;
+  indexState.scanned = 0;
+  indexState.indexed = 0;
+  indexState.error = "";
+
+  try {
+    walk(ROOT, files);
+
+    for (const file of files) {
+      db.transaction(
+        () => {
+          indexDocument(file, generation);
+        },
+      )();
+
+      indexState.scanned += 1;
+
+      if (indexState.scanned % 100 === 0) {
+        await Bun.sleep(0);
       }
+    }
 
-      db.query(`
-        DELETE FROM documents
-        WHERE scan_generation != ?
-      `).run(generation);
+    db.transaction(
+      () => {
+        db.query(`
+          DELETE FROM documents
+          WHERE scan_generation != ?
+        `).run(generation);
 
-      db.query(`
-        INSERT INTO docs_meta(key, value)
-        VALUES('indexed_at', ?)
-        ON CONFLICT(key)
-        DO UPDATE SET value = excluded.value
-      `).run(String(generation));
-    },
-  );
+        db.query(`
+          INSERT INTO docs_meta(key, value)
+          VALUES('indexed_at', ?)
+          ON CONFLICT(key)
+          DO UPDATE SET value = excluded.value
+        `).run(String(generation));
+      },
+    )();
 
-  tx();
+    const row = db.query(`
+      SELECT COUNT(*) AS count
+      FROM documents
+    `).get() as { count: number };
+
+    indexState.indexed = row.count;
+    indexState.finishedAt = Date.now();
+  } catch (error) {
+    indexState.error = error instanceof Error
+      ? error.message
+      : String(error);
+    console.error(error);
+  } finally {
+    indexState.running = false;
+  }
 };
 
 const getIndexedAt = (): number => {
@@ -986,8 +1045,6 @@ const proxyRender = async (
   );
 };
 
-buildIndex();
-
 const server = Bun.serve({
   hostname: HOST,
   port: PORT,
@@ -1043,6 +1100,11 @@ const server = Bun.serve({
         ignores: IGNORES,
         indexedDocs: row.count,
         indexedAt: getIndexedAt(),
+        indexing: indexState.running,
+        indexStartedAt: indexState.startedAt,
+        indexFinishedAt: indexState.finishedAt,
+        indexScanned: indexState.scanned,
+        indexError: indexState.error,
         readOnly: true,
       });
     }
@@ -1087,3 +1149,7 @@ console.log(
 console.log(`root=${ROOT}`);
 console.log(`ignored=${IGNORES.join(":")}`);
 console.log(`database=${DB_PATH}`);
+
+setTimeout(() => {
+  void buildIndex();
+}, 0);
