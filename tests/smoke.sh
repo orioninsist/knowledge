@@ -24,7 +24,8 @@ echo '--- Services ---'
 for service in \
     knowledge-personal-search.service \
     knowledge-personal-watch.service \
-    knowledge-personal-web.service
+    knowledge-personal-web.service \
+    knowledge-docs-browser.service
 do
     if systemctl --user is-active \
         --quiet "$service"
@@ -58,6 +59,24 @@ then
     pass 'Search API'
 else
     fail 'Search API'
+fi
+
+if curl -fsS \
+    'http://127.0.0.1:1320/health' \
+    >/dev/null
+then
+    pass 'Docs browser health'
+else
+    fail 'Docs browser health'
+fi
+
+if curl -fsS \
+    'http://127.0.0.1:1320/api/search?q=markdown' \
+    >/dev/null
+then
+    pass 'Docs browser search'
+else
+    fail 'Docs browser search'
 fi
 
 #
@@ -223,6 +242,7 @@ fi
 
 for file in \
     scripts/build-workspace-index.ts \
+    scripts/docs-server.ts \
     scripts/new-note.ts \
     scripts/search-server.ts \
     scripts/validate-note-name.ts

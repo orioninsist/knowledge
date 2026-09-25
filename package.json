@@ -2,6 +2,7 @@
   "scripts": {},
   "dependencies": {
     "ical.js": "^2.2.1",
-    "mermaid": "^11.17.2"
+    "mermaid": "^11.17.2",
+    "marked": "^16.4.2"
   }
 }

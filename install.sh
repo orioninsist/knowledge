@@ -85,6 +85,14 @@ echo '--- Runtime ---'
 echo
 echo 'PASS: Runtime generated.'
 
+PERSONAL_RUNTIME_ENV="$PROJECT_DIR/.runtime/personal/runtime.env"
+WORKSPACE_ROOT="$(
+  sed -n 's/^WORKSPACE_ROOT=//p' "$PERSONAL_RUNTIME_ENV" |
+  head -1
+)"
+DOCS_ROOT="$(dirname "$WORKSPACE_ROOT")"
+DOCS_IGNORE="$WORKSPACE_ROOT"
+
 echo
 echo '--- Initial index ---'
 
@@ -134,6 +142,8 @@ install_unit() {
     -e "s|@HUGO@|$HUGO|g" \
     -e "s|@D2@|$D2|g" \
     -e "s|@TYPST@|$TYPST|g" \
+    -e "s|@DOCS_ROOT@|$DOCS_ROOT|g" \
+    -e "s|@DOCS_IGNORE@|$DOCS_IGNORE|g" \
     "$source" \
     > "$target"
 }
@@ -150,12 +160,17 @@ install_unit \
   systemd/knowledge-personal-web.service.in \
   "$SYSTEMD_DIR/knowledge-personal-web.service"
 
+install_unit \
+  systemd/knowledge-docs-browser.service.in \
+  "$SYSTEMD_DIR/knowledge-docs-browser.service"
+
 systemctl --user daemon-reload
 
 systemctl --user enable \
   knowledge-personal-search.service \
   knowledge-personal-watch.service \
   knowledge-personal-web.service \
+  knowledge-docs-browser.service \
   >/dev/null
 
 systemctl --user restart \
@@ -166,6 +181,9 @@ systemctl --user restart \
 
 systemctl --user restart \
   knowledge-personal-watch.service
+
+systemctl --user restart \
+  knowledge-docs-browser.service
 
 sleep 2
 
@@ -183,3 +201,4 @@ echo "Project: $PROJECT_DIR"
 echo 'Command: kn'
 echo 'Web:     http://127.0.0.1:1314'
 echo 'API:     http://127.0.0.1:8788'
+echo 'Docs:    http://127.0.0.1:1320'
