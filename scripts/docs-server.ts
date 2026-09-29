@@ -571,6 +571,10 @@ const pageHTML = (
         <header class="section-header">
           <h1>Documentation</h1>
         </header>
+        <nav class="home-routes" aria-label="Knowledge routes">
+          <a href="http://127.0.0.1:1314/">Notes</a>
+          <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
+        </nav>
         <p class="section-static-message">Use Alt + K to search documentation.</p>
       </section>
     `;
