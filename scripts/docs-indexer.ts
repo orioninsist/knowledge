@@ -221,10 +221,10 @@ export const buildDocsIndex = async (rawConfig: DocsIndexConfig): Promise<DocsIn
   const deleteFts = db.query(`DELETE FROM documents_fts WHERE path = ?`);
   const insertFts = db.query(`INSERT INTO documents_fts(path, folder, filename, title, summary, content) VALUES (?, ?, ?, ?, ?, ?)`);
 
-  // The documentation index is derived data. During a full rebuild it is safe
-  // to trade crash durability for much faster bulk ingestion; the next run
-  // can always recreate the index from Markdown source files.
-  db.run("PRAGMA synchronous = OFF");
+  // The documentation index is derived data. The installer opts into fast
+  // rebuild mode because the index can always be recreated from Markdown.
+  const fastRebuild = process.env.KNOWLEDGE_DOCS_REBUILD_FAST === "1";
+  if (fastRebuild) db.run("PRAGMA synchronous = OFF");
   db.run("BEGIN IMMEDIATE");
 
   for (const file of files) {
@@ -259,7 +259,7 @@ export const buildDocsIndex = async (rawConfig: DocsIndexConfig): Promise<DocsIn
   }
 
   db.run("COMMIT");
-  db.run("PRAGMA synchronous = NORMAL");
+  if (fastRebuild) db.run("PRAGMA synchronous = NORMAL");
 
   const stale = db.query(`SELECT path FROM documents WHERE scan_generation != ?`).all(generation) as Array<{ path: string }>;
   db.transaction(() => {
