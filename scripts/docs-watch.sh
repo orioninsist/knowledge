@@ -26,14 +26,6 @@ if [ ! -x "$BUN" ]; then
   exit 1
 fi
 
-reindex() {
-  KNOWLEDGE_DOCS_ROOT="$ROOT" \
-  KNOWLEDGE_DOCS_IGNORE="$IGNORE" \
-    "$BUN" scripts/build-docs-index.ts
-}
-
-reindex || true
-
 inotifywait \
   -m \
   -r \
@@ -49,7 +41,9 @@ while IFS='|' read -r _events path
 do
   case "${path,,}" in
     *.md)
-      reindex || true
+      KNOWLEDGE_DOCS_ROOT="$ROOT" \
+      KNOWLEDGE_DOCS_IGNORE="$IGNORE" \
+        "$BUN" scripts/update-docs-path.ts "$path" || true
       ;;
   esac
 done
