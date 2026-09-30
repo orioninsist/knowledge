@@ -106,6 +106,7 @@ echo '--- Documentation index ---'
 
 KNOWLEDGE_DOCS_ROOT="$DOCS_ROOT" \
 KNOWLEDGE_DOCS_IGNORE="$DOCS_IGNORE" \
+KNOWLEDGE_DOCS_REBUILD_FAST=1 \
   "$HOME/.bun/bin/bun" \
   scripts/build-docs-index.ts
 
