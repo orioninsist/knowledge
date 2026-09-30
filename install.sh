@@ -85,13 +85,11 @@ echo '--- Runtime ---'
 echo
 echo 'PASS: Runtime generated.'
 
-PERSONAL_RUNTIME_ENV="$PROJECT_DIR/.runtime/personal/runtime.env"
-WORKSPACE_ROOT="$(
-  sed -n 's/^WORKSPACE_ROOT=//p' "$PERSONAL_RUNTIME_ENV" |
-  head -1
-)"
-DOCS_ROOT="$(dirname "$WORKSPACE_ROOT")"
-DOCS_IGNORE="$WORKSPACE_ROOT"
+# Documentation is a separate surface from the personal notes workspace.
+# Never derive its root from WORKSPACE_ROOT: 1314 and 1320 intentionally serve
+# independent trees.
+DOCS_ROOT="${KNOWLEDGE_DOCS_ROOT:-/home/murat/Media/5-Documentation}"
+DOCS_IGNORE="${KNOWLEDGE_DOCS_IGNORE:-$DOCS_ROOT/Knowledge}"
 
 echo
 echo '--- Initial index ---'
