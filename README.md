@@ -161,7 +161,7 @@ Example:
 
 ```toml
 [[workspace]]
-root = "/home/murat/Media/5-Documentation/Knowledge"
+root = "/home/murat/Media/8-Document/Knowledge"
 ```
 
 Then run:
@@ -287,7 +287,7 @@ By default it scans:
 and ignores the personal Knowledge workspace:
 
 ```text
-/home/murat/Media/5-Documentation/Knowledge
+/home/murat/Media/8-Document/Knowledge
 ```
 
 The documentation browser is read-only. It supports search and reading only. Create, edit, move, and delete operations are rejected by the server.
