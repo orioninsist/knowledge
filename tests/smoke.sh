@@ -258,6 +258,7 @@ for file in \
     scripts/build-workspace-index.ts \
     scripts/build-docs-index.ts \
     scripts/docs-indexer.ts \
+    scripts/update-docs-path.ts \
     scripts/docs-server.ts \
     scripts/new-note.ts \
     scripts/search-server.ts \

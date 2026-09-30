@@ -1,4 +1,5 @@
 import {
+  existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -136,6 +137,61 @@ const walk = (config: DocsIndexConfig, dir: string, output: string[]) => {
   }
 };
 
+export const updateDocsPath = (rawConfig: DocsIndexConfig, absolutePath: string): "updated" | "deleted" | "ignored" => {
+  const config = normalizeDocsConfig(rawConfig);
+  const file = resolve(absolutePath);
+  if (!isInside(config.root, file) || isIgnored(config, file) || extname(file).toLowerCase() !== ".md") return "ignored";
+
+  const db = openDocsDatabase(config.dbPath);
+  const path = toRelative(config, file);
+  const deleteDoc = db.query(`DELETE FROM documents WHERE path = ?`);
+  const deleteFts = db.query(`DELETE FROM documents_fts WHERE path = ?`);
+
+  if (!existsSync(file)) {
+    db.transaction(() => {
+      deleteDoc.run(path);
+      deleteFts.run(path);
+    })();
+    db.close();
+    return "deleted";
+  }
+
+  const stat = statSync(file);
+  if (!stat.isFile()) {
+    db.close();
+    return "ignored";
+  }
+
+  const source = readFileSync(file, "utf8");
+  const body = stripFrontmatter(source);
+  const folder = dirname(path) === "." ? "" : dirname(path).split(sep).join("/");
+  const filename = basename(path);
+  const title = firstHeading(body) || basename(path, extname(path));
+  const summary = compactSummary(body);
+  const generation = Date.now();
+  const upsert = db.query(`
+    INSERT INTO documents(path, absolute_path, folder, filename, title, summary, mtime_ms, size, scan_generation)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(path) DO UPDATE SET
+      absolute_path = excluded.absolute_path, folder = excluded.folder, filename = excluded.filename,
+      title = excluded.title, summary = excluded.summary, mtime_ms = excluded.mtime_ms,
+      size = excluded.size, scan_generation = excluded.scan_generation
+  `);
+  const insertFts = db.query(`INSERT INTO documents_fts(path, folder, filename, title, summary, content) VALUES (?, ?, ?, ?, ?, ?)`);
+
+  db.transaction(() => {
+    upsert.run(path, file, folder, filename, title, summary, Math.trunc(stat.mtimeMs), stat.size, generation);
+    deleteFts.run(path);
+    insertFts.run(path, folder, filename, title, summary, body);
+    db.query(`
+      INSERT INTO docs_meta(key, value) VALUES('indexed_at', ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
+    `).run(String(generation));
+  })();
+  db.close();
+  return "updated";
+};
+
 export const buildDocsIndex = async (rawConfig: DocsIndexConfig): Promise<DocsIndexResult> => {
   const config = normalizeDocsConfig(rawConfig);
   const db = openDocsDatabase(config.dbPath);
@@ -165,6 +221,8 @@ export const buildDocsIndex = async (rawConfig: DocsIndexConfig): Promise<DocsIn
   const deleteFts = db.query(`DELETE FROM documents_fts WHERE path = ?`);
   const insertFts = db.query(`INSERT INTO documents_fts(path, folder, filename, title, summary, content) VALUES (?, ?, ?, ?, ?, ?)`);
 
+  db.run("BEGIN IMMEDIATE");
+
   for (const file of files) {
     scanned += 1;
     const stat = statSync(file);
@@ -184,16 +242,16 @@ export const buildDocsIndex = async (rawConfig: DocsIndexConfig): Promise<DocsIn
       const title = firstHeading(body) || basename(path, extname(path));
       const summary = compactSummary(body);
 
-      db.transaction(() => {
-        upsertQuery.run(path, file, folder, filename, title, summary, mtimeMs, size, generation);
-        deleteFts.run(path);
-        insertFts.run(path, folder, filename, title, summary, body);
-      })();
+      upsertQuery.run(path, file, folder, filename, title, summary, mtimeMs, size, generation);
+      deleteFts.run(path);
+      insertFts.run(path, folder, filename, title, summary, body);
       updated += 1;
     }
 
     if (scanned % 250 === 0) await Bun.sleep(0);
   }
+
+  db.run("COMMIT");
 
   const stale = db.query(`SELECT path FROM documents WHERE scan_generation != ?`).all(generation) as Array<{ path: string }>;
   db.transaction(() => {
