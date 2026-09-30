@@ -284,11 +284,13 @@ By default it scans:
 /home/murat/Media/5-Documentation
 ```
 
-and ignores the personal Knowledge workspace:
+and ignores its own optional `Knowledge` subdirectory by default:
 
 ```text
-/home/murat/Media/8-Document/Knowledge
+/home/murat/Media/5-Documentation/Knowledge
 ```
+
+The documentation root is independent from the personal notes workspace. The installer must not derive the port 1320 documentation root from the port 1314 workspace path. You can override the documentation paths for a one-off install with `KNOWLEDGE_DOCS_ROOT` and `KNOWLEDGE_DOCS_IGNORE`.
 
 The documentation browser is read-only. It supports search and reading only. Create, edit, move, and delete operations are rejected by the server.
 

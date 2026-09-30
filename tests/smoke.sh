@@ -164,6 +164,18 @@ fi
 echo
 echo '--- Source invariants ---'
 
+if grep -Fq 'DOCS_ROOT="$(dirname "$WORKSPACE_ROOT")"' install.sh; then
+    fail 'Docs root is independent from personal workspace'
+else
+    pass 'Docs root is independent from personal workspace'
+fi
+
+if grep -Fq 'DOCS_ROOT="${KNOWLEDGE_DOCS_ROOT:-/home/murat/Media/5-Documentation}"' install.sh; then
+    pass 'Docs root default'
+else
+    fail 'Docs root default'
+fi
+
 if "$HOME/.bun/bin/bun" \
     scripts/check-global-filenames.ts \
     personal
