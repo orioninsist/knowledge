@@ -510,117 +510,63 @@ fi
 #
 # PERSONAL SEARCH
 #
-if [ "${1:-}" = "search" ]; then
+if [ "${1:-}" = "search" ] || [ "${1:-}" = "docs" ]; then
     require_fzf || exit 1
-    require_glow || exit 1
 
+    MODE="${1}"
     QUERY="${*:2}"
-    API="$(api_base)" || {
-        echo "ERROR: Personal search API is not available."
-        exit 1
-    }
+    SEARCH_HELPER="$PROJECT/scripts/kn-terminal-search.ts"
 
-    RESULTS="$(
-        curl -fsS --get --data-urlencode "q=$QUERY" "$API/api/search" 2>/dev/null |
-        "$BUN" -e '
-          const data = await Bun.stdin.json();
-          for (const r of data.results ?? []) {
-            const section = String(r.section ?? "");
-            const folder = {inbox:"0-Inbox",projects:"1-Projects",areas:"2-Areas",resources:"3-Resources",archives:"4-Archives"}[section];
-            if (!folder || !r.url) continue;
-            const stem = decodeURIComponent(String(r.url).split("/").filter(Boolean).at(-1) ?? "");
-            if (!stem) continue;
-            console.log(folder + "/" + stem + ".md");
-          }
-        '
-    )" || exit 1
-
-    if [ -z "$RESULTS" ]; then
-        echo "No matching notes."
-        exit 0
+    if [ "$MODE" = "search" ]; then
+        SEARCH_MODE="personal"
+        SEARCH_ROOT="$ROOT"
+        SEARCH_PROMPT="search> "
+    else
+        SEARCH_MODE="docs"
+        SEARCH_ROOT="${KNOWLEDGE_DOCS_ROOT:-/home/murat/Media/5-Documentation}"
+        SEARCH_PROMPT="docs> "
     fi
 
-    export KN_SEARCH_ROOT="$ROOT"
+    export KN_SEARCH_ROOT="$SEARCH_ROOT"
 
     SELECTED="$(
-        printf '%s\n' "$RESULTS" |
+        "$BUN" "$SEARCH_HELPER" "$SEARCH_MODE" "$QUERY" |
         fzf \
-            --prompt='search> ' \
+            --disabled \
+            --prompt="$SEARCH_PROMPT" \
             --query="$QUERY" \
             --height=90% \
             --layout=reverse \
             --border \
-            --with-nth=2 \
-            --delimiter='/' \
+            --bind "change:reload($BUN $SEARCH_HELPER $SEARCH_MODE {q})" \
             --preview 'sed -n "1,160p" "$KN_SEARCH_ROOT"/{}' \
             --preview-window='right:60%:wrap'
     )" || exit 0
 
-    exec nvim "$ROOT/$SELECTED"
-fi
+    [ -n "$SELECTED" ] || exit 0
 
-#
-# DOCUMENTATION SEARCH (READ-ONLY)
-#
-if [ "${1:-}" = "docs" ]; then
-    require_fzf || exit 1
-    require_glow || exit 1
+    TARGET="$SEARCH_ROOT/$SELECTED"
 
-    DOCS_ROOT="${KNOWLEDGE_DOCS_ROOT:-/home/murat/Media/5-Documentation}"
-    QUERY="${*:2}"
-
-    if [ -z "$QUERY" ]; then
-        RESULTS="$(find "$DOCS_ROOT" -type f -name '*.md' -print 2>/dev/null)"
-    else
-        RESULTS="$(
-            curl -fsS --get --data-urlencode "q=$QUERY" "http://127.0.0.1:1320/api/search" 2>/dev/null |
-            "$BUN" -e '
-              const data = await Bun.stdin.json();
-              for (const r of data.results ?? []) {
-                const u = String(r.url ?? "");
-                const m = u.match(/[?&]path=([^&]+)/);
-                if (!m) continue;
-                console.log(decodeURIComponent(m[1]));
-              }
-            '
-        )" || exit 1
-        RESULTS="$(
-            printf '%s\n' "$RESULTS" |
-            while IFS= read -r rel; do
-                [ -n "$rel" ] && printf '%s/%s\n' "$DOCS_ROOT" "$rel"
-            done
-        )"
-    fi
-
-    if [ -z "$RESULTS" ]; then
-        echo "No matching documentation."
-        exit 0
-    fi
-
-    export KN_DOCS_ROOT="$DOCS_ROOT"
-
-    SELECTED="$(
-        printf '%s\n' "$RESULTS" |
-        fzf \
-            --prompt='docs> ' \
-            --query="$QUERY" \
-            --height=90% \
-            --layout=reverse \
-            --border \
-            --preview 'sed -n "1,160p" {}' \
-            --preview-window='right:60%:wrap'
-    )" || exit 0
-
-    case "$SELECTED" in
-        "$KN_DOCS_ROOT"/*.md)
-            exec nvim -R "$SELECTED"
+    case "$TARGET" in
+        "$SEARCH_ROOT"/*.md)
             ;;
         *)
-            echo "ERROR: Documentation path escaped the read-only root."
+            echo "ERROR: Selected path escaped its search root."
             exit 1
             ;;
     esac
+
+    if [ "$MODE" = "docs" ]; then
+        exec nvim -R "$TARGET"
+    fi
+
+    exec nvim "$TARGET"
 fi
+
+#
+# DOCUMENTATION SEARCH is intentionally handled above with the same
+# bounded FTS5/fzf flow as personal search. Documentation opens read-only.
+#
 
 #
 # NORMAL OPEN / CREATE
