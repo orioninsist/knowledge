@@ -1,76 +1,20 @@
 # Knowledge
 
-Knowledge is a local-first Markdown knowledge system. It keeps permanent notes as plain files, serves them in the browser with Hugo, indexes them with SQLite FTS5, and provides a small terminal command named `kn` for daily note work.
+Knowledge is a local-first Markdown knowledge system for personal notes and large read-only documentation sets.
 
-The project has three local surfaces:
+Markdown is the source of truth. Search databases, generated Hugo configuration, render caches, and systemd units are disposable runtime state.
 
-```text
-http://127.0.0.1:1314/              Personal notes home and search
-http://127.0.0.1:1314/productivity/ Productivity tools
-http://127.0.0.1:1320/              Read-only documentation browser
-```
+## Surfaces
 
-Everything is designed around one rule: Markdown files are the source of truth. Runtime databases, generated Hugo configuration, visual render caches, and systemd units are disposable and can be rebuilt.
+| URL | Purpose |
+| --- | --- |
+| `http://127.0.0.1:1314/` | Personal notes, statistics, and browser search |
+| `http://127.0.0.1:1314/productivity/` | Local productivity tools |
+| `http://127.0.0.1:1320/` | Read-only external documentation browser |
 
-## Project Goal
+## Core model
 
-Knowledge exists to be a stable, zero-cost personal knowledge environment built from native local tools. The goal is not to become a large custom platform. The goal is to connect the right simple tools in the right order so daily notes, large Markdown documentation sets, search, reading, visual rendering, and small productivity workflows all work locally without proprietary lock-in.
-
-The project should stay boring, portable, and maintainable:
-
-- Markdown files remain the permanent data.
-- The application code stays in this repository.
-- Personal notes stay outside this repository.
-- Runtime state stays disposable.
-- Browser pages are for reading and searching.
-- Terminal commands are for deliberate note operations.
-- Documentation browsing is read-only by design.
-- New code is added only when it removes real manual work or replaces fragile manual steps.
-
-## Current Features
-
-- Local-first personal Markdown notes.
-- Five fixed MOC folders: Inbox, Projects, Areas, Resources, and Archives.
-- Browser home page with personal note statistics.
-- Browser command search with `Alt + K`.
-- SQLite FTS5 search for personal notes.
-- SQLite FTS5 search for external documentation Markdown.
-- Separate read-only documentation browser on port `1320`.
-- Documentation indexer separated from the browser server.
-- Documentation watcher service for refreshing the docs index.
-- `kn` terminal command for opening, creating, reading, searching, moving, and renaming personal notes, plus read-only documentation search.
-- Global filename completion across all five personal note MOCs.
-- Confirmation before move and rename operations.
-- Personal note changes use local Git commits only; personal notes never push to GitHub.
-- Hugo-based personal note rendering.
-- Mermaid, D2, Typst, Canvas, and calendar visual blocks.
-- Local productivity page with World Clock, Weather, Prayer, and Focus tools.
-- systemd user services for the web server, search API, note watcher, docs browser, and docs watcher.
-- Reproducible installer with smoke tests.
-- Catppuccin Mocha based visual theme.
-
-## What It Does
-
-- Keeps personal notes in five fixed Markdown folders.
-- Opens, creates, reads, searches, moves, and renames notes from the terminal with `kn`.
-- Searches notes from the browser with SQLite FTS5.
-- Serves personal notes with Hugo at `http://127.0.0.1:1314/`.
-- Serves external documentation Markdown as a separate read-only browser at `http://127.0.0.1:1320/`.
-- Renders Mermaid, D2, Typst, Canvas, and calendar blocks inside notes.
-- Provides a local productivity page for clock, weather, prayer times, and focus timers.
-- Uses systemd user services so everything starts and restarts locally.
-
-## Repository Role
-
-This GitHub repository stores the Knowledge application code only.
-
-Personal Markdown notes live outside the project directory. The personal notes workspace is a separate local-only Git repository with no remote. `kn` may create local commits for note changes, but it never pushes personal notes. This project repository is the only workspace allowed to push to GitHub.
-
-The installed `kn` command at `~/.local/bin/kn` is only a symlink to this repository's `bin/kn`. The real source stays in the project directory.
-
-## Personal Notes Workspace
-
-A personal workspace must contain exactly five folders:
+Personal notes live outside this repository in exactly five MOC directories:
 
 ```text
 Knowledge/
@@ -81,75 +25,47 @@ Knowledge/
 └── 4-Archives/
 ```
 
-Section meaning:
+The folder is the MOC. Front matter does not duplicate MOC state.
 
-- `0-Inbox` captures new notes.
-- `1-Projects` stores active project notes.
-- `2-Areas` stores ongoing responsibilities and interests.
-- `3-Resources` stores reference material.
-- `4-Archives` stores inactive or completed notes.
-
-Only Markdown files belong in these folders. The folder decides the MOC; front matter does not duplicate MOC state.
-
-## Filename Rules
-
-Personal note filenames must match this pattern:
+Personal note filenames must match:
 
 ```text
 ^[a-z0-9]+(?:-[a-z0-9]+)*\.md$
 ```
 
-Valid examples:
+Examples: `linux.md`, `note1.md`, `project-2026.md`.
 
-```text
-linux.md
-arch-linux.md
-building-second-brain.md
-note1.md
-project-2026.md
-```
+Filenames are globally unique across all five MOCs. There is no delete command in `kn`; notes are archived instead.
 
-Invalid examples:
+## What is in this repository
 
-```text
-Linux.md
-note_name.md
-note name.md
-note.md.md
-note
--note.md
-note-.md
-note--name.md
-```
+This repository contains application code only:
 
-Filenames are globally unique across all five MOCs.
+- `bin/kn` — terminal entry point.
+- `scripts/` — workspace validation, indexing, search APIs, watchers, and note helpers.
+- `layouts/` and `static/` — Hugo/browser UI.
+- `systemd/` — user-service templates.
+- `tests/smoke.sh` — integration and source-invariant checks.
+- `install.sh` — local installation/bootstrap.
 
-## Front Matter
-
-New notes use this shape:
-
-```yaml
----
-title:
-description:
-status:
-aliases: []
-tags: []
----
-```
-
-Supported `status` values are free text, but the UI is prepared for:
-
-```text
-todo
-in-progress
-review
-done
-```
+Personal notes are a separate local-only Git repository with **no remote**. The project repository may push to GitHub; the personal notes repository must not.
 
 ## Install
 
-Configure the notes workspace in:
+Requirements used by the installer:
+
+```text
+bun
+npm
+hugo
+d2
+typst
+inotifywait
+curl
+systemctl
+```
+
+Create the workspace configuration:
 
 ```text
 ~/.config/knowledge/workspaces.toml
@@ -159,37 +75,29 @@ Example:
 
 ```toml
 [[workspace]]
-root = "/home/murat/Media/8-Document/Knowledge"
+root = "/absolute/path/to/your/notes"
 ```
 
 Then run:
 
 ```bash
-cd /home/murat/Media/6-Project/knowledge
+git clone https://github.com/orioninsist/knowledge.git
+cd knowledge
 ./install.sh
 ```
 
-The installer:
+The installer runs `npm ci`, generates `.runtime/personal/hugo.toml` and `runtime.env`, builds the personal and documentation indexes, installs the `kn` symlink and Bash completion, installs/restarts systemd user services, and runs the smoke test.
 
-- installs npm dependencies with `npm ci`;
-- generates runtime Hugo config under `.runtime/personal/`;
-- builds the personal note index;
-- builds the documentation browser index;
-- links `~/.local/bin/kn` to `bin/kn`;
-- links Bash completion;
-- installs and restarts systemd user services;
-- runs the smoke test.
+The generated Hugo config is the runtime source for personal-content mounts. Do not hand-maintain workspace paths in the repository.
 
 ## Services
 
-The installer manages these user services:
-
 ```text
-knowledge-personal-search.service   Bun API for personal notes
-knowledge-personal-web.service      Hugo web server on port 1314
-knowledge-personal-watch.service    inotify-based personal note index sync
-knowledge-docs-browser.service      read-only docs browser on port 1320
-knowledge-docs-watch.service        documentation index refresh watcher
+knowledge-personal-search.service   Personal SQLite FTS5/search/render API
+knowledge-personal-web.service      Hugo on 127.0.0.1:1314
+knowledge-personal-watch.service    Incremental personal-note index sync
+knowledge-docs-browser.service      Read-only docs browser on 127.0.0.1:1320
+knowledge-docs-watch.service        Incremental docs index sync
 ```
 
 Useful checks:
@@ -197,50 +105,38 @@ Useful checks:
 ```bash
 systemctl --user status knowledge-personal-search.service
 systemctl --user status knowledge-personal-web.service
+systemctl --user status knowledge-personal-watch.service
 systemctl --user status knowledge-docs-browser.service
 systemctl --user status knowledge-docs-watch.service
 ```
 
-## KN Command
+## `kn`
 
-Use `kn` as the terminal entry point.
-
-Open or create a personal note:
+Open or create a note:
 
 ```bash
-kn nvim inbox note-name.md
+kn nvim inbox note-name
 kn code projects project-note.md
 kn hx resources linux-notes.md
 ```
 
-The `.md` suffix is optional for open/create:
-
-```bash
-kn nvim inbox note-name
-```
-
-Interactive usage:
+Interactive selection:
 
 ```bash
 kn nvim
 kn nvim inbox
 ```
 
-Read a personal note with Glow:
+Read with Glow:
 
 ```bash
 kn glow note-name.md
 ```
 
-Move a personal note between MOCs:
+Move or rename:
 
 ```bash
 kn mv note-name.md archives
-```
-
-Rename a personal note:
-
-```bash
 kn rn note-name.md new-name.md
 ```
 
@@ -248,10 +144,8 @@ Search personal notes:
 
 ```bash
 kn search
-kn search google
+kn search docker network
 ```
-
-`kn search` uses SQLite FTS5 while you type, shows at most 10 results in `fzf`, previews the selected Markdown file as plain text, and opens the selected personal note in normal Neovim.
 
 Search external documentation:
 
@@ -260,156 +154,69 @@ kn docs
 kn docs systemd
 ```
 
-`kn docs` uses the separate documentation FTS5 index while you type, shows at most 10 results in `fzf`, previews the selected Markdown file as plain text, and opens the selected document with `nvim -R`.
+Personal search opens the selected note in normal Neovim. Documentation search opens the selected file with `nvim -R`.
 
-There is no delete command. Personal notes are moved to Archives instead of being deleted.
+Move and rename operations require confirmation. Note edits/creates/moves/renames can create local Git commits in the personal workspace, but only when that workspace has no remote.
 
-## Global Filename Selection
+## Browser search
 
-All five personal MOC folders are treated as one globally unique filename pool.
+Press `Alt + K` on the personal site to search the SQLite FTS5 index. Search supports folder, filename, title, description, status, alias, and tag data.
 
-- `kn glow`, `kn mv`, `kn rn`, and editor open/create operate only on the personal notes workspace.
-- Typed filename completion searches all five MOCs and returns up to 5 suggestions.
-- Existing notes always open from their real location.
-- The MOC argument only decides where a new note is created.
-- A filename may exist in only one MOC at a time.
+The personal home page intentionally stays small: note statistics, search, and links to the local surfaces.
 
-## Browser Search
+## Documentation browser
 
-Personal notes are searched at:
-
-```text
-http://127.0.0.1:1314/
-```
-
-Use `Alt + K` to open search. Search returns clickable note results. Filters are available for folder, filename, title, description, status, alias, and tag.
-
-The home page intentionally shows only note statistics and links to the three local surfaces.
-
-## Documentation Browser
-
-External Markdown documentation is served at:
-
-```text
-http://127.0.0.1:1320/
-```
-
-By default it scans:
+By default the documentation browser scans:
 
 ```text
 /home/murat/Media/5-Documentation
 ```
 
-and ignores its own optional `Knowledge` subdirectory by default:
+and ignores:
 
 ```text
 /home/murat/Media/5-Documentation/Knowledge
 ```
 
-The documentation root is independent from the personal notes workspace. The installer must not derive the port 1320 documentation root from the port 1314 workspace path. You can override the documentation paths for a one-off install with `KNOWLEDGE_DOCS_ROOT` and `KNOWLEDGE_DOCS_IGNORE`.
-
-The documentation browser is read-only. It supports search and reading only. Create, edit, move, and delete operations are rejected by the server.
-
-The documentation index is built by:
+Override them for installation with:
 
 ```bash
-bun scripts/build-docs-index.ts
+KNOWLEDGE_DOCS_ROOT=/path/to/docs \
+KNOWLEDGE_DOCS_IGNORE=/path/to/docs/ignored \
+./install.sh
 ```
 
-and refreshed by:
+The documentation surface is intentionally read-only. It supports indexing, search, preview, and reading; it does not create, edit, move, or delete documentation files.
 
-```text
-knowledge-docs-watch.service
-```
+## Visual blocks
+
+Personal notes support fenced blocks for Mermaid, D2, Typst, Canvas, and Calendar.
+
+Mermaid is served from the vendored browser bundle. D2 and Typst rendering are provided through the local search/render API.
 
 ## Productivity
 
-The productivity page is separate from the Markdown knowledge system:
+`/productivity/` contains World Clock, Weather, Prayer Times, and Focus tools. Its state lives in browser storage and it does not read or modify Markdown notes.
 
-```text
-http://127.0.0.1:1314/productivity/
-```
+## Local checks
 
-It includes:
-
-- World Clock
-- Weather
-- Prayer Times
-- Focus
-
-State is stored in browser storage. Weather and city lookup use Open-Meteo. Prayer times use AlAdhan with the Diyanet calculation method. The productivity page does not read, write, move, delete, or index Markdown notes.
-
-## Visual Blocks
-
-Markdown notes can contain visual fenced code blocks.
-
-Mermaid:
-
-````markdown
-```mermaid
-flowchart LR
-  Capture --> Organize
-  Organize --> Distill
-  Distill --> Express
-```
-````
-
-D2:
-
-````markdown
-```d2
-client -> api
-api -> database
-```
-````
-
-Typst:
-
-````markdown
-```typst
-#set page(width: auto, height: auto)
-Hello from Typst
-```
-````
-
-Calendar:
-
-````markdown
-```calendar
-src: /absolute/path/to/calendar.ics
-view: week
-```
-````
-
-## Local Checks
-
-Run the full installer and smoke test:
+Full installation + smoke test:
 
 ```bash
 ./install.sh
 ```
 
-Run smoke directly:
+Smoke test only:
 
 ```bash
 tests/smoke.sh
 ```
 
-Check docs health:
+Endpoints:
 
 ```bash
 curl -fsS http://127.0.0.1:1320/health
-```
-
-Check personal search:
-
-```bash
 curl -fsS 'http://127.0.0.1:8788/api/search?q=linux'
-```
-
-Check docs search:
-
-```bash
 curl -fsS 'http://127.0.0.1:1320/api/search?q=markdown'
 ```
 
@@ -421,33 +228,31 @@ Personal Markdown workspace
         ├── inotify watcher
         │       └── incremental SQLite FTS5 index
         │
-        ├── Hugo web server
-        │       └── browser UI on 1314
+        ├── generated Hugo runtime config
+        │       └── Hugo web UI on 1314
         │
-        └── kn terminal command
-                ├── bounded FTS5 search → fzf preview → normal nvim
-                └── local-only Git commits for note changes
+        └── kn
+                ├── create/open/read/move/rename
+                ├── bounded FTS5 → fzf → nvim
+                └── local-only Git commits
 
-External documentation Markdown
+External documentation
         │
-        ├── docs indexer / docs watcher
+        ├── docs indexer + watcher
         │       └── SQLite FTS5 docs index
         │
-        ├── read-only docs browser on 1320
-        └── kn docs → bounded FTS5 search → fzf preview → nvim -R
+        ├── read-only browser on 1320
+        └── kn docs → FTS5 → fzf → nvim -R
 ```
 
-Permanent data stays in Markdown files. Runtime data stays under `.runtime/` and can be rebuilt.
+## Maintenance rules
 
-## Maintenance Rule
+Keep the project small and explicit:
 
-Prefer native local tools over custom infrastructure:
-
-- Hugo for note pages
-- SQLite FTS5 for search
-- Bun for small local APIs and indexers
-- systemd user services for process management
-- inotify for filesystem change detection
-- Git for project source control and local-only personal note history
-
-Do not add a database or service unless it replaces real complexity.
+- Markdown is permanent data.
+- Runtime state belongs under `.runtime/`.
+- Workspace paths come from `~/.config/knowledge/workspaces.toml`.
+- Use one package-manager lockfile: npm/`package-lock.json`.
+- Prefer native local tools over extra infrastructure.
+- Do not add a service or database unless it removes real complexity.
+- Keep personal notes separate from project source control.
