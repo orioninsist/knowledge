@@ -121,22 +121,25 @@ _kn_completion() {
 
         if (( COMP_CWORD == 3 )); then
             local selected_name
-            local api
-            local current_moc
+            local kn_path
+            local kn_real
+            local project
+            local runtime_env
+            local root
+            local current_moc=""
 
             selected_name="${COMP_WORDS[2]:-}"
-            api="$(_kn_api_base)" || {
-                COMPREPLY=()
-                return
-            }
+            kn_path="$(command -v kn 2>/dev/null || true)"
+            kn_real="$(readlink -f "$kn_path" 2>/dev/null || printf '%s' "$kn_path")"
+            project="$(cd "$(dirname "$kn_real")/.." && pwd)"
+            runtime_env="$project/.runtime/personal/runtime.env"
+            root="$(sed -n 's/^WORKSPACE_ROOT=//p' "$runtime_env" 2>/dev/null | head -1)"
 
-            current_moc="$(
-                curl -fsS \
-                    --get \
-                    --data-urlencode "filename=$selected_name" \
-                    "$api/api/note-moc" \
-                    2>/dev/null
-            )"
+            [ -f "$root/0-Inbox/$selected_name" ] && current_moc="inbox"
+            [ -f "$root/1-Projects/$selected_name" ] && current_moc="projects"
+            [ -f "$root/2-Areas/$selected_name" ] && current_moc="areas"
+            [ -f "$root/3-Resources/$selected_name" ] && current_moc="resources"
+            [ -f "$root/4-Archives/$selected_name" ] && current_moc="archives"
 
             COMPREPLY=(
                 $(printf '%s\n' $mocs |
