@@ -47,19 +47,36 @@ _kn_api_base() {
 
 _kn_note_candidates() {
     local prefix="$1"
-    local api
+    local kn_path
+    local kn_real
+    local project
+    local runtime_env
+    local root
 
-    api="$(_kn_api_base)" ||
-        return 0
+    kn_path="$(command -v kn 2>/dev/null || true)"
+    [ -n "$kn_path" ] || return 0
 
-    curl \
-      -fsS \
-      --get \
-      --data-urlencode \
-      "prefix=$prefix" \
-      "$api/api/complete" \
-      2>/dev/null \
-      || true
+    kn_real="$(readlink -f "$kn_path" 2>/dev/null || printf '%s' "$kn_path")"
+    project="$(cd "$(dirname "$kn_real")/.." && pwd)"
+    runtime_env="$project/.runtime/personal/runtime.env"
+    [ -r "$runtime_env" ] || return 0
+
+    root="$(sed -n 's/^WORKSPACE_ROOT=//p' "$runtime_env" | head -1)"
+    [ -n "$root" ] || return 0
+
+    find \
+        "$root/0-Inbox" \
+        "$root/1-Projects" \
+        "$root/2-Areas" \
+        "$root/3-Resources" \
+        "$root/4-Archives" \
+        -maxdepth 1 \
+        -type f \
+        -name '*.md' \
+        -printf '%f\n' \
+        2>/dev/null |
+    sort -u |
+    awk -v p="$prefix" 'index($0, p) == 1'
 }
 
 _kn_completion() {
