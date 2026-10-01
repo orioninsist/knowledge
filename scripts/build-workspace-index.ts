@@ -19,6 +19,11 @@ import {
 } from "node:path";
 
 import {
+  MAX_NOTE_DEPTH,
+  walkMarkdownFiles,
+} from "./note-files";
+
+import {
   getWorkspace,
   validateWorkspace,
 } from "./workspaces";
@@ -446,23 +451,31 @@ const resolveNotePath = (
         prefix
       )
     ) {
-      const name =
-        absolutePath.slice(
-          prefix.length
-        );
+      const nestedPath =
+        absolutePath
+          .slice(prefix.length)
+          .replaceAll("\\", "/");
 
-      if (
-        !name ||
-        name.includes("/")
-      ) {
+      if (!nestedPath) {
+        return null;
+      }
+
+      const depth =
+        nestedPath
+          .split("/")
+          .filter(Boolean)
+          .length;
+
+      if (depth > MAX_NOTE_DEPTH) {
         return null;
       }
 
       return {
         section,
-        name,
+        name:
+          basename(nestedPath),
         relativePath:
-          `${section.directory}/${name}`,
+          `${section.directory}/${nestedPath}`,
       };
     }
   }
@@ -747,53 +760,24 @@ if (
       const section
       of workspace.sections
     ) {
-      const entries =
-        readdirSync(
-          section.path,
-          {
-            withFileTypes: true,
-          },
-        );
-
       for (
         const entry
-        of entries
+        of walkMarkdownFiles(
+          section.path
+        )
       ) {
         if (
-          !entry.isFile()
-        ) {
-          continue;
-        }
-
-        if (
-          !entry.name.endsWith(
-            ".md"
-          )
-        ) {
-          ignored += 1;
-          continue;
-        }
-
-        if (
-          entry.name ===
-          "_index.md" ||
-          entry.name ===
-          "index.md"
+          entry.name === "_index.md" ||
+          entry.name === "index.md"
         ) {
           continue;
         }
 
         scanned += 1;
 
-        const absolutePath =
-          join(
-            section.path,
-            entry.name,
-          );
-
         const result =
           upsertSingleNote(
-            absolutePath,
+            entry.path,
             generation,
           );
 
