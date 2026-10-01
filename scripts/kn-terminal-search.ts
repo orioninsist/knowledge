@@ -23,7 +23,7 @@ try {
 
   const data = await response.json();
 
-  for (const result of (data.results ?? []).slice(0, 50)) {
+  for (const result of (data.results ?? []).slice(0, 10)) {
     if (mode === "personal") {
       const folder = {
         inbox: "0-Inbox",
