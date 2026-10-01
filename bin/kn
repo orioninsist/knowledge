@@ -347,16 +347,6 @@ if [ "${1:-}" = "glow" ]; then
 fi
 
 #
-# DELETE IS DISABLED
-#
-if [ "${1:-}" = "rm" ]; then
-    echo
-    echo "ERROR: Note deletion is disabled by design."
-    echo "Use 'kn mv <filename.md> archives' instead."
-    exit 1
-fi
-
-#
 # MOVE BETWEEN MOCs
 #
 
