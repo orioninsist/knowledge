@@ -1415,65 +1415,34 @@ const server = Bun.serve({
         );
 
       /*
-       * Empty prefix:
-       * return only the last-used note,
-       * and only if that note still exists.
+       * Empty query:
+       * return only a small recent set. Never stream the whole namespace
+       * to the terminal; this keeps completion bounded for very large vaults.
        */
       if (!prefix) {
-        const state =
-          db.query(`
-            SELECT value
-            FROM search_meta
-            WHERE key =
-              'last_note_filename'
-          `).get() as
-            | { value: string }
-            | null;
-
-        if (!state) {
-          db.close();
-
-          return new Response(
-            "",
-            {
-              headers: {
-                "content-type":
-                  "text/plain; charset=utf-8",
-                "cache-control":
-                  "no-store",
-              },
-            },
-          );
-        }
-
-        const filename =
-          state.value;
-
-        const paths = [
-          `0-Inbox/${filename}`,
-          `1-Projects/${filename}`,
-          `2-Areas/${filename}`,
-          `3-Resources/${filename}`,
-          `4-Archives/${filename}`,
-        ];
-
-        const found =
+        const rows =
           db.query(`
             SELECT path
             FROM notes
-            WHERE path IN (
-              ?, ?, ?, ?, ?
-            )
-            LIMIT 1
-          `).get(
-            ...paths
-          );
+            ORDER BY mtime_ms DESC
+            LIMIT 50
+          `).all() as Array<{ path: string }>;
 
         db.close();
 
+        const results =
+          rows
+            .map((row) => {
+              const slash = row.path.indexOf("/");
+              return slash >= 0
+                ? row.path.slice(slash + 1)
+                : row.path;
+            })
+            .filter(Boolean);
+
         return new Response(
-          found
-            ? `${filename}\n`
+          results.length
+            ? `${results.join("\n")}\n`
             : "",
           {
             headers: {
