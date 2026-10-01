@@ -206,16 +206,11 @@ else
     pass 'Wikilinks are excluded from relation analysis'
 fi
 
-if grep -Fq '^\.\./0-Inbox/' layouts/_markup/render-link.html &&
-   grep -Fq '^\.\./1-Projects/' layouts/_markup/render-link.html &&
-   grep -Fq '^\.\./2-Areas/' layouts/_markup/render-link.html &&
-   grep -Fq '^\.\./3-Resources/' layouts/_markup/render-link.html &&
-   grep -Fq '^\.\./4-Archives/' layouts/_markup/render-link.html &&
-   grep -Fq '^0-Inbox/' layouts/_markup/render-link.html &&
-   grep -Fq '^4-Archives/' layouts/_markup/render-link.html; then
-    pass 'Hugo Markdown link MOC mapping'
+if grep -Fq '.Page.GetPage $clean' layouts/_markup/render-link.html &&
+   grep -Fq '.RelPermalink' layouts/_markup/render-link.html; then
+    pass 'Hugo Markdown link page resolution'
 else
-    fail 'Hugo Markdown link MOC mapping'
+    fail 'Hugo Markdown link page resolution'
 fi
 
 if "$HOME/.bun/bin/bun" \
