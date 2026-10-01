@@ -218,6 +218,20 @@ validate_note_name() {
         "$filename"
 }
 
+api_base() {
+    local api_port
+
+    api_port="$(
+        sed -n \
+            's/^API_PORT=//p' \
+            "$RUNTIME_ENV" |
+        head -1
+    )"
+
+    [ -n "$api_port" ] || return 1
+    printf 'http://127.0.0.1:%s\n' "$api_port"
+}
+
 remember_note() {
     local filename="$1"
     local runtime_env="$PROJECT/.runtime/personal/runtime.env"
