@@ -67,7 +67,7 @@ Usage:
     kn mv <filename.md> <moc>
 
   Rename:
-    kn rn <filename.md> [new-filename.md]
+    kn rn <filename.md> <new-filename.md>
 
   Search:
     kn search [words...]
@@ -449,8 +449,8 @@ fi
 # RENAME
 #
 if [ "${1:-}" = "rn" ]; then
-    if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
-        echo "Usage: kn rn <filename.md> [new-filename.md]"
+    if [ "$#" -ne 3 ]; then
+        echo "Usage: kn rn <filename.md> <new-filename.md>"
         exit 1
     fi
 
@@ -464,13 +464,7 @@ if [ "${1:-}" = "rn" ]; then
         exit 1
     fi
 
-    NEW_NAME="${3:-}"
-    if [ -z "$NEW_NAME" ]; then
-        printf 'new filename> '
-        read -r NEW_NAME
-    fi
-
-    NEW_NAME="$(normalize_note_name "$NEW_NAME")"
+    NEW_NAME="$(normalize_note_name "$3")"
     validate_note_name "$NEW_NAME" || exit 1
 
     if [ -n "$(find_note "$NEW_NAME")" ]; then
@@ -497,7 +491,17 @@ if [ "${1:-}" = "rn" ]; then
     OLD_RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
     NEW_RELATIVE="$(notes_git_relative_path "$TARGET")" || exit 1
 
+    SOURCE_TRACKED=0
+    if git -C "$ROOT" ls-files --error-unmatch -- "$OLD_RELATIVE" >/dev/null 2>&1; then
+        SOURCE_TRACKED=1
+    fi
+
     mv -- "$FOUND" "$TARGET"
+
+    if [ "$SOURCE_TRACKED" -eq 1 ]; then
+        git -C "$ROOT" update-index --force-remove -- "$OLD_RELATIVE" || exit 1
+    fi
+
     remember_note "$NEW_NAME"
     notes_git_commit "RENAME" "$OLD_RELATIVE" "$NEW_RELATIVE"
     exit 0
