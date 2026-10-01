@@ -70,6 +70,7 @@ Usage:
     kn rn <filename.md> <new-filename.md>
 
   Relations:
+    kn link <source.md> [target.md]
     kn links <filename.md>
     kn backlinks <filename.md>
     kn broken-links
@@ -96,6 +97,8 @@ Examples:
 
     kn mv linux-notes.md archives
     kn rn linux-notes.md linux-networking.md
+    kn link docker.md
+    kn link docker.md linux-networking.md
     kn links linux-notes.md
     kn backlinks linux-notes.md
     kn broken-links
@@ -317,6 +320,45 @@ path_moc() {
     esac
 }
 
+markdown_title() {
+    local file="$1"
+    local title
+
+    title="$(
+        sed -n 's/^title:[[:space:]]*//p' "$file" |
+        head -1 |
+        sed -e 's/^["'\'' ]*//' -e 's/["'\'' ]*$//'
+    )"
+
+    if [ -z "$title" ]; then
+        title="$(
+            sed -n 's/^#[[:space:]]\+//p' "$file" |
+            head -1
+        )"
+    fi
+
+    if [ -z "$title" ]; then
+        title="$(basename "$file" .md | tr '-' ' ')"
+    fi
+
+    printf '%s\n' "$title"
+}
+
+markdown_link_for() {
+    local source="$1"
+    local target="$2"
+    local relative_path
+    local title
+
+    relative_path="$(
+        realpath --relative-to="$(dirname "$source")" "$target"
+    )" || return 1
+
+    title="$(markdown_title "$target")"
+
+    printf '[%s](%s)\n' "$title" "$relative_path"
+}
+
 #
 # GLOW — READ NOTE
 #
@@ -516,6 +558,50 @@ if [ "${1:-}" = "rn" ]; then
 
     remember_note "$NEW_NAME"
     notes_git_commit "RENAME" "$OLD_RELATIVE" "$NEW_RELATIVE"
+    exit 0
+fi
+
+#
+# STANDARD MARKDOWN LINK
+#
+if [ "${1:-}" = "link" ]; then
+    if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+        echo "Usage: kn link <source.md> [target.md]"
+        exit 1
+    fi
+
+    SOURCE_NAME="$(normalize_note_name "$2")"
+    validate_note_name "$SOURCE_NAME" || exit 1
+    SOURCE_PATH="$(find_note "$SOURCE_NAME")"
+
+    if [ -z "$SOURCE_PATH" ]; then
+        echo
+        echo "ERROR: Source Markdown note not found: $SOURCE_NAME"
+        exit 1
+    fi
+
+    if [ "$#" -eq 3 ]; then
+        TARGET_NAME="$(normalize_note_name "$3")"
+        validate_note_name "$TARGET_NAME" || exit 1
+        TARGET_PATH="$(find_note "$TARGET_NAME")"
+    else
+        TARGET_PATH="$(choose_note_path "link")" || exit 0
+        [ -n "$TARGET_PATH" ] || exit 0
+    fi
+
+    if [ -z "$TARGET_PATH" ] || [ ! -f "$TARGET_PATH" ]; then
+        echo
+        echo "ERROR: Target Markdown note not found."
+        exit 1
+    fi
+
+    if [ "$SOURCE_PATH" = "$TARGET_PATH" ]; then
+        echo
+        echo "ERROR: Source and target note are the same."
+        exit 1
+    fi
+
+    markdown_link_for "$SOURCE_PATH" "$TARGET_PATH"
     exit 0
 fi
 
