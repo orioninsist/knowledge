@@ -630,7 +630,13 @@ fi
 #
 # NORMAL OPEN / CREATE
 #
-
+# Flow:
+#   kn <editor>
+#     1. choose one of the five MOCs
+#     2. choose/type a filename from the global Markdown pool
+#     3. existing note opens from its real MOC
+#     4. new note is created only in the selected MOC
+#
 if [ "$#" -lt 1 ] || [ "$#" -gt 3 ]; then
     usage
     exit 1
@@ -640,14 +646,19 @@ EDITOR_CMD="$1"
 MOC="${2:-}"
 NAME="${3:-}"
 
-if [ -z "$MOC" ]; then
-    MOC="$(choose_moc)"
+if ! command -v "$EDITOR_CMD" >/dev/null 2>&1; then
+    echo
+    echo "ERROR: Editor command not found:"
+    echo "$EDITOR_CMD"
+    exit 1
 fi
 
 if [ -z "$MOC" ]; then
-    echo
-    echo "ERROR: MOC is required."
-    exit 1
+    MOC="$(choose_moc)" || exit 0
+fi
+
+if [ -z "$MOC" ]; then
+    exit 0
 fi
 
 TARGET_DIR="$(moc_dir "$MOC")"
@@ -662,7 +673,7 @@ if [ -z "$NAME" ]; then
     require_fzf || exit 1
     require_glow || exit 1
 
-    NAME="$(
+    FZF_OUTPUT="$(
         all_note_names |
         fzf \
             --prompt='filename> ' \
@@ -671,27 +682,26 @@ if [ -z "$NAME" ]; then
             --border \
             --print-query \
             --preview 'f="$(find "'"$ROOT"'" -maxdepth 2 -type f -name {} -print -quit 2>/dev/null)"; [ -n "$f" ] && glow -t "$f"' \
-            --preview-window='right:60%:wrap' |
-        tail -1
-    )" || exit 0
+            --preview-window='right:60%:wrap'
+    )"
+    FZF_STATUS=$?
+
+    # fzf --print-query prints the typed query first and the selected row second.
+    # If a row was selected, use it. Otherwise use the typed query so a new note
+    # can be created without leaving the picker.
+    if [ -n "$FZF_OUTPUT" ]; then
+        NAME="$(printf '%s\n' "$FZF_OUTPUT" | tail -1)"
+    elif [ "$FZF_STATUS" -ne 0 ]; then
+        exit 0
+    fi
 fi
 
 if [ -z "$NAME" ]; then
-    echo
-    echo "ERROR: Filename is required."
-    exit 1
+    exit 0
 fi
 
 NAME="$(normalize_note_name "$NAME")"
-
 validate_note_name "$NAME" || exit 1
-
-if ! command -v "$EDITOR_CMD" >/dev/null 2>&1; then
-    echo
-    echo "ERROR: Editor command not found:"
-    echo "$EDITOR_CMD"
-    exit 1
-fi
 
 run_editor() {
     local file="$1"
@@ -706,33 +716,25 @@ run_editor() {
     esac
 }
 
+# Filename is globally unique. The selected MOC never relocates an existing note.
 FOUND="$(find_note "$NAME")"
 
 if [ -n "$FOUND" ]; then
     remember_note "$NAME"
-
     RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
-
     run_editor "$FOUND" || exit $?
-
     notes_git_commit "EDIT" "$RELATIVE"
     exit 0
 fi
 
+# Only a genuinely new filename uses the selected MOC.
 cd "$PROJECT" || exit 1
-
-"$BUN" \
-    scripts/new-note.ts \
-    "$MOC" \
-    "$NAME" \
-    || exit 1
+"$BUN" scripts/new-note.ts "$MOC" "$NAME" || exit 1
 
 remember_note "$NAME"
-
 NEW_PATH="$TARGET_DIR/$NAME"
 RELATIVE="$(notes_git_relative_path "$NEW_PATH")" || exit 1
 
 run_editor "$NEW_PATH" || exit $?
-
 notes_git_commit "CREATE" "$RELATIVE"
 exit 0
