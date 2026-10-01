@@ -530,7 +530,6 @@ if [ "${1:-}" = "search" ] || [ "${1:-}" = "docs" ]; then
     export KN_SEARCH_ROOT="$SEARCH_ROOT"
 
     SELECTED="$(
-        "$BUN" "$SEARCH_HELPER" "$SEARCH_MODE" "$QUERY" |
         fzf \
             --disabled \
             --prompt="$SEARCH_PROMPT" \
@@ -538,9 +537,11 @@ if [ "${1:-}" = "search" ] || [ "${1:-}" = "docs" ]; then
             --height=90% \
             --layout=reverse \
             --border \
+            --bind "start:reload($BUN $SEARCH_HELPER $SEARCH_MODE {q})" \
             --bind "change:reload($BUN $SEARCH_HELPER $SEARCH_MODE {q})" \
             --preview 'sed -n "1,160p" "$KN_SEARCH_ROOT"/{}' \
-            --preview-window='right:60%:wrap'
+            --preview-window='right:60%:wrap' \
+            </dev/null
     )" || exit 0
 
     [ -n "$SELECTED" ] || exit 0
