@@ -3,11 +3,11 @@
 {{- if and $current.File (not $current.IsHome) -}}
 
   {{- $folderMap := dict
-      "inbox" "1-Inbox"
-      "projects" "2-Projects"
-      "areas" "3-Areas"
-      "resources" "4-Resources"
-      "archives" "5-Archives"
+      "inbox" "0-Inbox"
+      "projects" "1-Projects"
+      "areas" "2-Areas"
+      "resources" "3-Resources"
+      "archives" "4-Archives"
   -}}
 
   {{- $targetFolder := index $folderMap $current.Section -}}
