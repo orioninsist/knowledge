@@ -129,7 +129,7 @@ do
   #
   # Rejected:
   #   AA.md
-    #   My-Note.md
+  #   My-Note.md
   #   my_note.md
   #   my note.md
   #   türkçe.md
