@@ -420,13 +420,18 @@ if [ "${1:-}" = "mv" ]; then
     OLD_RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
     NEW_RELATIVE="$(notes_git_relative_path "$TARGET")" || exit 1
 
-    # Preserve Git move semantics only when the source is already tracked.
-    # An untracked source must not be staged before the filesystem move, or Git
-    # would record both the old and new paths as newly created files.
+    # Remember whether the source is tracked. After the filesystem move,
+    # remove only the old Git index entry; never delete a note file.
+    SOURCE_TRACKED=0
     if git -C "$ROOT" ls-files --error-unmatch -- "$OLD_RELATIVE" >/dev/null 2>&1; then
-        git -C "$ROOT" add -- "$OLD_RELATIVE" || exit 1
+        SOURCE_TRACKED=1
     fi
+
     mv -- "$FOUND" "$TARGET"
+
+    if [ "$SOURCE_TRACKED" -eq 1 ]; then
+        git -C "$ROOT" update-index --force-remove -- "$OLD_RELATIVE" || exit 1
+    fi
 
     remember_note "$NAME"
 
