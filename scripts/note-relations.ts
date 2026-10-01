@@ -29,10 +29,6 @@ const links: Link[] = [];
 
 for (const note of notes) {
   const seen = new Set<string>();
-  for (const match of note.source.matchAll(/\[\[([^\]]+)\]\]/g)) {
-    const raw = match[1] ?? ""; const target = normalizeTarget(raw); if (!target) continue;
-    const key = "wiki:" + target; if (!seen.has(key)) { links.push({source:note,target,raw,kind:"wiki"}); seen.add(key); }
-  }
   for (const match of note.source.matchAll(/(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g)) {
     const raw = match[1] ?? "";
     if (/^(?:https?:|mailto:|tel:|ftp:|data:|javascript:|#)/i.test(raw)) continue;
