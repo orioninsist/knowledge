@@ -1425,7 +1425,7 @@ const server = Bun.serve({
             SELECT path
             FROM notes
             ORDER BY mtime_ms DESC
-            LIMIT 50
+            LIMIT 5
           `).all() as Array<{ path: string }>;
 
         db.close();
@@ -1480,7 +1480,7 @@ const server = Bun.serve({
             path >= ?
             AND path < ?
           ORDER BY path
-          LIMIT 20
+          LIMIT 5
         `);
 
       for (
@@ -1524,7 +1524,7 @@ const server = Bun.serve({
           ),
         ]
           .sort()
-          .slice(0, 20);
+          .slice(0, 5);
 
       return new Response(
         results.length
