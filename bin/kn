@@ -69,6 +69,14 @@ Usage:
   Rename:
     kn rn <filename.md> <new-filename.md>
 
+  Relations:
+    kn links <filename.md>
+    kn backlinks <filename.md>
+    kn broken-links
+
+  Diagnostics:
+    kn doctor
+
   Search:
     kn search [words...]
 
@@ -88,6 +96,10 @@ Examples:
 
     kn mv linux-notes.md archives
     kn rn linux-notes.md linux-networking.md
+    kn links linux-notes.md
+    kn backlinks linux-notes.md
+    kn broken-links
+    kn doctor
     kn search docker network
     kn docs systemd
 
@@ -505,6 +517,35 @@ if [ "${1:-}" = "rn" ]; then
     remember_note "$NEW_NAME"
     notes_git_commit "RENAME" "$OLD_RELATIVE" "$NEW_RELATIVE"
     exit 0
+fi
+
+#
+# NOTE RELATIONS
+#
+if [ "${1:-}" = "links" ] || [ "${1:-}" = "backlinks" ]; then
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: kn $1 <filename.md>"
+        exit 1
+    fi
+    NAME="$(normalize_note_name "$2")"
+    validate_note_name "$NAME" || exit 1
+    cd "$PROJECT" || exit 1
+    exec "$BUN" scripts/note-relations.ts "$1" "$NAME"
+fi
+
+if [ "${1:-}" = "broken-links" ]; then
+    [ "$#" -eq 1 ] || { echo "Usage: kn broken-links"; exit 1; }
+    cd "$PROJECT" || exit 1
+    exec "$BUN" scripts/note-relations.ts broken
+fi
+
+#
+# DIAGNOSTICS
+#
+if [ "${1:-}" = "doctor" ]; then
+    [ "$#" -eq 1 ] || { echo "Usage: kn doctor"; exit 1; }
+    cd "$PROJECT" || exit 1
+    exec "$BUN" scripts/doctor.ts
 fi
 
 #
