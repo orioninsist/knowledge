@@ -671,7 +671,6 @@ fi
 
 if [ -z "$NAME" ]; then
     require_fzf || exit 1
-    require_glow || exit 1
 
     FZF_OUTPUT="$(
         all_note_names |
@@ -680,9 +679,7 @@ if [ -z "$NAME" ]; then
             --height=90% \
             --layout=reverse \
             --border \
-            --print-query \
-            --preview 'f="$(find "'"$ROOT"'" -maxdepth 2 -type f -name {} -print -quit 2>/dev/null)"; [ -n "$f" ] && glow -t "$f"' \
-            --preview-window='right:60%:wrap'
+            --print-query
     )"
     FZF_STATUS=$?
 
