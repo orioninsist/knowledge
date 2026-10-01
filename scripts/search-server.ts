@@ -46,6 +46,10 @@ type ParsedQuery = {
   sections: string[];
   tags: string[];
   statuses: string[];
+  filenames: string[];
+  titles: string[];
+  descriptions: string[];
+  aliases: string[];
 };
 
 const parseQuery = (
@@ -71,7 +75,7 @@ const parseQuery = (
       : rawToken;
 
     const filterMatch = token.match(
-      /^(section|tag|status):(.+)$/i,
+      /^(section|folder|tag|status|file|filename|title|desc|description|alias):(.+)$/i,
     );
 
     if (!filterMatch) {
@@ -88,13 +92,17 @@ const parseQuery = (
       filterMatch[1].toLowerCase();
 
     const value =
-      normalize(filterMatch[2]);
+      normalize(
+        filterMatch[2]
+          .replace(/^"/, "")
+          .replace(/"$/, ""),
+      );
 
     if (!value) {
       continue;
     }
 
-    if (field === "section") {
+    if (field === "section" || field === "folder") {
       parsed.sections.push(
         SECTION_ALIASES[value] ??
         value,
@@ -113,6 +121,26 @@ const parseQuery = (
 
     if (field === "status") {
       parsed.statuses.push(value);
+      continue;
+    }
+
+    if (field === "file" || field === "filename") {
+      parsed.filenames.push(value);
+      continue;
+    }
+
+    if (field === "title") {
+      parsed.titles.push(value);
+      continue;
+    }
+
+    if (field === "desc" || field === "description") {
+      parsed.descriptions.push(value);
+      continue;
+    }
+
+    if (field === "alias") {
+      parsed.aliases.push(value);
     }
   }
 
@@ -1818,45 +1846,48 @@ const server = Bun.serve({
             },
           );
 
+        const parsed =
+          parseQuery(q);
+
         const response =
           search(
             db,
-            q,
+            parsed.terms.join(" "),
             {
-              folders:
-                url.searchParams
-                  .getAll("folder")
-                  .filter(Boolean),
+              folders: [
+                ...url.searchParams.getAll("folder").filter(Boolean),
+                ...parsed.sections,
+              ],
 
               filename:
-                url.searchParams
-                  .get("filename")
-                  ?.trim() ?? "",
+                url.searchParams.get("filename")?.trim() ??
+                parsed.filenames[0] ??
+                "",
 
               title:
-                url.searchParams
-                  .get("title")
-                  ?.trim() ?? "",
+                url.searchParams.get("title")?.trim() ??
+                parsed.titles[0] ??
+                "",
 
               description:
-                url.searchParams
-                  .get("description")
-                  ?.trim() ?? "",
+                url.searchParams.get("description")?.trim() ??
+                parsed.descriptions[0] ??
+                "",
 
-              statuses:
-                url.searchParams
-                  .getAll("status")
-                  .filter(Boolean),
+              statuses: [
+                ...url.searchParams.getAll("status").filter(Boolean),
+                ...parsed.statuses,
+              ],
 
-              aliases:
-                url.searchParams
-                  .getAll("alias")
-                  .filter(Boolean),
+              aliases: [
+                ...url.searchParams.getAll("alias").filter(Boolean),
+                ...parsed.aliases,
+              ],
 
-              tags:
-                url.searchParams
-                  .getAll("tag")
-                  .filter(Boolean),
+              tags: [
+                ...url.searchParams.getAll("tag").filter(Boolean),
+                ...parsed.tags,
+              ],
             },
             Math.max(
               0,
