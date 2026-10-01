@@ -14,8 +14,7 @@ PROJECT="$(
         pwd
 )"
 
-# Local-only version history for personal Markdown notes.
-# This repository must never have a remote.
+# Personal-note Git history. Only paths inside WORKSPACE_ROOT are committed/pushed.
 source "$PROJECT/scripts/notes-git.sh"
 
 BUN="$(command -v bun || true)"
@@ -65,10 +64,16 @@ Usage:
     kn <editor>
 
   Move:
-    kn mv <filename.md> <moc>
+    kn mv <filename.md> [moc]
 
-  Delete:
-    kn rm <filename.md>
+  Rename:
+    kn rn <filename.md> [new-filename.md]
+
+  Search:
+    kn search [words...]
+
+  Documentation:
+    kn docs [words...]
 
 Examples:
 
@@ -82,7 +87,9 @@ Examples:
     kn nvim
 
     kn mv linux-notes.md archives
-    kn rm linux-notes.md
+    kn rn linux-notes.md linux-networking.md
+    kn search docker network
+    kn docs systemd
 
 Editors:
 
@@ -134,51 +141,31 @@ normalize_note_name() {
     printf '%s\n' "$name"
 }
 
+require_fzf() {
+    if ! command -v fzf >/dev/null 2>&1; then
+        echo
+        echo "ERROR: fzf is required."
+        echo "Install: sudo dnf install fzf"
+        return 1
+    fi
+}
+
+require_glow() {
+    if ! command -v glow >/dev/null 2>&1; then
+        echo
+        echo "ERROR: Glow is required."
+        echo "Install Glow for Fedora, then retry."
+        return 1
+    fi
+}
+
 choose_from_list() {
     local prompt="$1"
-
-    if command -v fzf >/dev/null 2>&1; then
-        fzf --prompt="$prompt> "
-        return
-    fi
-
-    sed -n '1p'
+    require_fzf || return 1
+    fzf --prompt="$prompt> " --height=80% --layout=reverse --border
 }
 
-api_base() {
-    local api_port
-
-    api_port="$(
-        sed -n \
-            's/^API_PORT=//p' \
-            "$RUNTIME_ENV" |
-        head -1
-    )"
-
-    [ -n "$api_port" ] || return 1
-
-    printf 'http://127.0.0.1:%s\n' "$api_port"
-}
-
-global_note_candidates() {
-    local prefix="${1:-}"
-    local api
-
-    api="$(api_base)" || return 0
-
-    curl \
-        -fsS \
-        --get \
-        --data-urlencode \
-        "prefix=$prefix" \
-        "$api/api/complete" \
-        2>/dev/null \
-        || true
-}
-
-global_note_filesystem_candidates() {
-    local prefix="${1:-}"
-
+all_note_paths() {
     find \
         "$ROOT/0-Inbox" \
         "$ROOT/1-Projects" \
@@ -187,42 +174,13 @@ global_note_filesystem_candidates() {
         "$ROOT/4-Archives" \
         -maxdepth 1 \
         -type f \
-        -name "${prefix}*.md" \
-        -printf '%f\n' \
-        2>/dev/null \
-        | sort \
-        | awk 'NF && !seen[$0]++' \
-        | sed -n '1,20p'
+        -name '*.md' \
+        -print \
+        2>/dev/null | sort
 }
 
-choose_moc() {
-    printf '%s\n' \
-        inbox \
-        projects \
-        areas \
-        resources \
-        archives \
-        | choose_from_list "moc"
-}
-
-choose_note_name() {
-    local selected=""
-
-    selected="$(
-        {
-            global_note_candidates ""
-            global_note_filesystem_candidates ""
-        } | awk 'NF && !seen[$0]++' | choose_from_list "filename"
-    )" || true
-
-    if [ -n "$selected" ]; then
-        printf '%s\n' "$selected"
-        return
-    fi
-
-    printf 'filename.md> ' >&2
-    read -r selected
-    printf '%s\n' "$selected"
+all_note_names() {
+    all_note_paths | sed 's|.*/||'
 }
 
 validate_note_name() {
@@ -311,16 +269,21 @@ path_moc() {
 #
 
 if [ "${1:-}" = "glow" ]; then
-    if [ "$#" -ne 2 ]; then
-        echo "Usage: kn glow <filename.md>"
+    if [ "$#" -gt 2 ]; then
+        echo "Usage: kn glow [filename.md]"
         exit 1
     fi
 
-    NAME="$2"
+    NAME="${2:-}"
+
+    if [ -z "$NAME" ]; then
+        FOUND="$(choose_note_path "glow")" || exit 0
+        NAME="$(basename "$FOUND")"
+    fi
 
     validate_note_name "$NAME" || exit 1
 
-    FOUND="$(find_note "$NAME")"
+    FOUND="${FOUND:-$(find_note "$NAME")}"
 
     if [ -z "$FOUND" ]; then
         echo
@@ -333,7 +296,7 @@ if [ "${1:-}" = "glow" ]; then
     if ! command -v glow >/dev/null 2>&1; then
         echo
         echo "ERROR: Glow is not installed."
-        echo "Install: sudo pacman -S glow"
+        echo "Install Glow for Fedora, then retry."
         exit 1
     fi
 
@@ -343,95 +306,18 @@ if [ "${1:-}" = "glow" ]; then
 fi
 
 #
-# DELETE
-#
-
-if [ "${1:-}" = "rm" ]; then
-    if [ "$#" -ne 2 ]; then
-        echo "Usage: kn rm <filename.md>"
-        exit 1
-    fi
-
-    NAME="$2"
-
-    validate_note_name "$NAME" || exit 1
-
-    FOUND="$(find_note "$NAME")"
-
-    if [ -z "$FOUND" ]; then
-        echo
-        echo "ERROR: Markdown note not found."
-        echo
-        echo "$NAME"
-        exit 1
-    fi
-
-    if ! command -v nvim >/dev/null 2>&1; then
-        echo
-        echo "ERROR: Neovim (nvim) is not available."
-        echo "Note was not deleted."
-        exit 1
-    fi
-
-    echo
-    echo "Review note before deletion."
-    echo "Exit Neovim with :q to continue to the delete confirmation."
-    echo
-
-    if ! nvim -R "$FOUND"; then
-        echo
-        echo "CANCELLED: Neovim did not exit successfully."
-        echo "Note was not deleted."
-        exit 1
-    fi
-
-    MOC="$(path_moc "$FOUND")"
-
-    echo
-    echo "Delete note"
-    echo
-    echo "File:  $NAME"
-    echo "MOC:   $MOC"
-    echo
-    echo "$FOUND"
-    echo
-    printf "Delete this note? [y/N] "
-
-    read -r ANSWER
-
-    case "$ANSWER" in
-        y|Y|yes|YES|Yes)
-            ;;
-        *)
-            echo
-            echo "CANCELLED: Note was not deleted."
-            exit 0
-            ;;
-    esac
-
-    RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
-
-    rm -- "$FOUND"
-
-    echo
-    echo "PASS: Note deleted."
-
-    notes_git_commit "DELETE" "$RELATIVE"
-    exit 0
-fi
-
-#
 # MOVE BETWEEN MOCs
 #
 
+
 if [ "${1:-}" = "mv" ]; then
-    if [ "$#" -ne 3 ]; then
-        echo "Usage: kn mv <filename.md> <moc>"
+    if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+        echo "Usage: kn mv <filename.md> [moc]"
         exit 1
     fi
 
     NAME="$2"
-    TARGET_MOC="$3"
+    TARGET_MOC="${3:-}"
 
     validate_note_name "$NAME" || exit 1
 
@@ -443,6 +329,16 @@ if [ "${1:-}" = "mv" ]; then
         echo
         echo "$NAME"
         exit 1
+    fi
+
+    CURRENT_MOC="$(path_moc "$FOUND")"
+
+    if [ -z "$TARGET_MOC" ]; then
+        TARGET_MOC="$(
+            printf '%s\n' inbox projects areas resources archives |
+            grep -vx "$CURRENT_MOC" |
+            choose_from_list "moc"
+        )" || exit 0
     fi
 
     TARGET_DIR="$(moc_dir "$TARGET_MOC")"
@@ -460,7 +356,6 @@ if [ "${1:-}" = "mv" ]; then
         exit 1
     fi
 
-    CURRENT_MOC="$(path_moc "$FOUND")"
     TARGET="$TARGET_DIR/$NAME"
 
     if [ "$CURRENT_MOC" = "$TARGET_MOC" ]; then
@@ -522,6 +417,139 @@ if [ "${1:-}" = "mv" ]; then
 fi
 
 #
+# RENAME
+#
+if [ "${1:-}" = "rn" ]; then
+    if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+        echo "Usage: kn rn <filename.md> [new-filename.md]"
+        exit 1
+    fi
+
+    NAME="$2"
+    validate_note_name "$NAME" || exit 1
+    FOUND="$(find_note "$NAME")"
+
+    if [ -z "$FOUND" ]; then
+        echo
+        echo "ERROR: Markdown note not found: $NAME"
+        exit 1
+    fi
+
+    NEW_NAME="${3:-}"
+    if [ -z "$NEW_NAME" ]; then
+        printf 'new filename> '
+        read -r NEW_NAME
+    fi
+
+    NEW_NAME="$(normalize_note_name "$NEW_NAME")"
+    validate_note_name "$NEW_NAME" || exit 1
+
+    if [ -n "$(find_note "$NEW_NAME")" ]; then
+        echo
+        echo "ERROR: Target filename already exists: $NEW_NAME"
+        exit 1
+    fi
+
+    TARGET="$(dirname "$FOUND")/$NEW_NAME"
+
+    echo
+    echo "$FOUND"
+    echo "→"
+    echo "$TARGET"
+    echo
+    printf "Rename this note? [y/N] "
+    read -r ANSWER
+
+    case "$ANSWER" in
+        y|Y|yes|YES|Yes) ;;
+        *) echo "CANCELLED: Note was not renamed."; exit 0 ;;
+    esac
+
+    OLD_RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
+    NEW_RELATIVE="$(notes_git_relative_path "$TARGET")" || exit 1
+
+    mv -- "$FOUND" "$TARGET"
+    remember_note "$NEW_NAME"
+    notes_git_commit "RENAME" "$OLD_RELATIVE" "$NEW_RELATIVE"
+    exit 0
+fi
+
+#
+# PERSONAL SEARCH
+#
+if [ "${1:-}" = "search" ]; then
+    require_fzf || exit 1
+    require_glow || exit 1
+
+    QUERY="${*:2}"
+    API="$(api_base)" || {
+        echo "ERROR: Personal search API is not available."
+        exit 1
+    }
+
+    RESULTS="$(
+        curl -fsS --get --data-urlencode "q=$QUERY" "$API/api/search" 2>/dev/null |
+        "$BUN" -e '
+          const data = await Bun.stdin.json();
+          for (const r of data.results ?? []) {
+            const section = String(r.section ?? "");
+            const folder = {inbox:"0-Inbox",projects:"1-Projects",areas:"2-Areas",resources:"3-Resources",archives:"4-Archives"}[section];
+            if (!folder || !r.url) continue;
+            const stem = decodeURIComponent(String(r.url).split("/").filter(Boolean).at(-1) ?? "");
+            if (!stem) continue;
+            console.log(folder + "/" + stem + ".md");
+          }
+        '
+    )" || exit 1
+
+    if [ -z "$RESULTS" ]; then
+        echo "No matching notes."
+        exit 0
+    fi
+
+    SELECTED="$(
+        printf '%s\n' "$RESULTS" |
+        fzf \
+            --prompt='search> ' \
+            --query="$QUERY" \
+            --height=90% \
+            --layout=reverse \
+            --border \
+            --with-nth=2 \
+            --delimiter='/' \
+            --preview 'glow -t "'"$ROOT"'"/{}' \
+            --preview-window='right:60%:wrap'
+    )" || exit 0
+
+    exec glow -t "$ROOT/$SELECTED"
+fi
+
+#
+# DOCUMENTATION SEARCH (READ-ONLY)
+#
+if [ "${1:-}" = "docs" ]; then
+    require_fzf || exit 1
+    require_glow || exit 1
+
+    DOCS_ROOT="${KNOWLEDGE_DOCS_ROOT:-/home/murat/Media/5-Documentation}"
+    QUERY="${*:2}"
+
+    SELECTED="$(
+        find "$DOCS_ROOT" -type f -name '*.md' -print 2>/dev/null |
+        fzf \
+            --prompt='docs> ' \
+            --query="$QUERY" \
+            --height=90% \
+            --layout=reverse \
+            --border \
+            --preview 'glow -t {}' \
+            --preview-window='right:60%:wrap'
+    )" || exit 0
+
+    exec glow -t "$SELECTED"
+fi
+
+#
 # NORMAL OPEN / CREATE
 #
 
@@ -553,7 +581,21 @@ if [ -z "$TARGET_DIR" ]; then
 fi
 
 if [ -z "$NAME" ]; then
-    NAME="$(choose_note_name)"
+    require_fzf || exit 1
+    require_glow || exit 1
+
+    NAME="$(
+        all_note_names |
+        fzf \
+            --prompt='filename> ' \
+            --height=90% \
+            --layout=reverse \
+            --border \
+            --print-query \
+            --preview 'f="$(find "'"$ROOT"'" -maxdepth 2 -type f -name {} -print -quit 2>/dev/null)"; [ -n "$f" ] && glow -t "$f"' \
+            --preview-window='right:60%:wrap' |
+        tail -1
+    )" || exit 0
 fi
 
 if [ -z "$NAME" ]; then
