@@ -53,7 +53,7 @@ The directory is the source of truth for a note's MOC:
 
 MOC state is not duplicated in front matter.
 
-Subdirectories inside these five MOC directories are not allowed by the workspace validator. Non-Markdown files are ignored.
+Subdirectories inside these five MOC directories are supported. Markdown discovery, indexing, link relations, Hugo content mounts, and Neovim link completion are recursive. Non-Markdown files are ignored.
 
 ## 4. Filename contract
 
@@ -195,7 +195,20 @@ API_PORT=8788
 DB_PATH=.../.runtime/personal/knowledge.db
 ```
 
-The generated Hugo configuration mounts the five real note directories into Hugo content paths.
+The generated Hugo configuration mounts the five real note directories into Hugo content paths. Each mount includes both root-level and nested Markdown files:
+
+```toml
+files = ["*.md", "**/*.md"]
+```
+
+The runtime config also enables Goldmark trusted raw HTML rendering for the local personal workspace:
+
+```toml
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+```
 
 Do not maintain a second static root `hugo.toml` containing user workspace paths. The generated runtime configuration is the source of truth.
 
@@ -457,6 +470,14 @@ kn broken-links
 ```
 
 Relations are derived directly from standard Markdown links only. Wikilinks are intentionally unsupported.
+
+In Neovim Markdown buffers, link destinations can be completed inside `[]()` with:
+
+```text
+Ctrl-X Ctrl-O
+```
+
+The omnifunc starts from the current note's directory, walks one folder level at a time as directories are selected, shows at most five matching entries per completion menu, and offers directories plus `.md` files. Selecting a Markdown file inserts its relative path.
 
 Use:
 
@@ -796,12 +817,13 @@ Keep these invariants unless intentionally redesigning the project:
 7. MOC is derived from folder location, not front matter.
 8. Runtime state belongs under `.runtime/`.
 9. Workspace paths come from `~/.config/knowledge/workspaces.toml`.
-10. Hugo personal mounts come from generated runtime config.
-11. Documentation remains independent from the personal workspace.
-12. Documentation remains read-only from the Knowledge UI/CLI.
-13. Avoid extra infrastructure when local native tools already solve the problem.
-14. Use one package-manager lockfile.
-15. Prefer archiving notes over introducing destructive delete behavior.
+10. Hugo personal mounts come from generated runtime config and include root-level plus nested Markdown files.
+11. Trusted raw HTML in personal Markdown is rendered intentionally because the personal workspace is local and user-controlled.
+12. Documentation remains independent from the personal workspace.
+13. Documentation remains read-only from the Knowledge UI/CLI.
+14. Avoid extra infrastructure when local native tools already solve the problem.
+15. Use one package-manager lockfile.
+16. Prefer archiving notes over introducing destructive delete behavior.
 
 ## 23. Fast recovery checklist
 
