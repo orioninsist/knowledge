@@ -120,10 +120,28 @@ _kn_completion() {
         fi
 
         if (( COMP_CWORD == 3 )); then
+            local selected_name
+            local api
+            local current_moc
+
+            selected_name="${COMP_WORDS[2]:-}"
+            api="$(_kn_api_base)" || {
+                COMPREPLY=()
+                return
+            }
+
+            current_moc="$(
+                curl -fsS \
+                    --get \
+                    --data-urlencode "filename=$selected_name" \
+                    "$api/api/note-moc" \
+                    2>/dev/null
+            )"
+
             COMPREPLY=(
-                $(compgen \
-                    -W "$mocs" \
-                    -- "$cur")
+                $(printf '%s\n' $mocs |
+                    grep -vx "$current_moc" |
+                    grep "^$cur")
             )
 
             return
