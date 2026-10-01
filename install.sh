@@ -137,6 +137,18 @@ ln -sfn \
 echo 'PASS: Bash completion installed.'
 
 echo
+echo '--- Neovim Markdown completion ---'
+
+NVIM_AFTER="$HOME/.config/nvim/after/ftplugin"
+mkdir -p "$NVIM_AFTER"
+
+ln -sfn \
+  "$PROJECT_DIR/nvim/after/ftplugin/markdown.lua" \
+  "$NVIM_AFTER/markdown.lua"
+
+echo 'PASS: Neovim Markdown completion installed.'
+
+echo
 echo '--- systemd user services ---'
 
 SYSTEMD_DIR="$HOME/.config/systemd/user"
