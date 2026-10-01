@@ -3,11 +3,11 @@
 
 {{- if findRE `\.md(?:#.*)?$` $destination -}}
 
-  {{- $href = replaceRE `^\.\./1-Inbox/` `/inbox/` $href -}}
-  {{- $href = replaceRE `^\.\./2-Projects/` `/projects/` $href -}}
-  {{- $href = replaceRE `^\.\./3-Areas/` `/areas/` $href -}}
-  {{- $href = replaceRE `^\.\./4-Resources/` `/resources/` $href -}}
-  {{- $href = replaceRE `^\.\./5-Archives/` `/archives/` $href -}}
+  {{- $href = replaceRE `^\.\./0-Inbox/` `/inbox/` $href -}}
+  {{- $href = replaceRE `^\.\./1-Projects/` `/projects/` $href -}}
+  {{- $href = replaceRE `^\.\./2-Areas/` `/areas/` $href -}}
+  {{- $href = replaceRE `^\.\./3-Resources/` `/resources/` $href -}}
+  {{- $href = replaceRE `^\.\./4-Archives/` `/archives/` $href -}}
 
   {{- $href = replaceRE `^0-Inbox/` `/inbox/` $href -}}
   {{- $href = replaceRE `^1-Projects/` `/projects/` $href -}}
