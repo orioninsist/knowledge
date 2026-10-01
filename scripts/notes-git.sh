@@ -104,7 +104,12 @@ notes_git_commit() {
         return 0
     fi
 
-    git -C "$NOTES_ROOT" add -A -- "${@}"
+    local path
+    for path in "$@"; do
+        if [ -e "$NOTES_ROOT/$path" ]; then
+            git -C "$NOTES_ROOT" add -- "$path" || return 1
+        fi
+    done
 
     if git -C "$NOTES_ROOT" diff --cached --quiet -- "${@}"; then
         echo
