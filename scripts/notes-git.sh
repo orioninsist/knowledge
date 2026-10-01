@@ -112,7 +112,10 @@ notes_git_commit() {
         return 0
     fi
 
-    git -C "$NOTES_ROOT" commit -m "$message" -- "${@}" || return 1
+    # Commit exactly the index state we just prepared. Do not pass pathspecs
+    # here: after a move/rename the old path no longer exists in the worktree.
+    # Other unstaged note changes remain outside this commit.
+    git -C "$NOTES_ROOT" commit -m "$message" || return 1
 
     echo
     echo "PASS: Local commit created."
