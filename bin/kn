@@ -165,7 +165,8 @@ Core rules:
   - Markdown is the source of truth.
   - Personal note filenames:
       ^[a-z0-9]+(?:-[a-z0-9]+)*\.md$
-  - Filenames are globally unique across all five MOCs.\n  - Notes may live in nested directories up to 5 levels deep.
+  - Filenames are globally unique across all five MOCs.
+  - Notes may live in nested directories up to 5 levels deep.
   - index.md and _index.md are reserved.
   - kn intentionally has no delete command; archive notes instead.
   - Personal notes use a separate local Git repository with no remote.
@@ -194,7 +195,7 @@ find_note() {
         "$ROOT/2-Areas" \
         "$ROOT/3-Resources" \
         "$ROOT/4-Archives" \
-        -maxdepth 1 \
+        -maxdepth 5 \
         -type f \
         -name "$name" \
         -print \
@@ -243,7 +244,7 @@ all_note_paths() {
         "$ROOT/2-Areas" \
         "$ROOT/3-Resources" \
         "$ROOT/4-Archives" \
-        -maxdepth 1 \
+        -maxdepth 5 \
         -type f \
         -name '*.md' \
         -print \
