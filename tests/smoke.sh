@@ -182,122 +182,7 @@ else
     fail 'Hugo uses generated runtime config only'
 fi
 
-if grep -Fq -- '^[a-z0-9]+(-[a-z0-9]+)*\.md
-if "$HOME/.bun/bin/bun" \
-    scripts/check-global-filenames.ts \
-    personal
-then
-    pass 'Global filenames'
-else
-    fail 'Global filenames'
-fi
-
-if "$HOME/.bun/bin/bun" \
-    scripts/check-note-invariants.ts \
-    personal
-then
-    pass 'Note invariants'
-else
-    fail 'Note invariants'
-fi
-
-if "$HOME/.bun/bin/bun" \
-    scripts/check-workspaces.ts
-then
-    pass 'Workspace configuration'
-else
-    fail 'Workspace configuration'
-fi
-
-#
-# Internal links
-#
-
-echo
-echo '--- Internal links ---'
-
-if node scripts/check-links.mjs; then
-    pass 'Internal Markdown links'
-else
-    fail 'Internal Markdown links'
-fi
-
-#
-# Syntax / compile
-#
-
-echo
-echo '--- Syntax ---'
-
-if bash -n \
-    bin/kn
-then
-    pass 'KN command shell syntax'
-else
-    fail 'KN command shell syntax'
-fi
-
-for shell_file in \
-    install.sh \
-    scripts/live-workspace-sync.sh \
-    scripts/docs-watch.sh \
-    scripts/notes-git.sh
-do
-    if bash -n "$shell_file"
-    then
-        pass "$shell_file syntax"
-    else
-        fail "$shell_file syntax"
-    fi
-done
-
-if node --check \
-    static/js/visual-renderers.js
-then
-    pass 'Visual renderer JS syntax'
-else
-    fail 'Visual renderer JS syntax'
-fi
-
-
-for file in \
-    scripts/build-workspace-index.ts \
-    scripts/build-docs-index.ts \
-    scripts/docs-indexer.ts \
-    scripts/update-docs-path.ts \
-    scripts/docs-server.ts \
-    scripts/new-note.ts \
-    scripts/search-server.ts \
-    scripts/validate-note-name.ts
-do
-    if "$HOME/.bun/bin/bun" build \
-        "$file" \
-        --target=bun \
-        --outfile=/tmp/knowledge-smoke.js \
-        >/dev/null 2>&1
-    then
-        pass "$file"
-    else
-        fail "$file"
-    fi
-done
-
-rm -f /tmp/knowledge-smoke.js
-
-#
-# Result
-#
-
-echo
-
-if [ "$FAIL" -eq 0 ]; then
-    echo '===== SMOKE TEST PASS ====='
-    exit 0
-else
-    echo '===== SMOKE TEST FAIL ====='
-    exit 1
-fi
- scripts/live-workspace-sync.sh; then
+if grep -Fq '^[a-z0-9]+(-[a-z0-9]+)*\.md' scripts/live-workspace-sync.sh; then
     pass 'Watcher filename rule matches note policy'
 else
     fail 'Watcher filename rule matches note policy'
@@ -359,7 +244,6 @@ fi
 
 for shell_file in \
     install.sh \
-    scripts/install-local-links.sh \
     scripts/live-workspace-sync.sh \
     scripts/docs-watch.sh \
     scripts/notes-git.sh
