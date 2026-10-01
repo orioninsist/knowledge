@@ -194,10 +194,23 @@ else
     fail 'Inline search query filters'
 fi
 
-if grep -Fq 'kn broken-links' bin/kn && grep -Fq 'kn doctor' bin/kn; then
-    pass 'KN relations and doctor commands'
+if grep -Fq 'kn link <source.md> [target.md]' bin/kn && grep -Fq 'kn broken-links' bin/kn && grep -Fq 'kn doctor' bin/kn; then
+    pass 'KN standard Markdown link, relations, and doctor commands'
 else
-    fail 'KN relations and doctor commands'
+    fail 'KN standard Markdown link, relations, and doctor commands'
+fi
+
+if grep -Fq 'matchAll(/\\[\\[' scripts/note-relations.ts; then
+    fail 'Wikilinks are excluded from relation analysis'
+else
+    pass 'Wikilinks are excluded from relation analysis'
+fi
+
+if grep -Fq '../0-Inbox/' layouts/_markup/render-link.html &&
+   grep -Fq '../4-Archives/' layouts/_markup/render-link.html; then
+    pass 'Hugo Markdown link MOC mapping'
+else
+    fail 'Hugo Markdown link MOC mapping'
 fi
 
 if "$HOME/.bun/bin/bun" \
