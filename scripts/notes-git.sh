@@ -40,6 +40,15 @@ notes_git_assert() {
         echo "$NOTES_ROOT"
         return 1
     fi
+
+    # Safety invariant: personal notes are local-Git-only.
+    # Refuse to operate if any remote is ever configured accidentally.
+    if [ -n "$(git -C "$NOTES_ROOT" remote)" ]; then
+        echo
+        echo "ERROR: Personal notes must remain local Git only."
+        echo "Remove all Git remotes from: $NOTES_ROOT"
+        return 1
+    fi
 }
 
 notes_git_relative_path() {
