@@ -36,15 +36,15 @@ notes_git_assert() {
 
     if [ ! -d "$NOTES_ROOT/.git" ]; then
         echo
-        echo "ERROR: Local Notes Git repository is missing."
+        echo "ERROR: Notes Git repository is missing."
         echo "$NOTES_ROOT"
         return 1
     fi
 
-    if [ -n "$(git -C "$NOTES_ROOT" remote)" ]; then
+    if ! git -C "$NOTES_ROOT" remote get-url origin >/dev/null 2>&1; then
         echo
-        echo "ERROR: Notes Git must remain LOCAL-ONLY."
-        echo "A Git remote is configured."
+        echo "ERROR: Notes Git remote 'origin' is not configured."
+        echo "$NOTES_ROOT"
         return 1
     fi
 }
@@ -81,7 +81,7 @@ notes_git_commit() {
     fi
 
     echo
-    echo "===== KNOWLEDGE LOCAL GIT ====="
+    echo "===== KNOWLEDGE GIT ====="
     echo
     echo "Operation: $operation"
     echo
@@ -93,23 +93,15 @@ notes_git_commit() {
     git -C "$NOTES_ROOT" diff --stat -- "${@}" || true
 
     echo
-    echo "Preview:"
-    git -C "$NOTES_ROOT" diff -- "${@}" | sed -n '1,80p'
-
-    echo
     printf "Commit message: "
     IFS= read -r message
 
     if [ -z "$message" ]; then
         echo
-        echo "UNCOMMITTED: Notes were changed but no commit message was entered."
+        echo "UNCOMMITTED: Changes remain in the working tree."
         return 0
     fi
 
-    #
-    # Stage ONLY the paths belonging to this operation.
-    # Never use: git add .
-    #
     git -C "$NOTES_ROOT" add -A -- "${@}"
 
     if git -C "$NOTES_ROOT" diff --cached --quiet -- "${@}"; then
@@ -118,9 +110,14 @@ notes_git_commit() {
         return 0
     fi
 
-    git -C "$NOTES_ROOT" commit -m "$message" -- "${@}"
+    git -C "$NOTES_ROOT" commit -m "$message" -- "${@}" || return 1
 
-    echo
-    echo "PASS: Local Notes Git commit created."
-    echo "No remote. No push."
+    if git -C "$NOTES_ROOT" push origin HEAD; then
+        echo
+        echo "PASS: Commit created and pushed."
+    else
+        echo
+        echo "ERROR: Commit was created, but push failed."
+        return 1
+    fi
 }
