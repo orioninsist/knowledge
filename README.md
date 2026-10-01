@@ -225,6 +225,26 @@ Mermaid is served from the vendored browser bundle. D2 and Typst rendering are p
 
 `/productivity/` contains World Clock, Weather, Prayer Times, and Focus tools. Its state lives in browser storage and it does not read or modify Markdown notes.
 
+## Code statistics
+
+Use `cloc` to measure the repository by language and source lines without counting generated/runtime dependencies.
+
+On Arch Linux:
+
+```bash
+sudo pacman -S cloc
+```
+
+From the repository root:
+
+```bash
+cloc . \
+  --exclude-dir=.git,.runtime,node_modules,vendor \
+  --exclude-list-file=/dev/null
+```
+
+The exclusions keep Git metadata, generated runtime state, installed dependencies, and vendored third-party code out of the project source count. In particular, the vendored Mermaid bundle should not be treated as project-authored source code.
+
 ## Local checks
 
 Full installation + smoke test:
