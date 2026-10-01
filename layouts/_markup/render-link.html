@@ -2,21 +2,11 @@
 {{- $href := $destination -}}
 
 {{- if findRE `\.md(?:#.*)?$` $destination -}}
-
-  {{- $href = replaceRE `^\.\./0-Inbox/` `/inbox/` $href -}}
-  {{- $href = replaceRE `^\.\./1-Projects/` `/projects/` $href -}}
-  {{- $href = replaceRE `^\.\./2-Areas/` `/areas/` $href -}}
-  {{- $href = replaceRE `^\.\./3-Resources/` `/resources/` $href -}}
-  {{- $href = replaceRE `^\.\./4-Archives/` `/archives/` $href -}}
-
-  {{- $href = replaceRE `^0-Inbox/` `/inbox/` $href -}}
-  {{- $href = replaceRE `^1-Projects/` `/projects/` $href -}}
-  {{- $href = replaceRE `^2-Areas/` `/areas/` $href -}}
-  {{- $href = replaceRE `^3-Resources/` `/resources/` $href -}}
-  {{- $href = replaceRE `^4-Archives/` `/archives/` $href -}}
-
-  {{- $href = replaceRE `\.md(#.*)?$` `/$1` $href -}}
-
+  {{- $clean := replaceRE `#.*$` `` $destination -}}
+  {{- $fragment := replaceRE `^[^#]*(#.*)?$` `$1` $destination -}}
+  {{- with .Page.GetPage $clean -}}
+    {{- $href = printf "%s%s" .RelPermalink $fragment -}}
+  {{- end -}}
 {{- end -}}
 
 <a href="{{ $href | safeURL }}"
