@@ -540,6 +540,8 @@ if [ "${1:-}" = "search" ]; then
         exit 0
     fi
 
+    export KN_SEARCH_ROOT="$ROOT"
+
     SELECTED="$(
         printf '%s\n' "$RESULTS" |
         fzf \
@@ -550,11 +552,11 @@ if [ "${1:-}" = "search" ]; then
             --border \
             --with-nth=2 \
             --delimiter='/' \
-            --preview 'glow -t "'"$ROOT"'"/{}' \
+            --preview 'sed -n "1,160p" "$KN_SEARCH_ROOT"/{}' \
             --preview-window='right:60%:wrap'
     )" || exit 0
 
-    exec glow -t "$ROOT/$SELECTED"
+    exec nvim "$ROOT/$SELECTED"
 fi
 
 #
