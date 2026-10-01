@@ -76,7 +76,7 @@ for (
     "[[module.mounts]]",
     `source = "${escapeToml(section.path)}"`,
     `target = "content/${section.section}"`,
-    'includeFiles = ["**/*.md"]',
+    'files = ["*.md", "**/*.md"]',
   );
 }
 
