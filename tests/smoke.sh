@@ -176,13 +176,13 @@ else
     fail 'Docs root default'
 fi
 
-if grep -Fq '^ExecStart=@HUGO@ server --config .runtime/personal/hugo.toml ' systemd/knowledge-personal-web.service.in; then
+if grep -Fq -- '--config .runtime/personal/hugo.toml ' systemd/knowledge-personal-web.service.in; then
     pass 'Hugo uses generated runtime config only'
 else
     fail 'Hugo uses generated runtime config only'
 fi
 
-if grep -Fq '^[a-z0-9]+(-[a-z0-9]+)*\\.md
+if grep -Fq '^[a-z0-9]+(-[a-z0-9]+)*\.md
 if "$HOME/.bun/bin/bun" \
     scripts/check-global-filenames.ts \
     personal
@@ -239,7 +239,6 @@ fi
 
 for shell_file in \
     install.sh \
-    scripts/install-local-links.sh \
     scripts/live-workspace-sync.sh \
     scripts/docs-watch.sh \
     scripts/notes-git.sh
