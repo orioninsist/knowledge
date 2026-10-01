@@ -1393,6 +1393,46 @@ const server = Bun.serve({
 
     if (
       request.method === "GET" &&
+      url.pathname === "/api/note-moc"
+    ) {
+      const filename =
+        (url.searchParams.get("filename") ?? "").trim();
+
+      if (
+        !filename ||
+        filename.includes("/") ||
+        filename.includes("\\") ||
+        !filename.endsWith(".md")
+      ) {
+        return new Response("", { status: 400 });
+      }
+
+      const db = new Database(DB_PATH, { readonly: true });
+      const rows = db.query(`
+        SELECT section
+        FROM notes
+        WHERE path IN (?, ?, ?, ?, ?)
+        LIMIT 1
+      `).all(
+        `0-Inbox/${filename}`,
+        `1-Projects/${filename}`,
+        `2-Areas/${filename}`,
+        `3-Resources/${filename}`,
+        `4-Archives/${filename}`,
+      ) as Array<{ section: string }>;
+      db.close();
+
+      const section = rows[0]?.section ?? "";
+      return new Response(section ? `${section}\n` : "", {
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+        },
+      });
+    }
+
+    if (
+      request.method === "GET" &&
       url.pathname === "/api/complete"
     ) {
       const prefix =
