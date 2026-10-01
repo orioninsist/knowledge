@@ -54,14 +54,6 @@ _kn_note_candidates() {
     local runtime_env
     local root
 
-    # Empty filename: suggest only the last used note. Do not dump every note.
-    if [ -z "$prefix" ]; then
-        api="$(_kn_api_base)" || return 0
-        curl -fsS --get --data-urlencode "prefix=" "$api/api/complete" 2>/dev/null |
-            head -1
-        return 0
-    fi
-
     kn_path="$(command -v kn 2>/dev/null || true)"
     [ -n "$kn_path" ] || return 0
 
@@ -205,5 +197,24 @@ _kn_completion() {
 
     COMPREPLY=()
 }
+
+_kn_pick_note_after_space() {
+    local before="${READLINE_LINE:0:READLINE_POINT}"
+    local after="${READLINE_LINE:READLINE_POINT}"
+    local point="$READLINE_POINT"
+    local selected
+
+    if [[ "$before" =~ ^kn[[:space:]]+[^[:space:]]+[[:space:]]+(inbox|projects|areas|resources|archives)[[:space:]]$ ]]; then
+        selected="$(_kn_note_candidates "" | fzf --height=40% --layout=reverse --border --prompt='filename> ')" || return
+        READLINE_LINE="${before}${selected}${after}"
+        READLINE_POINT=$((${#before} + ${#selected}))
+        return
+    fi
+
+    READLINE_LINE="${before} ${after}"
+    READLINE_POINT=$((point + 1))
+}
+
+bind -x '" ":_kn_pick_note_after_space'
 
 complete -F _kn_completion kn
