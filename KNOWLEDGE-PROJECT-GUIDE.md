@@ -448,12 +448,35 @@ kn rn linux-notes.md linux-networking.md
 
 Rename requires confirmation and still obeys global filename uniqueness.
 
+### Relations and link health
+
+```bash
+kn links linux-notes.md
+kn backlinks linux-notes.md
+kn broken-links
+```
+
+Relations are derived directly from Markdown. The analyzer recognizes `[[wikilinks]]`, including heading/label forms, and local Markdown `.md` links. It does not introduce a second persistent relation database.
+
+### Diagnostics
+
+```bash
+kn doctor
+```
+
+The doctor checks runtime/workspace availability, the five MOCs, filename validity and global uniqueness, the local-only notes Git boundary, required/interactively used commands, the five systemd user services, and broken note relations.
+
 ### Personal search
 
 ```bash
 kn search
 kn search docker network
+kn search 'section:projects tag:linux status:todo'
+kn search 'title:"local first"'
+kn search 'file:systemd description:service alias:daemon'
 ```
+
+Inline query filters support `section:`/`folder:`, `tag:`, `status:`, `file:`/`filename:`, `title:`, `description:`/`desc:`, and `alias:`.
 
 This uses the personal FTS5 search endpoint, sends results into `fzf`, previews files, and opens the selected result in normal Neovim.
 
