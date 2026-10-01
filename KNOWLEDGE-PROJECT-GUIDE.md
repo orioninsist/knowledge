@@ -456,7 +456,16 @@ kn backlinks linux-notes.md
 kn broken-links
 ```
 
-Relations are derived directly from Markdown. The analyzer recognizes `[[wikilinks]]`, including heading/label forms, and local Markdown `.md` links. It does not introduce a second persistent relation database.
+Relations are derived directly from standard Markdown links only. Wikilinks are intentionally unsupported.
+
+Use:
+
+```bash
+kn link source-note.md
+kn link source-note.md target-note.md
+```
+
+When the target is omitted, `kn link` shows the global Markdown note picker. The user selects only the note; Knowledge discovers the target note's actual MOC and computes the relative path from the source note. The generated output is portable Markdown such as `[Linux networking](../3-Resources/linux-networking.md)`. The relation analyzer introduces no second persistent relation database.
 
 ### Diagnostics
 
