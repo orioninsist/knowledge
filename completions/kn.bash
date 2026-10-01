@@ -151,6 +151,11 @@ _kn_completion() {
     fi
 
     if (( COMP_CWORD == 3 )); then
+        if [ -z "$cur" ]; then
+            COMPREPLY=()
+            return
+        fi
+
         mapfile -t candidates < <(
             _kn_note_candidates "$cur"
         )
@@ -164,33 +169,5 @@ _kn_completion() {
 
     COMPREPLY=()
 }
-
-_kn_pick_note_after_space() {
-    local before="${READLINE_LINE:0:READLINE_POINT}"
-    local after="${READLINE_LINE:READLINE_POINT}"
-    local point="$READLINE_POINT"
-    local selected
-
-    if [[ "$before" =~ ^kn[[:space:]]+[^[:space:]]+[[:space:]]+(inbox|projects|areas|resources|archives)[[:space:]]$ ]]; then
-        selected="$(
-            fzf \
-                --height=40% \
-                --layout=reverse \
-                --border \
-                --prompt='filename> ' \
-                --disabled \
-                --bind 'start:reload(_kn_note_candidates "")' \
-                --bind 'change:reload(_kn_note_candidates {q})'
-        )" || return
-        READLINE_LINE="${before}${selected}${after}"
-        READLINE_POINT=$((${#before} + ${#selected}))
-        return
-    fi
-
-    READLINE_LINE="${before} ${after}"
-    READLINE_POINT=$((point + 1))
-}
-
-bind -x '" ":_kn_pick_note_after_space'
 
 complete -F _kn_completion kn
