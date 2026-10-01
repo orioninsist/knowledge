@@ -229,10 +229,10 @@ Mermaid is served from the vendored browser bundle. D2 and Typst rendering are p
 
 Use `cloc` to measure the repository by language and source lines without counting generated/runtime dependencies.
 
-On Arch Linux:
+On Fedora:
 
 ```bash
-sudo pacman -S cloc
+sudo dnf install cloc
 ```
 
 From the repository root:
