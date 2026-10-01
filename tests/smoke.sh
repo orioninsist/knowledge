@@ -188,6 +188,18 @@ else
     fail 'Watcher filename rule matches note policy'
 fi
 
+if grep -Fq 'section|folder|tag|status|file|filename|title|desc|description|alias' scripts/search-server.ts; then
+    pass 'Inline search query filters'
+else
+    fail 'Inline search query filters'
+fi
+
+if grep -Fq 'kn broken-links' bin/kn && grep -Fq 'kn doctor' bin/kn; then
+    pass 'KN relations and doctor commands'
+else
+    fail 'KN relations and doctor commands'
+fi
+
 if "$HOME/.bun/bin/bun" \
     scripts/check-global-filenames.ts \
     personal
@@ -272,6 +284,8 @@ for file in \
     scripts/update-docs-path.ts \
     scripts/docs-server.ts \
     scripts/new-note.ts \
+    scripts/note-relations.ts \
+    scripts/doctor.ts \
     scripts/search-server.ts \
     scripts/validate-note-name.ts
 do
