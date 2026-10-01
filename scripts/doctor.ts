@@ -35,6 +35,6 @@ for(const service of ["knowledge-personal-search.service","knowledge-personal-we
   check(spawnSync("systemctl",["--user","is-active","--quiet",service]).status===0,"service "+service);
 }
 const relations=spawnSync(process.execPath,[join(project,"scripts","note-relations.ts"),"broken"],{cwd:project,encoding:"utf8"});
-check(relations.status===0,"wikilink/Markdown relations",relations.status===0?"no broken relations":"broken relations found");
+check(relations.status===0,"Markdown relations",relations.status===0?"no broken relations":"broken relations found");
 console.log(""); console.log("Notes: "+noteCount); console.log("Result: "+(failures===0?"healthy":failures+" problem(s)"));
 process.exit(failures===0?0:1);
