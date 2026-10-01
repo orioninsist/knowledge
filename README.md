@@ -149,7 +149,16 @@ kn broken-links
 kn doctor
 ```
 
-Relations are derived from Markdown. Both `[[wikilinks]]` and local Markdown `.md` links are recognized.
+Relations are derived only from standard Markdown links such as `[Linux networking](../3-Resources/linux-networking.md)`. Wikilinks are intentionally not part of the Knowledge note-link contract.
+
+Generate a link without choosing a MOC manually:
+
+```bash
+kn link docker.md
+kn link docker.md linux-networking.md
+```
+
+With only the source filename, `kn link` opens the global note picker. After a target note is selected, Knowledge discovers its real MOC, computes the relative path from the source note, and prints a portable standard Markdown link.
 
 Search personal notes:
 
