@@ -47,11 +47,20 @@ _kn_api_base() {
 
 _kn_note_candidates() {
     local prefix="$1"
+    local api
     local kn_path
     local kn_real
     local project
     local runtime_env
     local root
+
+    # Empty filename: suggest only the last used note. Do not dump every note.
+    if [ -z "$prefix" ]; then
+        api="$(_kn_api_base)" || return 0
+        curl -fsS --get --data-urlencode "prefix=" "$api/api/complete" 2>/dev/null |
+            head -1
+        return 0
+    fi
 
     kn_path="$(command -v kn 2>/dev/null || true)"
     [ -n "$kn_path" ] || return 0
@@ -64,6 +73,8 @@ _kn_note_candidates() {
     root="$(sed -n 's/^WORKSPACE_ROOT=//p' "$runtime_env" | head -1)"
     [ -n "$root" ] || return 0
 
+    # Typed filename: search all five MOCs. Substring matches are enough here;
+    # fzf remains the richer interactive selector after Enter.
     find \
         "$root/0-Inbox" \
         "$root/1-Projects" \
@@ -76,7 +87,16 @@ _kn_note_candidates() {
         -printf '%f\n' \
         2>/dev/null |
     sort -u |
-    awk -v p="$prefix" 'index($0, p) == 1'
+    awk -v p="$prefix" '
+        BEGIN { p=tolower(p) }
+        {
+            n=tolower($0)
+            pos=index(n,p)
+            if (pos) print pos "\t" $0
+        }
+    ' |
+    sort -k1,1n -k2,2 |
+    cut -f2-
 }
 
 _kn_completion() {
