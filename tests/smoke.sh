@@ -182,7 +182,7 @@ else
     fail 'Hugo uses generated runtime config only'
 fi
 
-if grep -Eq '\^\[a-z0-9\]\+\(-\[a-z0-9\]\+\)\*\\\.md\
+if grep -Fq -- '^[a-z0-9]+(-[a-z0-9]+)*\.md
 if "$HOME/.bun/bin/bun" \
     scripts/check-global-filenames.ts \
     personal
