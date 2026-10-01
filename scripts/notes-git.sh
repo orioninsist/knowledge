@@ -105,12 +105,7 @@ notes_git_commit() {
 
     git -C "$NOTES_ROOT" commit -m "$message" -- "${@}" || return 1
 
-    if git -C "$NOTES_ROOT" push origin HEAD; then
-        echo
-        echo "PASS: Commit created and pushed."
-    else
-        echo
-        echo "ERROR: Commit was created, but push failed."
-        return 1
-    fi
+    echo
+    echo "PASS: Local commit created."
+
 }
