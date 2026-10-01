@@ -35,7 +35,7 @@ Personal note filenames must match:
 
 Examples: `linux.md`, `note1.md`, `project-2026.md`.
 
-Filenames are globally unique across all five MOCs. There is no delete command in `kn`; notes are archived instead.
+Notes may be organized in nested subdirectories inside any MOC. Filenames are globally unique across all five MOCs and their nested directories. There is no delete command in `kn`; notes are archived instead.
 
 ## What is in this repository
 
@@ -88,7 +88,7 @@ cd knowledge
 
 The installer runs `npm ci`, generates `.runtime/personal/hugo.toml` and `runtime.env`, builds the personal and documentation indexes, installs the `kn` symlink and Bash completion, installs/restarts systemd user services, and runs the smoke test.
 
-The generated Hugo config is the runtime source for personal-content mounts. Do not hand-maintain workspace paths in the repository.
+The generated Hugo config is the runtime source for personal-content mounts. It mounts both root-level and nested Markdown files, enables trusted raw HTML rendering for the local personal workspace, and maps the five physical MOC directories to Hugo sections. Do not hand-maintain workspace paths in the repository.
 
 ## Services
 
@@ -150,6 +150,8 @@ kn doctor
 ```
 
 Relations are derived only from standard Markdown links such as `[Linux networking](../3-Resources/linux-networking.md)`. Wikilinks are intentionally not part of the Knowledge note-link contract.
+
+In Neovim Markdown buffers, `Ctrl-X Ctrl-O` completes link destinations inside `[]()`. Completion is directory-by-directory, shows at most five items at a time, includes folders and Markdown files, and inserts a relative path when a file is selected.
 
 Generate a link without choosing a MOC manually:
 
