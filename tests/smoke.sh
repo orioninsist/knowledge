@@ -188,6 +188,12 @@ else
     fail 'Hugo mounts root and nested Markdown notes'
 fi
 
+if grep -Fq '"      unsafe = true"' scripts/prepare-workspace-runtime.ts; then
+    pass 'Hugo renders trusted raw HTML in Markdown notes'
+else
+    fail 'Hugo renders trusted raw HTML in Markdown notes'
+fi
+
 if grep -Fq '^[a-z0-9]+(-[a-z0-9]+)*\.md' scripts/live-workspace-sync.sh; then
     pass 'Watcher filename rule matches note policy'
 else

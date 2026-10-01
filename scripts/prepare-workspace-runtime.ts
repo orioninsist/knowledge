@@ -64,6 +64,11 @@ const lines: string[] = [
   "[params]",
   `searchEndpoint = "http://127.0.0.1:${apiPort}"`,
   "",
+  "[markup]",
+  "  [markup.goldmark]",
+  "    [markup.goldmark.renderer]",
+  "      unsafe = true",
+  "",
   "[module]",
 ];
 
