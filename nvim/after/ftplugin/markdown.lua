@@ -64,7 +64,7 @@ function _G.knowledge_markdown_complete(findstart, base)
     local before = vim.api.nvim_get_current_line():sub(1, col)
     local start = before:match(".*%]%(()")
     if not start then return -3 end
-    return start - 1
+    return start
   end
 
   return complete_items(base)
