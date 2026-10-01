@@ -38,10 +38,10 @@ The project should stay boring, portable, and maintainable:
 - Separate read-only documentation browser on port `1320`.
 - Documentation indexer separated from the browser server.
 - Documentation watcher service for refreshing the docs index.
-- `kn` terminal command for opening, creating, reading, searching, moving, and renaming personal notes.
+- `kn` terminal command for opening, creating, reading, searching, moving, and renaming personal notes, plus read-only documentation search.
 - Global filename completion across all five personal note MOCs.
 - Confirmation before move and rename operations.
-- Git commit and push workflow for personal notes only.
+- Personal note changes use local Git commits only; personal notes never push to GitHub.
 - Hugo-based personal note rendering.
 - Mermaid, D2, Typst, Canvas, and calendar visual blocks.
 - Local productivity page with World Clock, Weather, Prayer, and Focus tools.
@@ -64,7 +64,7 @@ The project should stay boring, portable, and maintainable:
 
 This GitHub repository stores the Knowledge application code only.
 
-Personal Markdown notes live outside the project directory. The notes workspace may be a separate Git repository with an `origin` remote; `kn` commits and pushes only note paths involved in the current operation.
+Personal Markdown notes live outside the project directory. The personal notes workspace is a separate local-only Git repository with no remote. `kn` may create local commits for note changes, but it never pushes personal notes. This project repository is the only workspace allowed to push to GitHub.
 
 The installed `kn` command at `~/.local/bin/kn` is only a symlink to this repository's `bin/kn`. The real source stays in the project directory.
 
@@ -203,9 +203,9 @@ systemctl --user status knowledge-docs-watch.service
 
 ## KN Command
 
-Use `kn` for personal notes.
+Use `kn` as the terminal entry point.
 
-Open or create a note:
+Open or create a personal note:
 
 ```bash
 kn nvim inbox note-name.md
@@ -226,47 +226,53 @@ kn nvim
 kn nvim inbox
 ```
 
-Read a note in the terminal:
+Read a personal note with Glow:
 
 ```bash
 kn glow note-name.md
 ```
 
-Move a note between MOCs:
+Move a personal note between MOCs:
 
 ```bash
 kn mv note-name.md archives
 ```
 
-Rename a note:
+Rename a personal note:
 
 ```bash
 kn rn note-name.md new-name.md
 ```
 
-Search personal notes with FTS5 and preview them with Glow:
+Search personal notes:
 
 ```bash
-kn search docker network
+kn search
+kn search google
 ```
 
-Search read-only documentation:
+`kn search` uses SQLite FTS5 while you type, shows at most 10 results in `fzf`, previews the selected Markdown file as plain text, and opens the selected personal note in normal Neovim.
+
+Search external documentation:
 
 ```bash
+kn docs
 kn docs systemd
 ```
 
-`kn rm` is disabled by design. Archive a note instead of deleting it.
+`kn docs` uses the separate documentation FTS5 index while you type, shows at most 10 results in `fzf`, previews the selected Markdown file as plain text, and opens the selected document with `nvim -R`.
+
+There is no delete command. Personal notes are moved to Archives instead of being deleted.
 
 ## Global Filename Selection
 
-All five MOC folders are treated as one filename pool.
+All five personal MOC folders are treated as one globally unique filename pool.
 
-- `kn glow`, `kn mv`, `kn rn`, and editor open/create use the same global filename pool.
-- Empty filename completion returns the last used note if it still exists.
-- Typed filename completion searches all five MOCs and returns up to 20 results.
+- `kn glow`, `kn mv`, `kn rn`, and editor open/create operate only on the personal notes workspace.
+- Typed filename completion searches all five MOCs and returns up to 5 suggestions.
 - Existing notes always open from their real location.
 - The MOC argument only decides where a new note is created.
+- A filename may exist in only one MOC at a time.
 
 ## Browser Search
 
@@ -419,13 +425,16 @@ Personal Markdown workspace
         │       └── browser UI on 1314
         │
         └── kn terminal command
+                ├── bounded FTS5 search → fzf preview → normal nvim
+                └── local-only Git commits for note changes
 
 External documentation Markdown
         │
         ├── docs indexer / docs watcher
         │       └── SQLite FTS5 docs index
         │
-        └── read-only docs browser on 1320
+        ├── read-only docs browser on 1320
+        └── kn docs → bounded FTS5 search → fzf preview → nvim -R
 ```
 
 Permanent data stays in Markdown files. Runtime data stays under `.runtime/` and can be rebuilt.
@@ -439,6 +448,6 @@ Prefer native local tools over custom infrastructure:
 - Bun for small local APIs and indexers
 - systemd user services for process management
 - inotify for filesystem change detection
-- Git for source control, commit, and push of personal notes
+- Git for project source control and local-only personal note history
 
 Do not add a database or service unless it replaces real complexity.
