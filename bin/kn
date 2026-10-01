@@ -14,7 +14,7 @@ PROJECT="$(
         pwd
 )"
 
-# Personal-note Git history. Only paths inside WORKSPACE_ROOT are committed/pushed.
+# Personal-note Git history. Only paths inside WORKSPACE_ROOT are committed locally.
 source "$PROJECT/scripts/notes-git.sh"
 
 BUN="$(command -v bun || true)"
