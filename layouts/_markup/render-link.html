@@ -4,8 +4,20 @@
 {{- if findRE `\.md(?:#.*)?$` $destination -}}
   {{- $clean := replaceRE `#.*$` `` $destination -}}
   {{- $fragment := replaceRE `^[^#]*(#.*)?$` `$1` $destination -}}
-  {{- with .Page.GetPage $clean -}}
+
+  {{- $clean = replaceRE `^(?:\.\./)*0-Inbox/` `inbox/` $clean -}}
+  {{- $clean = replaceRE `^(?:\.\./)*1-Projects/` `projects/` $clean -}}
+  {{- $clean = replaceRE `^(?:\.\./)*2-Areas/` `areas/` $clean -}}
+  {{- $clean = replaceRE `^(?:\.\./)*3-Resources/` `resources/` $clean -}}
+  {{- $clean = replaceRE `^(?:\.\./)*4-Archives/` `archives/` $clean -}}
+  {{- $clean = strings.TrimPrefix "./" $clean -}}
+
+  {{- with .Page.Site.GetPage $clean -}}
     {{- $href = printf "%s%s" .RelPermalink $fragment -}}
+  {{- else -}}
+    {{- with .Page.GetPage $clean -}}
+      {{- $href = printf "%s%s" .RelPermalink $fragment -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 
