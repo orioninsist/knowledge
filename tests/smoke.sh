@@ -206,7 +206,9 @@ else
     pass 'Wikilinks are excluded from relation analysis'
 fi
 
-if grep -Fq '.Page.GetPage $clean' layouts/_markup/render-link.html &&
+if grep -Fq '.Page.Site.GetPage $clean' layouts/_markup/render-link.html &&
+   grep -Fq '3-Resources/' layouts/_markup/render-link.html &&
+   grep -Fq 'resources/' layouts/_markup/render-link.html &&
    grep -Fq '.RelPermalink' layouts/_markup/render-link.html; then
     pass 'Hugo Markdown link page resolution'
 else
