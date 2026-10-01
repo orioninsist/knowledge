@@ -92,7 +92,7 @@ _kn_completion() {
     # kn rn <filename> [new-filename]
     #
     if [[ "$command" == "rn" ]]; then
-        if (( COMP_CWORD == 2 )); then
+        if (( COMP_CWORD == 2 || COMP_CWORD == 3 )); then
             mapfile -t candidates < <(
                 _kn_note_candidates "$cur"
             )
