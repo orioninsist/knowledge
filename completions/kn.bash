@@ -170,4 +170,4 @@ _kn_completion() {
     COMPREPLY=()
 }
 
-complete -F _kn_completion kn
+complete -o nospace -F _kn_completion kn
