@@ -182,6 +182,12 @@ else
     fail 'Hugo uses generated runtime config only'
 fi
 
+if grep -Fq 'files = ["*.md", "**/*.md"]' scripts/prepare-workspace-runtime.ts; then
+    pass 'Hugo mounts root and nested Markdown notes'
+else
+    fail 'Hugo mounts root and nested Markdown notes'
+fi
+
 if grep -Fq '^[a-z0-9]+(-[a-z0-9]+)*\.md' scripts/live-workspace-sync.sh; then
     pass 'Watcher filename rule matches note policy'
 else
