@@ -420,6 +420,7 @@ if [ "${1:-}" = "mv" ]; then
     OLD_RELATIVE="$(notes_git_relative_path "$FOUND")" || exit 1
     NEW_RELATIVE="$(notes_git_relative_path "$TARGET")" || exit 1
 
+    git -C "$ROOT" add -- "$OLD_RELATIVE" || exit 1
     mv -- "$FOUND" "$TARGET"
 
     remember_note "$NAME"
