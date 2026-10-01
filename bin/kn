@@ -53,73 +53,129 @@ fi
 usage() {
     cat <<'HELP'
 
+Knowledge CLI — local-first Markdown notes
+
 Usage:
+  kn --help
+  kn <editor> [moc] [filename.md]
+  kn glow <filename.md>
+  kn mv <filename.md> <moc>
+  kn rn <filename.md> <new-filename.md>
+  kn link <source.md> [target.md]
+  kn links <filename.md>
+  kn backlinks <filename.md>
+  kn broken-links
+  kn doctor
+  kn search [query...]
+  kn docs [query...]
 
-  Read:
-    kn glow <filename.md>
+Open / create:
+  kn nvim
+      Choose a MOC, then choose an existing filename or type a new one.
 
-  Open/create:
-    kn <editor> <moc> <filename.md>
-    kn <editor> <moc>
-    kn <editor>
+  kn nvim inbox
+      Use Inbox for a new note; an existing globally unique filename still
+      opens from its real MOC.
 
-  Move:
-    kn mv <filename.md> <moc>
+  kn nvim inbox linux-notes
+  kn code projects project-note.md
+  kn zed areas german-notes.md
+  kn hx resources reference.md
 
-  Rename:
-    kn rn <filename.md> <new-filename.md>
+  Missing .md is added automatically. New notes are created only in the
+  selected MOC. Existing notes are never silently moved.
 
-  Relations:
-    kn link <source.md> [target.md]
-    kn links <filename.md>
-    kn backlinks <filename.md>
-    kn broken-links
+Read:
+  kn glow linux-notes.md
+      Render one personal note in Glow.
 
-  Diagnostics:
-    kn doctor
+Move / rename:
+  kn mv linux-notes.md archives
+  kn rn linux-notes.md linux-networking.md
 
-  Search:
-    kn search [words...]
+  Move and rename require confirmation. Filenames remain globally unique.
 
-  Documentation:
-    kn docs [words...]
+Standard Markdown links:
+  kn link docker.md
+      Choose the target note globally with fzf. Knowledge finds its real MOC
+      and prints a relative standard Markdown link.
 
-Examples:
+  kn link docker.md linux-networking.md
+      Generate the link directly for a known target.
 
-    kn glow linux-notes.md
+  Example output:
+      [Linux networking](../3-Resources/linux-networking.md)
 
-    kn code inbox linux-notes.md
-    kn zed projects project-note.md
-    kn hx resources linux-notes.md
-    kn nvim areas german-notes.md
-    kn nvim inbox linux-notes
-    kn nvim
+  Wikilinks are not part of the note-link contract.
 
-    kn mv linux-notes.md archives
-    kn rn linux-notes.md linux-networking.md
-    kn link docker.md
-    kn link docker.md linux-networking.md
-    kn links linux-notes.md
-    kn backlinks linux-notes.md
-    kn broken-links
-    kn doctor
-    kn search docker network
-    kn docs systemd
+Relations:
+  kn links linux-notes.md
+      List notes linked from the note.
+
+  kn backlinks linux-notes.md
+      List notes linking to the note.
+
+  kn broken-links
+      Check standard Markdown note relations for missing targets.
+
+Diagnostics:
+  kn doctor
+      Check workspace/runtime, MOCs, filename rules, global uniqueness,
+      local-only notes Git, required tools, services, and broken relations.
+
+Personal search:
+  kn search
+  kn search docker network
+  kn search 'section:projects tag:linux status:todo'
+  kn search 'title:"local first"'
+  kn search 'file:systemd description:service alias:daemon'
+
+  Inline filters:
+      section: / folder:
+      tag:
+      status:
+      file: / filename:
+      title:
+      description: / desc:
+      alias:
+
+  Results use SQLite FTS5 -> fzf -> normal Neovim.
+
+Documentation search:
+  kn docs
+  kn docs systemd
+
+  External documentation uses its separate FTS5 index and opens selected
+  Markdown read-only with nvim -R.
 
 Editors:
+  code
+  zed
+  nvim
+  hx
 
-    code
-    zed
-    nvim
-    hx
+MOCs:
+  inbox       -> 0-Inbox
+  projects    -> 1-Projects
+  areas       -> 2-Areas
+  resources   -> 3-Resources
+  archives    -> 4-Archives
 
-MOC:
+Core rules:
+  - Markdown is the source of truth.
+  - Personal note filenames:
+      ^[a-z0-9]+(?:-[a-z0-9]+)*\.md$
+  - Filenames are globally unique across all five MOCs.
+  - index.md and _index.md are reserved.
+  - kn intentionally has no delete command; archive notes instead.
+  - Personal notes use a separate local Git repository with no remote.
+  - Search databases and runtime files are derived/rebuildable state.
 
-    inbox
-    projects
-    areas
-    resources
-    archives
+Local services:
+  Personal web:       http://127.0.0.1:1314/
+  Productivity:       http://127.0.0.1:1314/productivity/
+  Personal API:       http://127.0.0.1:8788/
+  Documentation web:  http://127.0.0.1:1320/
 
 HELP
 }
