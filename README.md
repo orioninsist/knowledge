@@ -38,12 +38,10 @@ The project should stay boring, portable, and maintainable:
 - Separate read-only documentation browser on port `1320`.
 - Documentation indexer separated from the browser server.
 - Documentation watcher service for refreshing the docs index.
-- `kn` terminal command for opening, creating, reading, moving, and deleting personal notes.
+- `kn` terminal command for opening, creating, reading, searching, moving, and renaming personal notes.
 - Global filename completion across all five personal note MOCs.
-- Confirmation before move and delete operations.
-- Read-only review before delete operations.
-- Local-only Git history for personal notes.
-- Protection against accidentally adding a remote to the personal notes Git repository.
+- Confirmation before move and rename operations.
+- Git commit and push workflow for personal notes only.
 - Hugo-based personal note rendering.
 - Mermaid, D2, Typst, Canvas, and calendar visual blocks.
 - Local productivity page with World Clock, Weather, Prayer, and Focus tools.
@@ -54,7 +52,7 @@ The project should stay boring, portable, and maintainable:
 ## What It Does
 
 - Keeps personal notes in five fixed Markdown folders.
-- Opens, creates, reads, moves, and deletes notes from the terminal with `kn`.
+- Opens, creates, reads, searches, moves, and renames notes from the terminal with `kn`.
 - Searches notes from the browser with SQLite FTS5.
 - Serves personal notes with Hugo at `http://127.0.0.1:1314/`.
 - Serves external documentation Markdown as a separate read-only browser at `http://127.0.0.1:1320/`.
@@ -66,7 +64,7 @@ The project should stay boring, portable, and maintainable:
 
 This GitHub repository stores the Knowledge application code only.
 
-Personal Markdown notes live outside the project directory. The notes workspace is local-only and may have its own local Git history, but it must not have a remote.
+Personal Markdown notes live outside the project directory. The notes workspace may be a separate Git repository with an `origin` remote; `kn` commits and pushes only note paths involved in the current operation.
 
 The installed `kn` command at `~/.local/bin/kn` is only a symlink to this repository's `bin/kn`. The real source stays in the project directory.
 
@@ -240,19 +238,31 @@ Move a note between MOCs:
 kn mv note-name.md archives
 ```
 
-Delete a note:
+Rename a note:
 
 ```bash
-kn rm note-name.md
+kn rn note-name.md new-name.md
 ```
 
-Move and delete ask for confirmation. Delete opens the note read-only first for review.
+Search personal notes with FTS5 and preview them with Glow:
+
+```bash
+kn search docker network
+```
+
+Search read-only documentation:
+
+```bash
+kn docs systemd
+```
+
+`kn rm` is disabled by design. Archive a note instead of deleting it.
 
 ## Global Filename Selection
 
 All five MOC folders are treated as one filename pool.
 
-- `kn glow`, `kn rm`, `kn mv`, and editor open/create use the same global filename completion.
+- `kn glow`, `kn mv`, `kn rn`, and editor open/create use the same global filename pool.
 - Empty filename completion returns the last used note if it still exists.
 - Typed filename completion searches all five MOCs and returns up to 20 results.
 - Existing notes always open from their real location.
@@ -429,6 +439,6 @@ Prefer native local tools over custom infrastructure:
 - Bun for small local APIs and indexers
 - systemd user services for process management
 - inotify for filesystem change detection
-- Git for source control and local note history
+- Git for source control, commit, and push of personal notes
 
 Do not add a database or service unless it replaces real complexity.
