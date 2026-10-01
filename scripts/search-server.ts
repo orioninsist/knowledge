@@ -60,10 +60,14 @@ const parseQuery = (
     sections: [],
     tags: [],
     statuses: [],
+    filenames: [],
+    titles: [],
+    descriptions: [],
+    aliases: [],
   };
 
   const tokens =
-    rawQuery.match(/"[^"]*"|\S+/g) ?? [];
+    rawQuery.match(/(?:[^\s"]+:"[^"]*"|"[^"]*"|\S+)/g) ?? [];
 
   for (const rawToken of tokens) {
     const quoted =
