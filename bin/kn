@@ -597,18 +597,29 @@ if [ "${1:-}" = "docs" ]; then
         exit 0
     fi
 
+    export KN_DOCS_ROOT="$DOCS_ROOT"
+
     SELECTED="$(
         printf '%s\n' "$RESULTS" |
         fzf \
             --prompt='docs> ' \
+            --query="$QUERY" \
             --height=90% \
             --layout=reverse \
             --border \
-            --preview 'glow -t {}' \
+            --preview 'sed -n "1,160p" {}' \
             --preview-window='right:60%:wrap'
     )" || exit 0
 
-    exec glow -t "$SELECTED"
+    case "$SELECTED" in
+        "$KN_DOCS_ROOT"/*.md)
+            exec nvim -R "$SELECTED"
+            ;;
+        *)
+            echo "ERROR: Documentation path escaped the read-only root."
+            exit 1
+            ;;
+    esac
 fi
 
 #
