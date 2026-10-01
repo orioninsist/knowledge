@@ -40,13 +40,6 @@ notes_git_assert() {
         echo "$NOTES_ROOT"
         return 1
     fi
-
-    if ! git -C "$NOTES_ROOT" remote get-url origin >/dev/null 2>&1; then
-        echo
-        echo "ERROR: Notes Git remote 'origin' is not configured."
-        echo "$NOTES_ROOT"
-        return 1
-    fi
 }
 
 notes_git_relative_path() {
