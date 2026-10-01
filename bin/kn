@@ -64,7 +64,7 @@ Usage:
     kn <editor>
 
   Move:
-    kn mv <filename.md> [moc]
+    kn mv <filename.md> <moc>
 
   Rename:
     kn rn <filename.md> [new-filename.md]
@@ -337,13 +337,13 @@ fi
 
 
 if [ "${1:-}" = "mv" ]; then
-    if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
-        echo "Usage: kn mv <filename.md> [moc]"
+    if [ "$#" -ne 3 ]; then
+        echo "Usage: kn mv <filename.md> <moc>"
         exit 1
     fi
 
     NAME="$2"
-    TARGET_MOC="${3:-}"
+    TARGET_MOC="$3"
 
     validate_note_name "$NAME" || exit 1
 
@@ -358,14 +358,6 @@ if [ "${1:-}" = "mv" ]; then
     fi
 
     CURRENT_MOC="$(path_moc "$FOUND")"
-
-    if [ -z "$TARGET_MOC" ]; then
-        TARGET_MOC="$(
-            printf '%s\n' inbox projects areas resources archives |
-            grep -vx "$CURRENT_MOC" |
-            choose_from_list "moc"
-        )" || exit 0
-    fi
 
     TARGET_DIR="$(moc_dir "$TARGET_MOC")"
 
