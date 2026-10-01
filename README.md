@@ -140,12 +140,28 @@ kn mv note-name.md archives
 kn rn note-name.md new-name.md
 ```
 
+Relations and diagnostics:
+
+```bash
+kn links linux-notes.md
+kn backlinks linux-notes.md
+kn broken-links
+kn doctor
+```
+
+Relations are derived from Markdown. Both `[[wikilinks]]` and local Markdown `.md` links are recognized.
+
 Search personal notes:
 
 ```bash
 kn search
 kn search docker network
+kn search 'section:projects tag:linux status:todo'
+kn search 'title:"local first"'
+kn search 'file:systemd description:service alias:daemon'
 ```
+
+Inline query filters support `section:`/`folder:`, `tag:`, `status:`, `file:`/`filename:`, `title:`, `description:`/`desc:`, and `alias:`.
 
 Search external documentation:
 
