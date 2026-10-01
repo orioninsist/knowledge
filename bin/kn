@@ -310,39 +310,24 @@ path_moc() {
 #
 
 if [ "${1:-}" = "glow" ]; then
-    if [ "$#" -gt 2 ]; then
-        echo "Usage: kn glow [filename.md]"
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: kn glow <filename.md>"
         exit 1
     fi
 
-    NAME="${2:-}"
-
-    if [ -z "$NAME" ]; then
-        FOUND="$(choose_note_path "glow")" || exit 0
-        NAME="$(basename "$FOUND")"
-    fi
-
+    NAME="$(normalize_note_name "$2")"
     validate_note_name "$NAME" || exit 1
 
-    FOUND="${FOUND:-$(find_note "$NAME")}"
+    FOUND="$(find_note "$NAME")"
 
     if [ -z "$FOUND" ]; then
         echo
         echo "ERROR: Markdown note not found."
-        echo
         echo "$NAME"
         exit 1
     fi
 
-    if ! command -v glow >/dev/null 2>&1; then
-        echo
-        echo "ERROR: Glow is not installed."
-        echo "Install Glow for Fedora, then retry."
-        exit 1
-    fi
-
-    remember_note "$NAME"
-
+    require_glow || exit 1
     exec glow -t "$FOUND"
 fi
 
