@@ -93,21 +93,17 @@ _kn_completion() {
     fi
 
     #
-    # kn rm <filename>
+    # kn rn <filename> [new-filename]
     #
-    if [[ "$command" == "rm" ]]; then
+    if [[ "$command" == "rn" ]]; then
         if (( COMP_CWORD == 2 )); then
             mapfile -t candidates < <(
                 _kn_note_candidates "$cur"
             )
-
-            COMPREPLY=(
-                "${candidates[@]}"
-            )
+            COMPREPLY=("${candidates[@]}")
         else
             COMPREPLY=()
         fi
-
         return
     fi
 
