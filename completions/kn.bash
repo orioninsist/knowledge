@@ -70,6 +70,21 @@ _kn_completion() {
     mocs="$(_kn_mocs)"
 
     #
+    # kn link <source> [target]
+    #
+    if [[ "$command" == "link" ]]; then
+        if (( COMP_CWORD == 2 || COMP_CWORD == 3 )); then
+            mapfile -t candidates < <(
+                _kn_note_candidates "$cur"
+            )
+            COMPREPLY=("${candidates[@]}")
+        else
+            COMPREPLY=()
+        fi
+        return
+    fi
+
+    #
     # kn glow <filename>
     #
     if [[ "$command" == "glow" ]]; then
