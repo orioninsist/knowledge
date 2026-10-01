@@ -183,6 +183,33 @@ all_note_names() {
     all_note_paths | sed 's|.*/||'
 }
 
+choose_moc() {
+    printf '%s\n' \
+        inbox \
+        projects \
+        areas \
+        resources \
+        archives \
+        | choose_from_list "moc"
+}
+
+choose_note_path() {
+    local prompt="${1:-note}"
+    require_fzf || return 1
+    require_glow || return 1
+
+    all_note_paths |
+        fzf \
+            --prompt="$prompt> " \
+            --height=90% \
+            --layout=reverse \
+            --border \
+            --with-nth=-1 \
+            --delimiter='/' \
+            --preview 'glow -t {}' \
+            --preview-window='right:60%:wrap'
+}
+
 validate_note_name() {
     local filename="$1"
 
@@ -303,6 +330,16 @@ if [ "${1:-}" = "glow" ]; then
     remember_note "$NAME"
 
     exec glow -t "$FOUND"
+fi
+
+#
+# DELETE IS DISABLED
+#
+if [ "${1:-}" = "rm" ]; then
+    echo
+    echo "ERROR: Note deletion is disabled by design."
+    echo "Use 'kn mv <filename.md> archives' instead."
+    exit 1
 fi
 
 #
@@ -534,11 +571,38 @@ if [ "${1:-}" = "docs" ]; then
     DOCS_ROOT="${KNOWLEDGE_DOCS_ROOT:-/home/murat/Media/5-Documentation}"
     QUERY="${*:2}"
 
+    if [ -z "$QUERY" ]; then
+        RESULTS="$(find "$DOCS_ROOT" -type f -name '*.md' -print 2>/dev/null)"
+    else
+        RESULTS="$(
+            curl -fsS --get --data-urlencode "q=$QUERY" "http://127.0.0.1:1320/api/search" 2>/dev/null |
+            "$BUN" -e '
+              const data = await Bun.stdin.json();
+              for (const r of data.results ?? []) {
+                const u = String(r.url ?? "");
+                const m = u.match(/[?&]path=([^&]+)/);
+                if (!m) continue;
+                console.log(decodeURIComponent(m[1]));
+              }
+            '
+        )" || exit 1
+        RESULTS="$(
+            printf '%s\n' "$RESULTS" |
+            while IFS= read -r rel; do
+                [ -n "$rel" ] && printf '%s/%s\n' "$DOCS_ROOT" "$rel"
+            done
+        )"
+    fi
+
+    if [ -z "$RESULTS" ]; then
+        echo "No matching documentation."
+        exit 0
+    fi
+
     SELECTED="$(
-        find "$DOCS_ROOT" -type f -name '*.md' -print 2>/dev/null |
+        printf '%s\n' "$RESULTS" |
         fzf \
             --prompt='docs> ' \
-            --query="$QUERY" \
             --height=90% \
             --layout=reverse \
             --border \
