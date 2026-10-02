@@ -26,6 +26,7 @@ for service in \
     knowledge-personal-watch.service \
     knowledge-personal-web.service \
     knowledge-docs-browser.service \
+    knowledge-man-browser.service \
     knowledge-docs-watch.service
 do
     if systemctl --user is-active \
@@ -78,6 +79,24 @@ then
     pass 'Docs browser search'
 else
     fail 'Docs browser search'
+fi
+
+if curl -fsS \
+    'http://127.0.0.1:1321/api/search?q=man' \
+    >/dev/null
+then
+    pass 'Man browser search'
+else
+    fail 'Man browser search'
+fi
+
+if curl -fsS \
+    'http://127.0.0.1:1321/man/1/man' \
+    | grep -Fq 'man'
+then
+    pass 'Man browser render'
+else
+    fail 'Man browser render'
 fi
 
 #
@@ -310,6 +329,7 @@ for file in \
     scripts/docs-indexer.ts \
     scripts/update-docs-path.ts \
     scripts/docs-server.ts \
+    scripts/man-server.ts \
     scripts/new-note.ts \
     scripts/note-relations.ts \
     scripts/doctor.ts \

@@ -1,0 +1,13 @@
+[Unit]
+Description=Knowledge Local Man Pages Browser
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+Environment=KNOWLEDGE_MAN_PORT=1321
+ExecStart=%h/.bun/bin/bun scripts/man-server.ts
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

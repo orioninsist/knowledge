@@ -5,29 +5,34 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>Knowledge Productivity</title>
+  <link rel="stylesheet" href="/css/shell.css">
   <link rel="stylesheet" href="./app.css">
   <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 <body>
   <div class="app-shell">
-    <header class="app-header">
+    <header class="topbar">
       <a class="brand" href="/" aria-label="Knowledge home">
-        <span class="brand-mark">K</span>
-        <strong>Productivity</strong>
+        Knowledge
       </a>
-      <nav class="nav" aria-label="Productivity tools">
-        <a class="nav-item nav-link" href="/" aria-label="Knowledge notes">Notes</a>
-        <a class="nav-item nav-link" href="http://127.0.0.1:1320/" aria-label="Documentation browser">Docs</a>
-        <button class="nav-item is-active" data-view="clock">World Clock</button>
-        <button class="nav-item" data-view="weather">Weather</button>
-        <button class="nav-item" data-view="prayer">Prayer</button>
-        <button class="nav-item" data-view="focus">Focus</button>
+
+      <nav class="topnav" aria-label="Knowledge">
+        <a href="/">Notes</a>
+        <a href="/productivity/">Productivity</a>
+        <a href="http://127.0.0.1:1320/">Documentation</a>
+        <a href="http://127.0.0.1:1321/">Man</a>
       </nav>
-      <time id="now"></time>
     </header>
 
+    <nav class="productivity-nav" aria-label="Productivity">
+      <button class="nav-item is-active" data-view="clock">World Clock</button>
+      <button class="nav-item" data-view="weather">Weather</button>
+      <button class="nav-item" data-view="prayer">Prayer</button>
+      <button class="nav-item" data-view="focus">Focus</button>
+    </nav>
+
     <main class="main">
-      <header class="topbar">
+      <header class="view-header">
         <div>
           <p id="eyebrow">WORLD CLOCK</p>
           <h1 id="title">Time across your cities.</h1>

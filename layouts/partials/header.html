@@ -1,45 +1,29 @@
 <header class="topbar">
+  <a
+    class="brand"
+    href="/"
+  >
+    Knowledge
+  </a>
 
-  <a class="brand" href="/">Knowledge</a>
+  <nav
+    class="topnav"
+    aria-label="Knowledge"
+  >
+    <a href="/">
+      Notes
+    </a>
 
-  <div class="search">
+    <a href="/productivity/">
+      Productivity
+    </a>
 
-    <label
-      class="visually-hidden"
-      for="knowledge-search"
-    >
-      Search
-    </label>
+    <a href="http://127.0.0.1:1320/">
+      Documentation
+    </a>
 
-    <input
-      id="knowledge-search"
-      class="search-input"
-      type="search"
-      placeholder="Search notes..."
-      autocomplete="off"
-      spellcheck="false"
-      aria-label="Search notes"
-    >
-
-    <div
-      id="search-results"
-      class="search-results"
-      hidden
-    >
-      <div
-        id="search-summary"
-        class="search-summary"
-        hidden
-      ></div>
-
-      <div
-        id="search-results-list"
-        class="search-results-list"
-      ></div>
-    </div>
-
-  </div>
-
+    <a href="http://127.0.0.1:1321/">
+      Man
+    </a>
+  </nav>
 </header>
-
-<script src="/js/search.js" defer></script>

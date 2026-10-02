@@ -541,8 +541,23 @@ const pageHTML = (
     ? `${selectedDoc.title} · Documentation`
     : "Documentation";
 
+  const header = `
+    <header class="topbar">
+      <a class="brand" href="http://127.0.0.1:1314/">Knowledge</a>
+
+      <nav class="topnav" aria-label="Knowledge">
+        <a href="http://127.0.0.1:1314/">Notes</a>
+        <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
+        <a href="/">Documentation</a>
+        <a href="http://127.0.0.1:1321/">Man</a>
+      </nav>
+    </header>
+  `;
+
   const body = selectedDoc
     ? `
+      ${header}
+
       <article class="note">
         <header class="note-header">
           <div class="note-header-row">
@@ -567,16 +582,7 @@ const pageHTML = (
       </article>
     `
     : `
-      <section class="section-page">
-        <header class="section-header">
-          <h1>Documentation</h1>
-        </header>
-        <nav class="home-routes" aria-label="Knowledge routes">
-          <a href="http://127.0.0.1:1314/">Notes</a>
-          <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
-        </nav>
-        <p class="section-static-message">Use Alt + K to search documentation.</p>
-      </section>
+      ${header}
     `;
 
   return `<!doctype html>
@@ -587,6 +593,7 @@ const pageHTML = (
   <meta name="color-scheme" content="light dark">
   <meta name="knowledge-search-api" content="http://${HOST}:${PORT}">
   <title>${escapeHTML(title)}</title>
+  <link rel="stylesheet" href="/css/shell.css">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/tags.css">
   <link rel="icon" type="image/png" href="/favicon.png">
