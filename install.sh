@@ -36,6 +36,7 @@ for cmd in \
   d2 \
   typst \
   inotifywait \
+  info \
   curl \
   npm \
   systemctl
@@ -191,6 +192,10 @@ install_unit \
   "$SYSTEMD_DIR/knowledge-man-browser.service"
 
 install_unit \
+  systemd/knowledge-info-browser.service.in \
+  "$SYSTEMD_DIR/knowledge-info-browser.service"
+
+install_unit \
   systemd/knowledge-docs-watch.service.in \
   "$SYSTEMD_DIR/knowledge-docs-watch.service"
 
@@ -202,6 +207,7 @@ systemctl --user enable \
   knowledge-personal-web.service \
   knowledge-docs-browser.service \
   knowledge-man-browser.service \
+  knowledge-info-browser.service \
   knowledge-docs-watch.service \
   >/dev/null
 
@@ -219,6 +225,9 @@ systemctl --user restart \
 
 systemctl --user restart \
   knowledge-man-browser.service
+
+systemctl --user restart \
+  knowledge-info-browser.service
 
 systemctl --user restart \
   knowledge-docs-watch.service
@@ -241,3 +250,4 @@ echo 'Web:     http://127.0.0.1:1314'
 echo 'API:     http://127.0.0.1:8788'
 echo 'Docs:    http://127.0.0.1:1320'
 echo 'Man:     http://127.0.0.1:1321'
+echo 'Info:    http://127.0.0.1:1322'

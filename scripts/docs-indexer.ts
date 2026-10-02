@@ -195,7 +195,7 @@ export const updateDocsPath = (rawConfig: DocsIndexConfig, absolutePath: string)
 export const buildDocsIndex = async (rawConfig: DocsIndexConfig): Promise<DocsIndexResult> => {
   const config = normalizeDocsConfig(rawConfig);
   const db = openDocsDatabase(config.dbPath);
-  const generation = Date.now();
+  const indexedAt = Date.now();
   const files: string[] = [];
   let scanned = 0;
   let updated = 0;
@@ -203,10 +203,51 @@ export const buildDocsIndex = async (rawConfig: DocsIndexConfig): Promise<DocsIn
 
   walk(config, config.root, files);
 
-  const existingQuery = db.query(`SELECT mtime_ms, size FROM documents WHERE path = ?`);
-  const touchQuery = db.query(`UPDATE documents SET scan_generation = ? WHERE path = ?`);
+  // Reconcile the database with the filesystem before doing any FTS work.
+  // The documentation corpus may be replaced in bulk, so relying only on
+  // inotify delete events can leave historical paths behind indefinitely.
+  const livePaths = new Set(
+    files.map((file) => toRelative(config, file)),
+  );
+
+  const existingPaths = db
+    .query(`SELECT path FROM documents`)
+    .all() as Array<{ path: string }>;
+
+  const stale = existingPaths
+    .map((row) => row.path)
+    .filter((path) => !livePaths.has(path));
+
+  if (stale.length > 0) {
+    const deleteDoc =
+      db.query(`DELETE FROM documents WHERE path = ?`);
+    const deleteFts =
+      db.query(`DELETE FROM documents_fts WHERE path = ?`);
+
+    db.transaction(() => {
+      for (const path of stale) {
+        deleteDoc.run(path);
+        deleteFts.run(path);
+      }
+    })();
+  }
+
+  const existingQuery = db.query(
+    `SELECT mtime_ms, size FROM documents WHERE path = ?`,
+  );
+
   const upsertQuery = db.query(`
-    INSERT INTO documents(path, absolute_path, folder, filename, title, summary, mtime_ms, size, scan_generation)
+    INSERT INTO documents(
+      path,
+      absolute_path,
+      folder,
+      filename,
+      title,
+      summary,
+      mtime_ms,
+      size,
+      scan_generation
+    )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(path) DO UPDATE SET
       absolute_path = excluded.absolute_path,
@@ -215,69 +256,126 @@ export const buildDocsIndex = async (rawConfig: DocsIndexConfig): Promise<DocsIn
       title = excluded.title,
       summary = excluded.summary,
       mtime_ms = excluded.mtime_ms,
-      size = excluded.size,
-      scan_generation = excluded.scan_generation
+      size = excluded.size
   `);
-  const deleteFts = db.query(`DELETE FROM documents_fts WHERE path = ?`);
-  const insertFts = db.query(`INSERT INTO documents_fts(path, folder, filename, title, summary, content) VALUES (?, ?, ?, ?, ?, ?)`);
 
-  // The documentation index is derived data. The installer opts into fast
-  // rebuild mode because the index can always be recreated from Markdown.
-  const fastRebuild = process.env.KNOWLEDGE_DOCS_REBUILD_FAST === "1";
-  if (fastRebuild) db.run("PRAGMA synchronous = OFF");
+  const deleteFts = db.query(
+    `DELETE FROM documents_fts WHERE path = ?`,
+  );
+
+  const insertFts = db.query(`
+    INSERT INTO documents_fts(
+      path,
+      folder,
+      filename,
+      title,
+      summary,
+      content
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+  const fastRebuild =
+    process.env.KNOWLEDGE_DOCS_REBUILD_FAST === "1";
+
+  if (fastRebuild) {
+    db.run("PRAGMA synchronous = OFF");
+  }
+
   db.run("BEGIN IMMEDIATE");
 
   for (const file of files) {
     scanned += 1;
+
     const stat = statSync(file);
     const mtimeMs = Math.trunc(stat.mtimeMs);
     const size = stat.size;
     const path = toRelative(config, file);
-    const current = existingQuery.get(path) as { mtime_ms: number; size: number } | null;
 
-    if (current && current.mtime_ms === mtimeMs && current.size === size) {
-      touchQuery.run(generation, path);
+    const current = existingQuery.get(path) as {
+      mtime_ms: number;
+      size: number;
+    } | null;
+
+    if (
+      current &&
+      current.mtime_ms === mtimeMs &&
+      current.size === size
+    ) {
       unchanged += 1;
     } else {
       const source = readFileSync(file, "utf8");
       const body = stripFrontmatter(source);
-      const folder = dirname(path) === "." ? "" : dirname(path).split(sep).join("/");
+      const folder =
+        dirname(path) === "."
+          ? ""
+          : dirname(path).split(sep).join("/");
       const filename = basename(path);
-      const title = firstHeading(body) || basename(path, extname(path));
+      const title =
+        firstHeading(body) ||
+        basename(path, extname(path));
       const summary = compactSummary(body);
 
-      upsertQuery.run(path, file, folder, filename, title, summary, mtimeMs, size, generation);
+      upsertQuery.run(
+        path,
+        file,
+        folder,
+        filename,
+        title,
+        summary,
+        mtimeMs,
+        size,
+        indexedAt,
+      );
+
       deleteFts.run(path);
-      insertFts.run(path, folder, filename, title, summary, body);
+      insertFts.run(
+        path,
+        folder,
+        filename,
+        title,
+        summary,
+        body,
+      );
+
       updated += 1;
     }
 
     if (scanned % 250 === 0) {
-      console.log(`indexed ${scanned}/${files.length}`);
+      console.log(
+        `indexed ${scanned}/${files.length}`,
+      );
       await Bun.sleep(0);
     }
   }
 
   db.run("COMMIT");
-  if (fastRebuild) db.run("PRAGMA synchronous = NORMAL");
 
-  const stale = db.query(`SELECT path FROM documents WHERE scan_generation != ?`).all(generation) as Array<{ path: string }>;
-  db.transaction(() => {
-    const deleteDoc = db.query(`DELETE FROM documents WHERE path = ?`);
-    const deleteDocFts = db.query(`DELETE FROM documents_fts WHERE path = ?`);
-    for (const row of stale) {
-      deleteDoc.run(row.path);
-      deleteDocFts.run(row.path);
-    }
-    db.query(`
-      INSERT INTO docs_meta(key, value) VALUES('indexed_at', ?)
-      ON CONFLICT(key) DO UPDATE SET value = excluded.value
-    `).run(String(generation));
-  })();
+  if (fastRebuild) {
+    db.run("PRAGMA synchronous = NORMAL");
+  }
+
+  db.query(`
+    INSERT INTO docs_meta(key, value)
+    VALUES('indexed_at', ?)
+    ON CONFLICT(key)
+    DO UPDATE SET value = excluded.value
+  `).run(String(indexedAt));
 
   db.run("PRAGMA optimize");
-  const row = db.query(`SELECT COUNT(*) AS count FROM documents`).get() as { count: number };
+
+  const row = db
+    .query(`SELECT COUNT(*) AS count FROM documents`)
+    .get() as { count: number };
+
   db.close();
 
-  return { scanned, updated, unchanged, deleted: stale.length, indexed: row.count, indexedAt: generation };
+  return {
+    scanned,
+    updated,
+    unchanged,
+    deleted: stale.length,
+    indexed: row.count,
+    indexedAt,
+  };
 };

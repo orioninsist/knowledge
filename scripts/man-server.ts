@@ -262,6 +262,7 @@ const shellHTML = `
     <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
     <a href="http://127.0.0.1:1320/">Documentation</a>
     <a href="/">Man</a>
+    <a href="http://127.0.0.1:1322/">Info</a>
   </nav>
 </header>
 

@@ -1,0 +1,13 @@
+[Unit]
+Description=Knowledge Local Info Browser
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+Environment=KNOWLEDGE_INFO_PORT=1322
+ExecStart=%h/.bun/bin/bun scripts/info-server.ts
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

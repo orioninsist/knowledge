@@ -27,6 +27,7 @@ for service in \
     knowledge-personal-web.service \
     knowledge-docs-browser.service \
     knowledge-man-browser.service \
+    knowledge-info-browser.service \
     knowledge-docs-watch.service
 do
     if systemctl --user is-active \
@@ -97,6 +98,35 @@ then
     pass 'Man browser render'
 else
     fail 'Man browser render'
+fi
+
+if curl -fsS \
+    'http://127.0.0.1:1322/api/search?q=make' \
+    | grep -Fq '"manual"'
+then
+    pass 'Info browser search'
+else
+    fail 'Info browser search'
+fi
+
+if curl -fsS \
+    'http://127.0.0.1:1322/info/make/Overview' \
+    | grep -Fq "Overview of"
+then
+    pass 'Info browser render'
+else
+    fail 'Info browser render'
+fi
+
+info_missing_status="$(
+    curl -sS -o /dev/null -w '%{http_code}' \
+        'http://127.0.0.1:1322/info/make/DefinitelyNotARealNode'
+)"
+
+if [[ "$info_missing_status" == "404" ]]; then
+    pass 'Info browser rejects missing nodes'
+else
+    fail "Info browser missing node returned HTTP $info_missing_status"
 fi
 
 #
@@ -330,6 +360,7 @@ for file in \
     scripts/update-docs-path.ts \
     scripts/docs-server.ts \
     scripts/man-server.ts \
+    scripts/info-server.ts \
     scripts/new-note.ts \
     scripts/note-relations.ts \
     scripts/doctor.ts \

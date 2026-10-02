@@ -550,6 +550,7 @@ const pageHTML = (
         <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
         <a href="/">Documentation</a>
         <a href="http://127.0.0.1:1321/">Man</a>
+        <a href="http://127.0.0.1:1322/">Info</a>
       </nav>
     </header>
   `;
