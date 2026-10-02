@@ -1,6 +1,6 @@
 # Knowledge
 
-Knowledge is a local-first workstation knowledge system for personal Markdown notes, large read-only Markdown documentation sets, and locally installed man pages.
+Knowledge is a local-first workstation knowledge system for personal Markdown notes, large read-only Markdown documentation sets, locally installed man pages, and locally installed GNU Info manuals.
 
 Markdown is the source of truth. Search databases, generated Hugo configuration, render caches, and systemd units are disposable runtime state.
 
@@ -12,6 +12,7 @@ Markdown is the source of truth. Search databases, generated Hugo configuration,
 | `http://127.0.0.1:1314/productivity/` | Local productivity tools |
 | `http://127.0.0.1:1320/` | Read-only external documentation browser |
 | `http://127.0.0.1:1321/` | Locally installed man-page browser |
+| `http://127.0.0.1:1322/` | Locally installed GNU Info browser |
 
 ## Core model
 
@@ -43,7 +44,7 @@ Notes may be organized in nested subdirectories inside any MOC. Filenames are gl
 This repository contains application code only:
 
 - `bin/kn` — terminal entry point.
-- `scripts/` — workspace validation, indexing, search APIs, watchers, note helpers, documentation browser, and local man browser.
+- `scripts/` — workspace validation, indexing, search APIs, watchers, note helpers, documentation browser, local man browser, and local GNU Info browser.
 - `layouts/` and `static/` — Hugo/browser UI.
 - `systemd/` — user-service templates.
 - `tests/smoke.sh` — integration and source-invariant checks.
@@ -62,6 +63,7 @@ hugo
 d2
 typst
 inotifywait
+info
 curl
 systemctl
 ```
@@ -99,6 +101,7 @@ knowledge-personal-web.service      Hugo on 127.0.0.1:1314
 knowledge-personal-watch.service    Incremental personal-note index sync
 knowledge-docs-browser.service      Read-only docs browser on 127.0.0.1:1320
 knowledge-man-browser.service       Local installed man browser on 127.0.0.1:1321
+knowledge-info-browser.service      Local installed GNU Info browser on 127.0.0.1:1322
 knowledge-docs-watch.service        Incremental docs index sync
 ```
 
@@ -110,6 +113,7 @@ systemctl --user status knowledge-personal-web.service
 systemctl --user status knowledge-personal-watch.service
 systemctl --user status knowledge-docs-browser.service
 systemctl --user status knowledge-man-browser.service
+systemctl --user status knowledge-info-browser.service
 systemctl --user status knowledge-docs-watch.service
 ```
 
@@ -195,9 +199,10 @@ Press `Alt + K` to open search on the current searchable surface. Search is inte
 - Notes searches the personal SQLite FTS5 index.
 - Documentation searches the read-only documentation index.
 - Man searches installed manual pages through `apropos`.
+- Info searches installed GNU Info entries through `info --apropos`.
 - Productivity has no artificial search layer.
 
-The shared navigation shell is `Knowledge · Notes · Productivity · Documentation · Man`, and it remains available while browsing inside each surface.
+The shared navigation shell is `Knowledge · Notes · Productivity · Documentation · Man · Info`, and it remains available while browsing inside each surface.
 
 The personal home page intentionally stays small: note statistics and links to the local surfaces.
 
@@ -225,6 +230,8 @@ KNOWLEDGE_DOCS_IGNORE=/path/to/docs/ignored \
 
 The documentation surface is intentionally read-only. It supports indexing, search, preview, and reading; it does not create, edit, move, or delete documentation files.
 
+Full reconciliation walks the current filesystem, removes database/FTS rows for paths that no longer exist, then compares modification time and size for each live path. Only new or changed Markdown files are read and re-indexed; unchanged files stay untouched. The watcher still performs per-path incremental updates during normal operation.
+
 ## Man pages
 
 The Man surface is available at:
@@ -242,6 +249,24 @@ It deliberately uses the operating system's installed manual pages as its source
 Knowledge does not copy man pages into Markdown and does not maintain a second man-page database. Installed references such as `man(1)` and `fuzzel.ini(5)` become local browser links when the target page exists.
 
 Open search with `Alt + K`, type a term such as `fuzzel`, and open a result such as `fuzzel(1)` or `fuzzel.ini(5)`.
+
+## GNU Info
+
+The Info surface is available at:
+
+```text
+http://127.0.0.1:1322/
+```
+
+It uses the machine's locally installed GNU Info manuals as its source of truth:
+
+- search: `info --apropos`
+- render: `info --file=<manual> --node=<node> --output=-`
+- node existence: the returned Info header must match the requested node exactly
+
+Knowledge does not copy Info manuals into Markdown and does not maintain a second Info database or index. Menu entries, `*Note` references, and header navigation are converted into local links when the target node exists. Requests for missing nodes return `404` rather than accepting GNU Info's fallback to `Top`.
+
+Open search with `Alt + K`, search for an installed topic such as `make`, and follow nodes within the local browser.
 
 ## Visual blocks
 
@@ -295,6 +320,8 @@ curl -fsS 'http://127.0.0.1:8788/api/search?q=linux'
 curl -fsS 'http://127.0.0.1:1320/api/search?q=markdown'
 curl -fsS 'http://127.0.0.1:1321/api/search?q=man'
 curl -fsS 'http://127.0.0.1:1321/man/1/man' >/dev/null
+curl -fsS 'http://127.0.0.1:1322/api/search?q=make'
+curl -fsS 'http://127.0.0.1:1322/info/make/Overview' >/dev/null
 ```
 
 ## Architecture
@@ -315,7 +342,11 @@ Personal Markdown workspace
 
 External documentation
         │
-        ├── docs indexer + watcher
+        ├── full reconciliation
+        │       ├── remove stale DB/FTS paths first
+        │       └── re-index only new/changed files
+        │
+        ├── per-path watcher updates
         │       └── SQLite FTS5 docs index
         │
         ├── read-only browser on 1320
@@ -326,6 +357,12 @@ Installed man pages
         ├── apropos → search
         ├── man -Thtml → render
         └── local browser on 1321
+
+Installed GNU Info manuals
+        │
+        ├── info --apropos → search
+        ├── info --file/--node → render
+        └── local browser on 1322
 ```
 
 ## Maintenance rules
@@ -340,4 +377,5 @@ Keep the project small and explicit:
 - Do not add a service or database unless it removes real complexity.
 - Keep personal notes separate from project source control.
 - Keep the Man browser backed by locally installed manual pages instead of duplicating them into a Knowledge-owned corpus or index.
+- Keep the Info browser backed by locally installed GNU Info manuals instead of duplicating them into a Knowledge-owned corpus or index.
 - Keep the shared navigation/search UX coherent, but keep each surface's backend and search scope independent.
