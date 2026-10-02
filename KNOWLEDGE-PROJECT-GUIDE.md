@@ -6,10 +6,12 @@ It is intentionally different from `README.md`: the README is the public overvie
 
 ## 1. What this project is
 
-Knowledge is a local-first Markdown knowledge system with two independent content surfaces:
+Knowledge is a local-first workstation layer around Markdown and locally installed Unix documentation. It exposes four user-facing surfaces:
 
 1. **Personal notes** — editable Markdown notes stored outside this repository.
-2. **External documentation** — a large read-only Markdown tree used for browsing and search.
+2. **Productivity** — local browser utilities that do not modify notes.
+3. **External documentation** — a large read-only Markdown tree used for browsing and search.
+4. **Man pages** — a read-only browser for the machine's locally installed manual pages.
 
 The repository contains the application, scripts, web UI, service templates, and tests. It does **not** contain the personal knowledge base itself.
 
@@ -27,6 +29,7 @@ SQLite databases, Hugo runtime configuration, render output, caches, and install
 | Productivity UI | `http://127.0.0.1:1314/productivity/` | World clock, weather, prayer times, focus tools |
 | Personal API | `http://127.0.0.1:8788/` | Search and local render API |
 | Documentation browser | `http://127.0.0.1:1320/` | Read-only external docs search/browser |
+| Man browser | `http://127.0.0.1:1321/` | Search and read locally installed man pages |
 
 All services bind locally. This project is designed as a local workstation tool, not a public network service.
 
@@ -294,7 +297,7 @@ Do not add a second package-manager lockfile unless the project deliberately cha
 
 ## 11. Systemd services
 
-Five user services form the running system.
+Six user services form the running system.
 
 ### knowledge-personal-search.service
 
@@ -372,6 +375,24 @@ scripts/docs-watch.sh
 
 It recursively watches the documentation tree and incrementally updates the documentation index when Markdown files change.
 
+### knowledge-man-browser.service
+
+Runs:
+
+```text
+bun scripts/man-server.ts
+```
+
+It serves the local manual-page browser on:
+
+```text
+127.0.0.1:1321
+```
+
+Search is delegated directly to the system `apropos` database, rendering is delegated to `man -Thtml`, and installed-page existence checks use `man -w`. The project does not copy man pages into Markdown and does not maintain a second man-page database or index.
+
+Rendered cross-references such as `man(1)` or `fuzzel.ini(5)` are linked to the local browser when the referenced page exists.
+
 ## 12. Service commands
 
 Check all services:
@@ -381,6 +402,7 @@ systemctl --user status knowledge-personal-search.service
 systemctl --user status knowledge-personal-web.service
 systemctl --user status knowledge-personal-watch.service
 systemctl --user status knowledge-docs-browser.service
+systemctl --user status knowledge-man-browser.service
 systemctl --user status knowledge-docs-watch.service
 ```
 
@@ -494,7 +516,7 @@ When the target is omitted, `kn link` shows the global Markdown note picker. The
 kn doctor
 ```
 
-The doctor checks runtime/workspace availability, the five MOCs, filename validity and global uniqueness, the local-only notes Git boundary, required/interactively used commands, the five systemd user services, and broken note relations.
+The doctor checks runtime/workspace availability, the five MOCs, filename validity and global uniqueness, the local-only notes Git boundary, required/interactively used commands, the six systemd user services, and broken note relations.
 
 ### Personal search
 
@@ -588,6 +610,14 @@ The browser shortcut documented by the project is:
 Alt + K
 ```
 
+The shared top navigation is:
+
+```text
+Knowledge · Notes · Productivity · Documentation · Man
+```
+
+`Alt + K` is surface-scoped rather than global: Notes searches personal notes, Documentation searches external documentation, and Man searches installed manual pages. Productivity does not invent a search surface where none is useful.
+
 ## 16. Documentation browser
 
 The documentation system is independent from the personal workspace.
@@ -625,7 +655,41 @@ The docs database indexes path, folder, filename, title, summary, and content th
 
 This surface should stay read-only. It is for discovery, preview, search, and reading, not for modifying the documentation tree.
 
-## 17. Visual Markdown blocks
+## 17. Man browser
+
+The Man surface is intentionally separate from the Markdown documentation browser.
+
+Address:
+
+```text
+http://127.0.0.1:1321/
+```
+
+Its source of truth is the set of manual pages installed on the local system. It has no copied Markdown corpus and no project-owned search database.
+
+Search flow:
+
+```text
+Alt + K → /api/search?q=... → apropos
+```
+
+Render flow:
+
+```text
+/man/<section>/<name> → man -Thtml <section> <name>
+```
+
+Examples:
+
+```text
+http://127.0.0.1:1321/man/1/man
+http://127.0.0.1:1321/man/1/fuzzel
+http://127.0.0.1:1321/man/5/fuzzel.ini
+```
+
+The server validates page names and sections before invoking `man`, uses argument arrays rather than shell interpolation, escapes generated HTML strings, and binds only to localhost.
+
+## 18. Visual Markdown blocks
 
 The personal note web surface supports special fenced content including:
 
@@ -639,7 +703,7 @@ Mermaid is rendered from the vendored browser bundle.
 
 D2 and Typst rendering are handled by the local personal API.
 
-## 18. Productivity page
+## 19. Productivity page
 
 The productivity area is available at:
 
@@ -656,7 +720,7 @@ Current tools include:
 
 This surface is deliberately separate from note storage. Its state lives in browser storage and it does not read or modify Markdown notes.
 
-## 19. Important repository paths
+## 20. Important repository paths
 
 ```text
 README.md
@@ -709,12 +773,15 @@ scripts/docs-indexer.ts
 scripts/docs-server.ts
     Read-only docs HTTP server.
 
+scripts/man-server.ts
+    Local installed-man-page search and HTML browser.
+
 scripts/docs-watch.sh
 scripts/update-docs-path.ts
     Incremental documentation index updates.
 
 systemd/*.service.in
-    User-service templates populated by install.sh.
+    User-service templates populated by install.sh, including the Man browser.
 
 layouts/
 static/
@@ -724,7 +791,7 @@ tests/smoke.sh
     Runtime, HTTP, invariant, link, syntax, and compile checks.
 ```
 
-## 20. Smoke tests
+## 21. Smoke tests
 
 Run the full install plus smoke test:
 
@@ -740,10 +807,11 @@ tests/smoke.sh
 
 The smoke test checks:
 
-- all five systemd services
+- all six systemd services
 - Hugo homepage
 - personal search API
 - docs browser health/search
+- Man browser search/render
 - key static assets
 - D2 → SVG rendering
 - Typst → SVG rendering
@@ -761,9 +829,11 @@ Useful manual endpoint checks:
 curl -fsS http://127.0.0.1:1320/health
 curl -fsS 'http://127.0.0.1:8788/api/search?q=linux'
 curl -fsS 'http://127.0.0.1:1320/api/search?q=markdown'
+curl -fsS 'http://127.0.0.1:1321/api/search?q=man'
+curl -fsS 'http://127.0.0.1:1321/man/1/man' >/dev/null
 ```
 
-## 21. Mental model of the data flow
+## 22. Mental model of the data flow
 
 ### Personal notes
 
@@ -804,7 +874,24 @@ external Markdown tree
         └── kn docs → API → fzf → nvim -R
 ```
 
-## 22. Design boundaries that should not be broken casually
+### Installed man pages
+
+```text
+system man pages
+        │
+        ├── apropos / man database maintained by the OS
+        │       └── Man search :1321
+        │
+        ├── man -Thtml
+        │       └── rendered local manual page
+        │
+        └── man -w
+                └── local cross-reference existence checks
+```
+
+There is intentionally no Knowledge-owned man-page index.
+
+## 23. Design boundaries that should not be broken casually
 
 Keep these invariants unless intentionally redesigning the project:
 
@@ -824,8 +911,10 @@ Keep these invariants unless intentionally redesigning the project:
 14. Avoid extra infrastructure when local native tools already solve the problem.
 15. Use one package-manager lockfile.
 16. Prefer archiving notes over introducing destructive delete behavior.
+17. Keep the Man browser backed by the system's installed man pages; do not duplicate them into a second corpus or database without a concrete need.
+18. Keep the four surfaces visually coherent through the shared navigation shell while allowing each surface to keep its own backend and search scope.
 
-## 23. Fast recovery checklist
+## 24. Fast recovery checklist
 
 If returning to this project after a long time:
 
@@ -847,6 +936,7 @@ systemctl --user status knowledge-personal-search.service
 systemctl --user status knowledge-personal-web.service
 systemctl --user status knowledge-personal-watch.service
 systemctl --user status knowledge-docs-browser.service
+systemctl --user status knowledge-man-browser.service
 systemctl --user status knowledge-docs-watch.service
 ```
 
@@ -856,6 +946,8 @@ systemctl --user status knowledge-docs-watch.service
 curl -fsS http://127.0.0.1:1314/ >/dev/null
 curl -fsS http://127.0.0.1:1320/health
 curl -fsS 'http://127.0.0.1:8788/api/search?q=test'
+curl -fsS 'http://127.0.0.1:1321/api/search?q=man'
+curl -fsS 'http://127.0.0.1:1321/man/1/man' >/dev/null
 ```
 
 8. Test the CLI:
@@ -866,7 +958,7 @@ kn search test
 kn docs test
 ```
 
-## 24. Current project summary
+## 25. Current project summary
 
 In its current form, Knowledge is best understood as a small local operating layer around Markdown.
 
@@ -881,5 +973,7 @@ It does not try to replace Markdown with an application database. Instead:
 - `kn` provides the daily terminal workflow.
 - local Git gives personal notes history without publishing them.
 - the docs browser gives a separate read-only search surface for large external Markdown collections.
+- the Man browser exposes the machine's installed manual pages directly, without copying or re-indexing them.
+- a shared responsive navigation shell keeps Notes, Productivity, Documentation, and Man visually consistent while their data models remain separate.
 
 When changing the project, preserve that separation and rebuildability unless there is a strong reason to change the architecture.
