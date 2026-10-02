@@ -1,6 +1,6 @@
 # Knowledge
 
-Knowledge is a local-first Markdown knowledge system for personal notes and large read-only documentation sets.
+Knowledge is a local-first workstation knowledge system for personal Markdown notes, large read-only Markdown documentation sets, and locally installed man pages.
 
 Markdown is the source of truth. Search databases, generated Hugo configuration, render caches, and systemd units are disposable runtime state.
 
@@ -11,6 +11,7 @@ Markdown is the source of truth. Search databases, generated Hugo configuration,
 | `http://127.0.0.1:1314/` | Personal notes, statistics, and browser search |
 | `http://127.0.0.1:1314/productivity/` | Local productivity tools |
 | `http://127.0.0.1:1320/` | Read-only external documentation browser |
+| `http://127.0.0.1:1321/` | Locally installed man-page browser |
 
 ## Core model
 
@@ -42,7 +43,7 @@ Notes may be organized in nested subdirectories inside any MOC. Filenames are gl
 This repository contains application code only:
 
 - `bin/kn` — terminal entry point.
-- `scripts/` — workspace validation, indexing, search APIs, watchers, and note helpers.
+- `scripts/` — workspace validation, indexing, search APIs, watchers, note helpers, documentation browser, and local man browser.
 - `layouts/` and `static/` — Hugo/browser UI.
 - `systemd/` — user-service templates.
 - `tests/smoke.sh` — integration and source-invariant checks.
@@ -97,6 +98,7 @@ knowledge-personal-search.service   Personal SQLite FTS5/search/render API
 knowledge-personal-web.service      Hugo on 127.0.0.1:1314
 knowledge-personal-watch.service    Incremental personal-note index sync
 knowledge-docs-browser.service      Read-only docs browser on 127.0.0.1:1320
+knowledge-man-browser.service       Local installed man browser on 127.0.0.1:1321
 knowledge-docs-watch.service        Incremental docs index sync
 ```
 
@@ -107,6 +109,7 @@ systemctl --user status knowledge-personal-search.service
 systemctl --user status knowledge-personal-web.service
 systemctl --user status knowledge-personal-watch.service
 systemctl --user status knowledge-docs-browser.service
+systemctl --user status knowledge-man-browser.service
 systemctl --user status knowledge-docs-watch.service
 ```
 
@@ -187,9 +190,16 @@ Move and rename operations require confirmation. Note edits/creates/moves/rename
 
 ## Browser search
 
-Press `Alt + K` on the personal site to search the SQLite FTS5 index. Search supports folder, filename, title, description, status, alias, and tag data.
+Press `Alt + K` to open search on the current searchable surface. Search is intentionally surface-scoped rather than global:
 
-The personal home page intentionally stays small: note statistics, search, and links to the local surfaces.
+- Notes searches the personal SQLite FTS5 index.
+- Documentation searches the read-only documentation index.
+- Man searches installed manual pages through `apropos`.
+- Productivity has no artificial search layer.
+
+The shared navigation shell is `Knowledge · Notes · Productivity · Documentation · Man`, and it remains available while browsing inside each surface.
+
+The personal home page intentionally stays small: note statistics and links to the local surfaces.
 
 ## Documentation browser
 
@@ -214,6 +224,24 @@ KNOWLEDGE_DOCS_IGNORE=/path/to/docs/ignored \
 ```
 
 The documentation surface is intentionally read-only. It supports indexing, search, preview, and reading; it does not create, edit, move, or delete documentation files.
+
+## Man pages
+
+The Man surface is available at:
+
+```text
+http://127.0.0.1:1321/
+```
+
+It deliberately uses the operating system's installed manual pages as its source of truth:
+
+- search: `apropos`
+- render: `man -Thtml`
+- page/cross-reference existence: `man -w`
+
+Knowledge does not copy man pages into Markdown and does not maintain a second man-page database. Installed references such as `man(1)` and `fuzzel.ini(5)` become local browser links when the target page exists.
+
+Open search with `Alt + K`, type a term such as `fuzzel`, and open a result such as `fuzzel(1)` or `fuzzel.ini(5)`.
 
 ## Visual blocks
 
@@ -265,6 +293,8 @@ Endpoints:
 curl -fsS http://127.0.0.1:1320/health
 curl -fsS 'http://127.0.0.1:8788/api/search?q=linux'
 curl -fsS 'http://127.0.0.1:1320/api/search?q=markdown'
+curl -fsS 'http://127.0.0.1:1321/api/search?q=man'
+curl -fsS 'http://127.0.0.1:1321/man/1/man' >/dev/null
 ```
 
 ## Architecture
@@ -290,6 +320,12 @@ External documentation
         │
         ├── read-only browser on 1320
         └── kn docs → FTS5 → fzf → nvim -R
+
+Installed man pages
+        │
+        ├── apropos → search
+        ├── man -Thtml → render
+        └── local browser on 1321
 ```
 
 ## Maintenance rules
@@ -303,3 +339,5 @@ Keep the project small and explicit:
 - Prefer native local tools over extra infrastructure.
 - Do not add a service or database unless it removes real complexity.
 - Keep personal notes separate from project source control.
+- Keep the Man browser backed by locally installed manual pages instead of duplicating them into a Knowledge-owned corpus or index.
+- Keep the shared navigation/search UX coherent, but keep each surface's backend and search scope independent.
