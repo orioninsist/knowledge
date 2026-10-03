@@ -31,11 +31,11 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
 
   await engine.init();
 
-  const search = new SearchService(
+  const search = createSearchService(
     engine,
   );
 
-  const documents = new DocumentService(
+  const documents = createDocumentService(
     engine,
   );
 

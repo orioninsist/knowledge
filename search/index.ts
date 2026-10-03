@@ -1,0 +1,1 @@
+export { createSearchService } from "./factory";
