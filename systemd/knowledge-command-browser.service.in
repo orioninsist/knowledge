@@ -1,0 +1,13 @@
+[Unit]
+Description=Knowledge Command Cheatsheets Browser
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT_DIR@
+Environment=KNOWLEDGE_COMMAND_PORT=1323
+ExecStart=%h/.bun/bin/bun scripts/command-server.ts
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

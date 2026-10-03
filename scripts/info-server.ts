@@ -436,6 +436,7 @@ const shellHTML = `
     <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
     <a href="http://127.0.0.1:1320/">Documentation</a>
     <a href="http://127.0.0.1:1321/">Man</a>
+    <a href="http://127.0.0.1:1323/">Commands</a>
     <a href="/">Info</a>
   </nav>
 </header>

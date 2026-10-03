@@ -28,6 +28,7 @@ for service in \
     knowledge-docs-browser.service \
     knowledge-man-browser.service \
     knowledge-info-browser.service \
+    knowledge-command-browser.service \
     knowledge-docs-watch.service
 do
     if systemctl --user is-active \
@@ -116,6 +117,15 @@ then
     pass 'Info browser render'
 else
     fail 'Info browser render'
+fi
+
+if curl -fsS \
+    'http://127.0.0.1:1323/health' \
+    | grep -Fq '"ok":true'
+then
+    pass 'Command cheatsheets browser health'
+else
+    fail 'Command cheatsheets browser health'
 fi
 
 info_missing_status="$(
@@ -361,6 +371,7 @@ for file in \
     scripts/docs-server.ts \
     scripts/man-server.ts \
     scripts/info-server.ts \
+    scripts/command-server.ts \
     scripts/new-note.ts \
     scripts/note-relations.ts \
     scripts/doctor.ts \

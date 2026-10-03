@@ -551,6 +551,7 @@ const pageHTML = (
         <a href="/">Documentation</a>
         <a href="http://127.0.0.1:1321/">Man</a>
         <a href="http://127.0.0.1:1322/">Info</a>
+        <a href="http://127.0.0.1:1323/">Commands</a>
       </nav>
     </header>
   `;
