@@ -38,7 +38,7 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     engine,
   );
 
-  const renderer = createRendererRuntime({
+  const api = createRendererRuntime({
     config,
     workspaces,
     engine,
@@ -91,12 +91,12 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
   });
 
   const facade = createApplicationFacade(
-    renderer,
+    api,
     lifecycle,
   );
 
   return createApplicationFacade(
-    renderer,
+    api,
     lifecycle,
   );
 }
