@@ -17,9 +17,7 @@ cards:
   width: 220
   height: 140
 
-workspaces:
-  - name: Notes
-    path: /home/murat/Notes
+workspaces: []
 
 search:
   index_path: "./storage/index"
