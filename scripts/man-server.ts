@@ -476,12 +476,6 @@ const renderMan = (
     box-sizing: border-box;
   }
 
-  body > :not(.topbar):not(.command-search):not(script) {
-    width: min(100%, 86ch);
-    margin-left: auto;
-    margin-right: auto;
-  }
-
   body > h1:first-of-type {
     margin-top: 0;
   }
