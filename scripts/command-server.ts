@@ -410,16 +410,7 @@ const server = Bun.serve({
 
 </p>
 <div class="source-status">${statuses}</div>
-<form class="home-search" action="/open" method="get">
-<input
-  name="q"
-  placeholder="git, curl, tar..."
-  autocomplete="off"
-  autofocus
-  required
->
-
-</form>`,
+`,
       );
     }
 
