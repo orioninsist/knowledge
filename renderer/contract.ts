@@ -5,6 +5,8 @@ import type { Workspace } from "../workspace/types";
 export interface RendererContract {
   getWorkspaces(): Workspace[];
 
+  getDocuments(): Promise<import("../search/metadata").DocumentMetadata[]>;
+
   search(
     query: string,
   ): Promise<SearchResult[]>;
@@ -16,6 +18,10 @@ export function createRendererContract(
   return {
     getWorkspaces() {
       return context.workspaces;
+    },
+
+    async getDocuments() {
+      return context.documents.list();
     },
 
     async search(query: string) {
