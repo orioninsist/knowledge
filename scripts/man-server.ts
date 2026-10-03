@@ -154,7 +154,6 @@ const linkManReferences = (
 const shellStyle = `
 <style>
   :root {
-    --border: #45475a;
   }
 
   .command-search[hidden] {

@@ -60,7 +60,6 @@ const readSource = (
 
 const shellStyle = `
   :root {
-    --border: #45475a;
     color-scheme: dark;
     font-family: var(--font-sans);
     background: var(--page);
