@@ -21,6 +21,8 @@
   --text: #cdd6f4;
   --muted: #a6adc8;
 
+  --code-bg: #151515;
+
   --reader-bg: #1c1c1c;
   --reader-text: #d8d8d8;
   --reader-link: #b8c7d9;
@@ -100,7 +102,7 @@ pre {
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
-  background: #151515;
+  background: var(--code-bg);
 }
 
 a {

@@ -172,7 +172,7 @@ const shellStyle = `
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem;
-    background: #151515;
+    background: var(--code-bg);
     color: var(--text);
   }
 
