@@ -3,6 +3,7 @@ import { indexWorkspaceOnStartup } from "./indexing/startup";
 import { ensureStorage } from "./search/storage";
 import { TantivySearchEngine } from "./search/tantivy";
 import { watchWorkspace } from "./watcher/watcher";
+import { SearchService } from "./search/service";
 import { loadWorkspaces } from "./workspace/manager";
 
 const config = await loadConfig();
@@ -13,6 +14,8 @@ const storage = await ensureStorage(
 );
 
 const engine = new TantivySearchEngine(storage);
+
+const search = new SearchService(engine);
 
 const activeWorkspaces = workspaces.filter(
   (workspace) => workspace.exists,
@@ -44,6 +47,10 @@ for (const workspace of activeWorkspaces) {
 }
 
 console.log("initial indexing complete");
+
+const results = await search.query("linux");
+
+console.log(results);
 
 const watchers = config.search.watch
   ? activeWorkspaces.map((workspace) =>
