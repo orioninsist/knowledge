@@ -6,13 +6,14 @@ It is intentionally different from `README.md`: the README is the public overvie
 
 ## 1. What this project is
 
-Knowledge is a local-first workstation layer around Markdown and locally installed Unix documentation. It exposes five user-facing surfaces:
+Knowledge is a local-first workstation layer around Markdown and locally installed Unix documentation. It exposes six user-facing surfaces:
 
 1. **Personal notes** — editable Markdown notes stored outside this repository.
 2. **Productivity** — local browser utilities that do not modify notes.
 3. **External documentation** — a large read-only Markdown tree used for browsing and search.
 4. **Man pages** — a read-only browser for the machine's locally installed manual pages.
 5. **GNU Info** — a read-only browser for locally installed Info manuals and nodes.
+6. **Command cheatsheets** — a read-only browser for TLDR, Navi, and Cheat.
 
 The repository contains the application, scripts, web UI, service templates, and tests. It does **not** contain the personal knowledge base itself.
 
@@ -32,6 +33,7 @@ SQLite databases, Hugo runtime configuration, render output, caches, and install
 | Documentation browser | `http://127.0.0.1:1320/` | Read-only external docs search/browser |
 | Man browser | `http://127.0.0.1:1321/` | Search and read locally installed man pages |
 | Info browser | `http://127.0.0.1:1322/` | Search and read locally installed GNU Info manuals |
+| Command cheatsheets | `http://127.0.0.1:1323/` | Read TLDR, Navi, and Cheat command references |
 
 All services bind locally. This project is designed as a local workstation tool, not a public network service.
 
@@ -300,7 +302,7 @@ Do not add a second package-manager lockfile unless the project deliberately cha
 
 ## 11. Systemd services
 
-Seven user services form the running system.
+Eight user services form the running system.
 
 ### knowledge-personal-search.service
 
@@ -412,6 +414,22 @@ It serves the local GNU Info browser on:
 
 Search is delegated directly to `info --apropos`; rendering uses `info --file=<manual> --node=<node> --output=-`. The server validates manual/node input, uses argument arrays rather than shell interpolation, links local Info menu and cross-reference targets when they exist, and rejects GNU Info's silent fallback to `Top` when the requested node does not exist. The project does not copy Info manuals into Markdown and does not maintain a second Info database or index.
 
+### knowledge-command-browser.service
+
+Runs:
+
+```text
+bun scripts/command-server.ts
+```
+
+It serves the read-only command-cheatsheet browser on:
+
+```text
+127.0.0.1:1323
+```
+
+TLDR, Navi, and Cheat remain independent local sources of truth. Knowledge validates command names, renders their output read-only, and does not maintain a second cheatsheet corpus or index. Navi content depends on locally installed `.cheat` repositories.
+
 ## 12. Service commands
 
 Check all services:
@@ -423,6 +441,7 @@ systemctl --user status knowledge-personal-watch.service
 systemctl --user status knowledge-docs-browser.service
 systemctl --user status knowledge-man-browser.service
 systemctl --user status knowledge-info-browser.service
+systemctl --user status knowledge-command-browser.service
 systemctl --user status knowledge-docs-watch.service
 ```
 
@@ -536,7 +555,7 @@ When the target is omitted, `kn link` shows the global Markdown note picker. The
 kn doctor
 ```
 
-The doctor checks runtime/workspace availability, the five MOCs, filename validity and global uniqueness, the local-only notes Git boundary, required/interactively used commands, the seven systemd user services, and broken note relations.
+The doctor checks runtime/workspace availability, the five MOCs, filename validity and global uniqueness, the local-only notes Git boundary, required/interactively used commands, the eight systemd user services, and broken note relations.
 
 ### Personal search
 
@@ -633,7 +652,7 @@ Alt + K
 The shared top navigation is:
 
 ```text
-Knowledge · Notes · Productivity · Documentation · Man · Info
+Knowledge · Notes · Productivity · Documentation · Man · Info · Commands
 ```
 
 `Alt + K` is surface-scoped rather than global: Notes searches personal notes, Documentation searches external documentation, Man searches installed manual pages, and Info searches installed Info entries. Productivity does not invent a search surface where none is useful.
@@ -738,6 +757,24 @@ Render flow:
 Menu entries, `*Note` references, and header Prev/Up/Next targets become local browser links only when the target node exists. Because GNU Info can silently fall back to `Top` for an invalid node, the server verifies the returned header node exactly matches the requested node; otherwise it returns `404`.
 
 The server validates manual/node input, invokes `info` with argument arrays rather than shell interpolation, escapes generated HTML strings, and binds only to localhost.
+
+## 19. Command cheatsheets
+
+The Commands surface is available at:
+
+```text
+http://127.0.0.1:1323/
+```
+
+Routes map directly to the local tools:
+
+```text
+/tldr/<command>
+/navi/<command>
+/cheat/<command>
+```
+
+The browser is read-only and localhost-only. It does not execute commands from cheatsheets and does not build a Knowledge-owned cheatsheet database. TLDR, Navi, and Cheat retain ownership of their own data. Navi requires a local `.cheat` repository, which can be installed through `navi repo add` or `navi repo browse`.
 
 ## 19. Visual Markdown blocks
 
@@ -860,12 +897,13 @@ tests/smoke.sh
 
 The smoke test checks:
 
-- all seven systemd services
+- all eight systemd services
 - Hugo homepage
 - personal search API
 - docs browser health/search
 - Man browser search/render
 - Info browser search/render/missing-node rejection
+- Command cheatsheets browser health
 - key static assets
 - D2 → SVG rendering
 - Typst → SVG rendering
@@ -887,6 +925,7 @@ curl -fsS 'http://127.0.0.1:1321/api/search?q=man'
 curl -fsS 'http://127.0.0.1:1321/man/1/man' >/dev/null
 curl -fsS 'http://127.0.0.1:1322/api/search?q=make'
 curl -fsS 'http://127.0.0.1:1322/info/make/Overview' >/dev/null
+curl -fsS http://127.0.0.1:1323/health
 curl -fsS 'http://127.0.0.1:1322/api/search?q=make'
 curl -fsS 'http://127.0.0.1:1322/info/make/Overview' >/dev/null
 ```
@@ -970,6 +1009,20 @@ system Info manuals
 
 There is intentionally no Knowledge-owned Info index.
 
+### Command cheatsheets
+
+```text
+local command reference tools
+        │
+        ├── tldr
+        ├── navi + local .cheat repositories
+        ├── cheat
+        │
+        └── read-only Commands browser :1323
+```
+
+There is intentionally no Knowledge-owned command-cheatsheet corpus or index.
+
 ## 24. Design boundaries that should not be broken casually
 
 Keep these invariants unless intentionally redesigning the project:
@@ -992,7 +1045,8 @@ Keep these invariants unless intentionally redesigning the project:
 16. Prefer archiving notes over introducing destructive delete behavior.
 17. Keep the Man browser backed by the system's installed man pages; do not duplicate them into a second corpus or database without a concrete need.
 18. Keep the Info browser backed by the system's installed GNU Info manuals; do not duplicate them into a second corpus or database without a concrete need.
-19. Keep the five surfaces visually coherent through the shared navigation shell while allowing each surface to keep its own backend and search scope.
+19. Keep the Commands browser backed by TLDR, Navi, and Cheat rather than duplicating their data into a Knowledge-owned corpus or index.
+20. Keep the six surfaces visually coherent through the shared navigation shell while allowing each surface to keep its own backend and search scope.
 
 ## 25. Fast recovery checklist
 
@@ -1056,6 +1110,7 @@ It does not try to replace Markdown with an application database. Instead:
 - the docs browser gives a separate read-only search surface for large external Markdown collections.
 - the Man browser exposes the machine's installed manual pages directly, without copying or re-indexing them.
 - the Info browser exposes the machine's installed GNU Info manuals directly, without copying or re-indexing them.
-- a shared responsive navigation shell keeps Notes, Productivity, Documentation, Man, and Info visually consistent while their data models remain separate.
+- the Commands browser exposes TLDR, Navi, and Cheat directly, without copying or re-indexing their cheatsheets.
+- a shared responsive navigation shell keeps Notes, Productivity, Documentation, Man, Info, and Commands visually consistent while their data models remain separate.
 
 When changing the project, preserve that separation and rebuildability unless there is a strong reason to change the architecture.
