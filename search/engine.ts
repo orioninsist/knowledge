@@ -6,4 +6,6 @@ export interface SearchEngine {
   remove(path: string): Promise<void>;
 
   search(query: string): Promise<SearchResult[]>;
+
+  all(): Promise<SearchDocument[]>;
 }
