@@ -1,6 +1,6 @@
 # Knowledge
 
-Knowledge is a local-first workstation knowledge system for personal Markdown notes, large read-only Markdown documentation sets, locally installed man pages, and locally installed GNU Info manuals.
+Knowledge is a local-first workstation knowledge system for personal Markdown notes, large read-only Markdown documentation sets, locally installed man pages, locally installed GNU Info manuals, and local command cheatsheets.
 
 Markdown is the source of truth. Search databases, generated Hugo configuration, render caches, and systemd units are disposable runtime state.
 
@@ -13,6 +13,7 @@ Markdown is the source of truth. Search databases, generated Hugo configuration,
 | `http://127.0.0.1:1320/` | Read-only external documentation browser |
 | `http://127.0.0.1:1321/` | Locally installed man-page browser |
 | `http://127.0.0.1:1322/` | Locally installed GNU Info browser |
+| `http://127.0.0.1:1323/` | TLDR, Navi, and Cheat command cheatsheets |
 
 ## Core model
 
@@ -44,7 +45,7 @@ Notes may be organized in nested subdirectories inside any MOC. Filenames are gl
 This repository contains application code only:
 
 - `bin/kn` — terminal entry point.
-- `scripts/` — workspace validation, indexing, search APIs, watchers, note helpers, documentation browser, local man browser, and local GNU Info browser.
+- `scripts/` — workspace validation, indexing, search APIs, watchers, note helpers, documentation browser, local man browser, local GNU Info browser, and command cheatsheets browser.
 - `layouts/` and `static/` — Hugo/browser UI.
 - `systemd/` — user-service templates.
 - `tests/smoke.sh` — integration and source-invariant checks.
@@ -67,6 +68,8 @@ info
 curl
 systemctl
 ```
+
+The command cheatsheets browser uses `tldr`, `navi`, and `cheat` when they are installed. Navi also needs at least one local `.cheat` repository to return content, which can be added with `navi repo add` or selected through `navi repo browse`.
 
 Create the workspace configuration:
 
@@ -102,6 +105,7 @@ knowledge-personal-watch.service    Incremental personal-note index sync
 knowledge-docs-browser.service      Read-only docs browser on 127.0.0.1:1320
 knowledge-man-browser.service       Local installed man browser on 127.0.0.1:1321
 knowledge-info-browser.service      Local installed GNU Info browser on 127.0.0.1:1322
+knowledge-command-browser.service   TLDR, Navi, and Cheat browser on 127.0.0.1:1323
 knowledge-docs-watch.service        Incremental docs index sync
 ```
 
@@ -114,6 +118,7 @@ systemctl --user status knowledge-personal-watch.service
 systemctl --user status knowledge-docs-browser.service
 systemctl --user status knowledge-man-browser.service
 systemctl --user status knowledge-info-browser.service
+systemctl --user status knowledge-command-browser.service
 systemctl --user status knowledge-docs-watch.service
 ```
 
@@ -202,7 +207,7 @@ Press `Alt + K` to open search on the current searchable surface. Search is inte
 - Info searches installed GNU Info entries through `info --apropos`.
 - Productivity has no artificial search layer.
 
-The shared navigation shell is `Knowledge · Notes · Productivity · Documentation · Man · Info`, and it remains available while browsing inside each surface.
+The shared navigation shell is `Knowledge · Notes · Productivity · Documentation · Man · Info · Commands`, and it remains available while browsing inside each surface.
 
 The personal home page intentionally stays small: note statistics and links to the local surfaces.
 
@@ -268,6 +273,26 @@ Knowledge does not copy Info manuals into Markdown and does not maintain a secon
 
 Open search with `Alt + K`, search for an installed topic such as `make`, and follow nodes within the local browser.
 
+## Command cheatsheets
+
+The Commands surface is available at:
+
+```text
+http://127.0.0.1:1323/
+```
+
+It provides read-only access to three locally installed command-cheatsheet tools:
+
+- TLDR: `/tldr/<command>`
+- Navi: `/navi/<command>`
+- Cheat: `/cheat/<command>`
+
+The executables and their own local data remain the source of truth. Knowledge does not copy these cheatsheets into Markdown and does not maintain a separate cheatsheet database or index.
+
+Navi requires a local `.cheat` repository to return cheatsheet content. Repositories can be installed with `navi repo add` or selected through `navi repo browse`.
+
+The browser binds only to `127.0.0.1`. Command names are validated and cheatsheets are rendered read-only; the browser does not execute commands from cheatsheet content.
+
 ## Visual blocks
 
 Personal notes support fenced blocks for Mermaid, D2, Typst, Canvas, and Calendar.
@@ -322,6 +347,8 @@ curl -fsS 'http://127.0.0.1:1321/api/search?q=man'
 curl -fsS 'http://127.0.0.1:1321/man/1/man' >/dev/null
 curl -fsS 'http://127.0.0.1:1322/api/search?q=make'
 curl -fsS 'http://127.0.0.1:1322/info/make/Overview' >/dev/null
+curl -fsS http://127.0.0.1:1323/health
+curl -fsS http://127.0.0.1:1323/tldr/git >/dev/null
 ```
 
 ## Architecture
@@ -363,6 +390,13 @@ Installed GNU Info manuals
         ├── info --apropos → search
         ├── info --file/--node → render
         └── local browser on 1322
+
+Local command cheatsheets
+        │
+        ├── tldr → TLDR pages
+        ├── navi → local .cheat repositories
+        ├── cheat → installed Cheat sheets
+        └── read-only browser on 1323
 ```
 
 ## Maintenance rules
@@ -378,4 +412,5 @@ Keep the project small and explicit:
 - Keep personal notes separate from project source control.
 - Keep the Man browser backed by locally installed manual pages instead of duplicating them into a Knowledge-owned corpus or index.
 - Keep the Info browser backed by locally installed GNU Info manuals instead of duplicating them into a Knowledge-owned corpus or index.
+- Keep the Commands browser backed by TLDR, Navi, and Cheat instead of duplicating their data into a Knowledge-owned corpus or index.
 - Keep the shared navigation/search UX coherent, but keep each surface's backend and search scope independent.
