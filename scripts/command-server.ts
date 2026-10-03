@@ -422,7 +422,7 @@ ${escapeHTML(source.toUpperCase())}: ${available ? "available" : "unavailable"}
   autofocus
   required
 >
-<button type="submit">Search</button>
+
 </form>`,
       );
     }
