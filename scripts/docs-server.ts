@@ -589,7 +589,7 @@ const pageHTML = (
   <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 <body>
-  <main class="main">${body}</main>
+  <main class="main content-shell">${body}</main>
 
   <div id="command-search" class="command-search" hidden>
     <div class="command-search-backdrop" data-command-search-close></div>
