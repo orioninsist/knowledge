@@ -37,6 +37,353 @@ const validName = (value: string): boolean =>
 const sourceAvailable = (source: Source): boolean =>
   commandExists(source);
 
+const readSource = (
+  source: Source,
+  name: string,
+): { stdout: string; ok: boolean } => {
+  if (source === "tldr") {
+    return run("tldr", ["--markdown", name]);
+  }
+
+  if (source === "cheat") {
+    return run("cheat", [name]);
+  }
+
+  return run("navi", [
+    "--print",
+    "--query",
+    name,
+    "--best-match",
+  ]);
+};
+
+const shellStyle = `
+  :root {
+    color-scheme: dark;
+    font-family:
+      Inter, ui-sans-serif, system-ui, -apple-system,
+      BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #1c1c1c;
+    color: #e8e8e8;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: #1c1c1c;
+    color: #e8e8e8;
+  }
+
+  body {
+    font: 16px/1.6 system-ui, sans-serif;
+  }
+
+  a {
+    color: #d8d8d8;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: #fff;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 52px;
+    padding: 0 1.25rem;
+    border-bottom: 1px solid #333;
+    background: #1c1c1c;
+  }
+
+  .brand {
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-current {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .search-button {
+    margin-left: auto;
+    border: 1px solid #444;
+    border-radius: 7px;
+    padding: .42rem .7rem;
+    background: #242424;
+    color: #ddd;
+    cursor: pointer;
+  }
+
+  .search-button:hover {
+    background: #292929;
+    color: #fff;
+  }
+
+  main {
+    width: min(1100px, calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 2rem 0 4rem;
+  }
+
+  h1, h2 {
+    color: #f4f4f4;
+  }
+
+  h1 {
+    margin-top: 0;
+  }
+
+  .muted {
+    color: #aaa;
+  }
+
+  .source-status {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 1.25rem 0;
+    color: #bbb;
+  }
+
+  .missing {
+    opacity: .55;
+  }
+
+  .home-search {
+    display: flex;
+    gap: .6rem;
+    margin-top: 1.5rem;
+  }
+
+  .home-search input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #444;
+    border-radius: 7px;
+    padding: .7rem .8rem;
+    background: #242424;
+    color: #eee;
+    font: inherit;
+  }
+
+  .home-search button {
+    border: 1px solid #444;
+    border-radius: 7px;
+    padding: .7rem 1rem;
+    background: #292929;
+    color: #eee;
+    cursor: pointer;
+  }
+
+  .sources {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .source {
+    min-width: 0;
+  }
+
+  .source h2 {
+    margin-bottom: .55rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  pre {
+    margin: 0;
+    overflow-x: auto;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #151515;
+    color: #e8e8e8;
+  }
+
+  code {
+    font-family:
+      "JetBrains Mono", "SFMono-Regular", Consolas,
+      "Liberation Mono", monospace;
+    font-size: .92rem;
+  }
+
+  .empty {
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    color: #888;
+    background: #181818;
+  }
+
+  .command-search[hidden] {
+    display: none;
+  }
+
+  .command-search {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: start center;
+    padding-top: min(16vh, 9rem);
+  }
+
+  .command-search-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 65%);
+  }
+
+  .command-search-panel {
+    position: relative;
+    width: min(640px, calc(100% - 2rem));
+    overflow: hidden;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #1c1c1c;
+    box-shadow: 0 20px 70px rgb(0 0 0 / 45%);
+  }
+
+  .command-search-input {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #333;
+    outline: 0;
+    padding: 1rem;
+    background: transparent;
+    color: #eee;
+    font: inherit;
+    font-size: 1.05rem;
+  }
+
+  .command-search-hint {
+    padding: .8rem 1rem;
+    color: #888;
+    font-size: .9rem;
+  }
+
+  .command-search-open {
+    overflow: hidden;
+  }
+
+  @media (max-width: 760px) {
+    .topbar {
+      align-items: flex-start;
+      padding: .8rem 1rem;
+    }
+
+    .nav {
+      gap: .7rem;
+    }
+
+    .search-button {
+      margin-left: auto;
+    }
+
+    main {
+      width: min(100% - 1.4rem, 1100px);
+      padding-top: 1.4rem;
+    }
+  }
+`;
+
+const shellHTML = `
+<header class="topbar">
+  <a class="brand" href="http://127.0.0.1:1314/">Knowledge</a>
+  <nav class="nav">
+    <a href="http://127.0.0.1:1314/">Notes</a>
+    <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
+    <a href="http://127.0.0.1:1320/">Documentation</a>
+    <a href="http://127.0.0.1:1321/">Man</a>
+    <a href="http://127.0.0.1:1322/">Info</a>
+    <span class="nav-current">Commands</span>
+  </nav>
+  <button
+    class="search-button"
+    id="command-search-open"
+    type="button"
+    title="Search commands (Alt+K)"
+  >Search · Alt+K</button>
+</header>
+
+<div id="command-search" class="command-search" hidden>
+  <div
+    class="command-search-backdrop"
+    data-command-search-close
+  ></div>
+  <form class="command-search-panel" action="/open" method="get">
+    <input
+      id="knowledge-search"
+      class="command-search-input"
+      name="q"
+      type="search"
+      autocomplete="off"
+      placeholder="Search command… git, tar, curl"
+      required
+    >
+    <div class="command-search-hint">
+      Enter opens TLDR + Navi + Cheat together · Esc closes
+    </div>
+  </form>
+</div>
+
+<script>
+(() => {
+  const modal = document.getElementById("command-search");
+  const input = document.getElementById("knowledge-search");
+  const openButton = document.getElementById("command-search-open");
+
+  const openSearch = () => {
+    modal.hidden = false;
+    document.documentElement.classList.add("command-search-open");
+    requestAnimationFrame(() => {
+      input.focus();
+      input.select();
+    });
+  };
+
+  const closeSearch = () => {
+    modal.hidden = true;
+    document.documentElement.classList.remove("command-search-open");
+  };
+
+  openButton.addEventListener("click", openSearch);
+
+  modal
+    .querySelector("[data-command-search-close]")
+    .addEventListener("click", closeSearch);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.altKey && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      modal.hidden ? openSearch() : closeSearch();
+      return;
+    }
+
+    if (event.key === "Escape" && !modal.hidden) {
+      closeSearch();
+    }
+  });
+})();
+</script>
+`;
+
 const renderPage = (
   title: string,
   body: string,
@@ -48,37 +395,13 @@ const renderPage = (
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHTML(title)} · Knowledge</title>
-<style>
-body {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 1.5rem;
-  font: 16px/1.55 system-ui, sans-serif;
-}
-nav { margin-bottom: 2rem; }
-nav a { margin-right: 1rem; }
-form { display: flex; gap: .5rem; margin: 1.5rem 0; }
-input { flex: 1; padding: .65rem; }
-button { padding: .65rem 1rem; }
-.sources { display: flex; gap: 1rem; flex-wrap: wrap; }
-pre {
-  overflow-x: auto;
-  padding: 1rem;
-  background: #f3f3f3;
-  border-radius: .4rem;
-}
-.missing { opacity: .65; }
-</style>
+<style>${shellStyle}</style>
 </head>
 <body>
-<nav>
-<a href="http://127.0.0.1:1314/">Knowledge</a>
-<a href="http://127.0.0.1:1320/">Documentation</a>
-<a href="http://127.0.0.1:1321/">Man</a>
-<a href="http://127.0.0.1:1322/">Info</a>
-<a href="/">Commands</a>
-</nav>
+${shellHTML}
+<main>
 ${body}
+</main>
 </body>
 </html>`,
     {
@@ -87,6 +410,40 @@ ${body}
       },
     },
   );
+
+const renderCommand = (name: string): Response => {
+  const sources = (["tldr", "navi", "cheat"] as Source[])
+    .map((source) => {
+      if (!sourceAvailable(source)) {
+        return `<section class="source">
+<h2>${escapeHTML(source)}</h2>
+<div class="empty">Source unavailable.</div>
+</section>`;
+      }
+
+      const result = readSource(source, name);
+
+      if (!result.ok || !result.stdout.trim()) {
+        return `<section class="source">
+<h2>${escapeHTML(source)}</h2>
+<div class="empty">No local cheatsheet found.</div>
+</section>`;
+      }
+
+      return `<section class="source">
+<h2>${escapeHTML(source)}</h2>
+<pre><code>${escapeHTML(result.stdout.trim())}</code></pre>
+</section>`;
+    })
+    .join("");
+
+  return renderPage(
+    name,
+    `<h1>${escapeHTML(name)}</h1>
+<p class="muted">TLDR, Navi and Cheat results for this command.</p>
+<div class="sources">${sources}</div>`,
+  );
+};
 
 const server = Bun.serve({
   hostname: HOST,
@@ -107,23 +464,32 @@ const server = Bun.serve({
     }
 
     if (url.pathname === "/") {
-      const sources = (["tldr", "navi", "cheat"] as Source[])
+      const statuses = (["tldr", "navi", "cheat"] as Source[])
         .map((source) => {
           const available = sourceAvailable(source);
+
           return `<span class="${available ? "" : "missing"}">
-            ${escapeHTML(source.toUpperCase())}: ${available ? "available" : "unavailable"}
-          </span>`;
+${escapeHTML(source.toUpperCase())}: ${available ? "available" : "unavailable"}
+</span>`;
         })
         .join("");
 
       return renderPage(
         "Command Cheatsheets",
         `<h1>Command Cheatsheets</h1>
-<p>Read-only command examples from TLDR, Navi and Cheat.</p>
-<div class="sources">${sources}</div>
-<form action="/open" method="get">
-<input name="q" placeholder="git, curl, tar..." autofocus required>
-<button type="submit">Open</button>
+<p class="muted">
+Search once and read TLDR, Navi and Cheat together.
+</p>
+<div class="source-status">${statuses}</div>
+<form class="home-search" action="/open" method="get">
+<input
+  name="q"
+  placeholder="git, curl, tar..."
+  autocomplete="off"
+  autofocus
+  required
+>
+<button type="submit">Search</button>
 </form>`,
       );
     }
@@ -136,60 +502,39 @@ const server = Bun.serve({
       }
 
       return Response.redirect(
-        `/tldr/${encodeURIComponent(query)}`,
+        `/command/${encodeURIComponent(query)}`,
         302,
       );
     }
 
-    const match = url.pathname.match(
-      /^\/(tldr|navi|cheat)\/([^/]+)$/,
+    const unifiedMatch = url.pathname.match(
+      /^\/command\/([^/]+)$/,
     );
 
-    if (match) {
-      const source = match[1] as Source;
-      const name = decodeURIComponent(match[2]);
+    if (unifiedMatch) {
+      const name = decodeURIComponent(unifiedMatch[1]);
 
       if (!validName(name)) {
         return new Response("Invalid command", { status: 400 });
       }
 
-      let result: { stdout: string; ok: boolean };
+      return renderCommand(name);
+    }
 
-      if (source === "tldr") {
-        result = run("tldr", ["--markdown", name]);
-      } else if (source === "cheat") {
-        result = run("cheat", [name]);
-      } else {
-        result = run("navi", [
-          "--print",
-          "--query",
-          name,
-          "--best-match",
-        ]);
+    const legacyMatch = url.pathname.match(
+      /^\/(tldr|navi|cheat)\/([^/]+)$/,
+    );
+
+    if (legacyMatch) {
+      const name = decodeURIComponent(legacyMatch[2]);
+
+      if (!validName(name)) {
+        return new Response("Invalid command", { status: 400 });
       }
 
-      if (!result.ok || !result.stdout.trim()) {
-        return renderPage(
-          `${source}: ${name}`,
-          `<h1>${escapeHTML(source.toUpperCase())}: ${escapeHTML(name)}</h1>
-<p>No local cheatsheet was found for this source.</p>
-<p>
-<a href="/tldr/${encodeURIComponent(name)}">TLDR</a> ·
-<a href="/navi/${encodeURIComponent(name)}">Navi</a> ·
-<a href="/cheat/${encodeURIComponent(name)}">Cheat</a>
-</p>`,
-        );
-      }
-
-      return renderPage(
-        `${source}: ${name}`,
-        `<h1>${escapeHTML(source.toUpperCase())}: ${escapeHTML(name)}</h1>
-<p>
-<a href="/tldr/${encodeURIComponent(name)}">TLDR</a> ·
-<a href="/navi/${encodeURIComponent(name)}">Navi</a> ·
-<a href="/cheat/${encodeURIComponent(name)}">Cheat</a>
-</p>
-<pre><code>${escapeHTML(result.stdout)}</code></pre>`,
+      return Response.redirect(
+        `/command/${encodeURIComponent(name)}`,
+        302,
       );
     }
 
