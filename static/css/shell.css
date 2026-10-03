@@ -27,12 +27,12 @@
   --command-surface-hover: #292929;
   --command-panel: #181818;
 
-  --reader-bg: #1c1c1c;
-  --reader-text: #d8d8d8;
-  --reader-link: #b8c7d9;
-  --reader-link-hover: #e0e7ef;
-  --reader-border: #555;
-  --reader-border-subtle: #333;
+  --reader-bg: var(--page);
+  --reader-text: var(--text);
+  --reader-link: var(--text);
+  --reader-link-hover: var(--text);
+  --reader-border: var(--border);
+  --reader-border-subtle: var(--border);
 }
 
 .topbar {
