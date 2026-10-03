@@ -270,7 +270,7 @@ ${renderTopbar("commands")}
       required
     >
     <div class="command-search-hint">
-      
+      Examples: git, curl, tar, imagemagick, ffmpeg
     </div>
   </form>
 </div>
