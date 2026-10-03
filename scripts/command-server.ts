@@ -270,7 +270,7 @@ ${renderTopbar("commands")}
       required
     >
     <div class="command-search-hint">
-      Enter opens TLDR + Navi + Cheat together · Esc closes
+      
     </div>
   </form>
 </div>
@@ -371,7 +371,7 @@ const renderCommand = (name: string): Response => {
   return renderPage(
     name,
     `<h1>${escapeHTML(name)}</h1>
-<p class="muted">TLDR, Navi and Cheat results for this command.</p>
+<p class="muted"></p>
 <div class="sources">${sources}</div>`,
   );
 };
