@@ -1,0 +1,31 @@
+app:
+  name: PARA
+  version: 1
+
+ui:
+  font:
+    family: "Inter"
+    size: 18
+    line_height: 1.7
+
+  background:
+    color: "#111111"
+
+cards:
+  columns: 4
+  gap: 24
+  width: 220
+  height: 140
+
+workspaces:
+  - name: Notes
+    path: /home/murat/Notes
+
+search:
+  index_path: "./storage/index"
+  watch: true
+  batch_size: 500
+
+renderer:
+  path: "./renderer"
+  auto_discover: true
