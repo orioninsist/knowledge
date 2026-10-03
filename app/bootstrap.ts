@@ -45,16 +45,7 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     workspaces,
   );
 
-  const api = createRendererRuntime(
-    {
-      config,
-      workspaces,
-      engine,
-      knowledge,
-      api: undefined as never,
-    },
-    knowledge,
-  );
+  const api = createRendererRuntime(knowledge);
 
   const activeWorkspaces =
     workspaces.filter(
