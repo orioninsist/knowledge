@@ -17,6 +17,10 @@
 
   --content-width: 86ch;
 
+  --page: #1e1e2e;
+  --text: #cdd6f4;
+  --muted: #a6adc8;
+
   --reader-bg: #1c1c1c;
   --reader-text: #d8d8d8;
   --reader-link: #b8c7d9;
