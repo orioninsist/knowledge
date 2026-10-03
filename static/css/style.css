@@ -1,11 +1,7 @@
 :root {
   color-scheme: dark;
-  --page: #1e1e2e;
   --surface: #313244;
   --surface-hover: #45475a;
-  --text: #cdd6f4;
-  --muted: #a6adc8;
-  --border: #45475a;
   --link: #89b4fa;
   --code: #181825;
   --accent: #cba6f7;
