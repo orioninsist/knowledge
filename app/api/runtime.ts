@@ -1,5 +1,5 @@
-import type { ApplicationContext } from "../app/context";
-import type { ApplicationApi } from "../app/api/types";
+import type { ApplicationApi } from "./types";
+import type { KnowledgeDAO } from "../../kdao";
 
 export function createApplicationApiRuntime(
   knowledge: KnowledgeDAO,
