@@ -338,7 +338,7 @@ const renderPage = (
 </head>
 <body>
 ${shellHTML}
-<main>
+<main class="main content-shell">
 ${body}
 </main>
 </body>
