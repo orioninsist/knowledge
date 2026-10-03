@@ -65,9 +65,7 @@ const shellStyle = `
     --text: #cdd6f4;
     --muted: #a6adc8;
     color-scheme: dark;
-    font-family:
-      Inter, ui-sans-serif, system-ui, -apple-system,
-      BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-sans);
     background: var(--page);
     color: var(--text);
   }
@@ -183,9 +181,7 @@ const shellStyle = `
   }
 
   code {
-    font-family:
-      "JetBrains Mono", "SFMono-Regular", Consolas,
-      "Liberation Mono", monospace;
+    font-family: var(--font-mono);
     font-size: .92rem;
   }
 
