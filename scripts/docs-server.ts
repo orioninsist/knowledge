@@ -19,6 +19,7 @@ import {
 } from "marked";
 
 import { openDocsDatabase } from "./docs-indexer";
+import { renderTopbar } from "./shell";
 
 const HOST = "127.0.0.1";
 const PORT = Number(
@@ -541,20 +542,7 @@ const pageHTML = (
     ? `${selectedDoc.title} · Documentation`
     : "Documentation";
 
-  const header = `
-    <header class="topbar">
-      <a class="brand" href="http://127.0.0.1:1314/">Knowledge</a>
-
-      <nav class="topnav" aria-label="Knowledge">
-        <a href="http://127.0.0.1:1314/">Notes</a>
-        <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
-        <a href="/">Documentation</a>
-        <a href="http://127.0.0.1:1321/">Man</a>
-        <a href="http://127.0.0.1:1322/">Info</a>
-        <a href="http://127.0.0.1:1323/">Commands</a>
-      </nav>
-    </header>
-  `;
+  const header = renderTopbar("docs");
 
   const body = selectedDoc
     ? `

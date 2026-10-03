@@ -1,3 +1,4 @@
+import { renderTopbar } from "./shell";
 import { spawnSync } from "node:child_process";
 
 const HOST = "127.0.0.1";
@@ -59,12 +60,16 @@ const readSource = (
 
 const shellStyle = `
   :root {
+    --page: #1e1e2e;
+    --border: #45475a;
+    --text: #cdd6f4;
+    --muted: #a6adc8;
     color-scheme: dark;
     font-family:
       Inter, ui-sans-serif, system-ui, -apple-system,
       BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #1c1c1c;
-    color: #e8e8e8;
+    background: var(--page);
+    color: var(--text);
   }
 
   * { box-sizing: border-box; }
@@ -72,8 +77,8 @@ const shellStyle = `
   html, body {
     margin: 0;
     min-height: 100%;
-    background: #1c1c1c;
-    color: #e8e8e8;
+    background: var(--page);
+    color: var(--text);
   }
 
   body {
@@ -81,7 +86,7 @@ const shellStyle = `
   }
 
   a {
-    color: #d8d8d8;
+    color: var(--text);
     text-decoration: none;
   }
 
@@ -89,50 +94,11 @@ const shellStyle = `
     color: #fff;
   }
 
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    min-height: 52px;
-    padding: 0 1.25rem;
-    border-bottom: 1px solid #333;
-    background: #1c1c1c;
-  }
 
-  .brand {
-    font-weight: 700;
-    color: #fff;
-  }
 
-  .nav {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
 
-  .nav-current {
-    color: #fff;
-    font-weight: 600;
-  }
 
-  .search-button {
-    margin-left: auto;
-    border: 1px solid #444;
-    border-radius: 7px;
-    padding: .42rem .7rem;
-    background: #242424;
-    color: #ddd;
-    cursor: pointer;
-  }
 
-  .search-button:hover {
-    background: #292929;
-    color: #fff;
-  }
 
   main {
     width: min(1100px, calc(100% - 2rem));
@@ -141,7 +107,7 @@ const shellStyle = `
   }
 
   h1, h2 {
-    color: #f4f4f4;
+    color: var(--text);
   }
 
   h1 {
@@ -149,7 +115,7 @@ const shellStyle = `
   }
 
   .muted {
-    color: #aaa;
+    color: var(--muted);
   }
 
   .source-status {
@@ -157,7 +123,7 @@ const shellStyle = `
     gap: 1rem;
     flex-wrap: wrap;
     margin: 1.25rem 0;
-    color: #bbb;
+    color: var(--muted);
   }
 
   .missing {
@@ -173,20 +139,20 @@ const shellStyle = `
   .home-search input {
     flex: 1;
     min-width: 0;
-    border: 1px solid #444;
+    border: 1px solid var(--border);
     border-radius: 7px;
     padding: .7rem .8rem;
     background: #242424;
-    color: #eee;
+    color: var(--text);
     font: inherit;
   }
 
   .home-search button {
-    border: 1px solid #444;
+    border: 1px solid var(--border);
     border-radius: 7px;
     padding: .7rem 1rem;
     background: #292929;
-    color: #eee;
+    color: var(--text);
     cursor: pointer;
   }
 
@@ -209,11 +175,11 @@ const shellStyle = `
   pre {
     margin: 0;
     overflow-x: auto;
-    border: 1px solid #333;
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem;
     background: #151515;
-    color: #e8e8e8;
+    color: var(--text);
   }
 
   code {
@@ -224,10 +190,10 @@ const shellStyle = `
   }
 
   .empty {
-    border: 1px solid #333;
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem;
-    color: #888;
+    color: var(--muted);
     background: #181818;
   }
 
@@ -254,27 +220,27 @@ const shellStyle = `
     position: relative;
     width: min(640px, calc(100% - 2rem));
     overflow: hidden;
-    border: 1px solid #444;
+    border: 1px solid var(--border);
     border-radius: 10px;
-    background: #1c1c1c;
+    background: var(--page);
     box-shadow: 0 20px 70px rgb(0 0 0 / 45%);
   }
 
   .command-search-input {
     width: 100%;
     border: 0;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border);
     outline: 0;
     padding: 1rem;
     background: transparent;
-    color: #eee;
+    color: var(--text);
     font: inherit;
     font-size: 1.05rem;
   }
 
   .command-search-hint {
     padding: .8rem 1rem;
-    color: #888;
+    color: var(--muted);
     font-size: .9rem;
   }
 
@@ -283,18 +249,8 @@ const shellStyle = `
   }
 
   @media (max-width: 760px) {
-    .topbar {
-      align-items: flex-start;
-      padding: .8rem 1rem;
-    }
 
-    .nav {
-      gap: .7rem;
-    }
 
-    .search-button {
-      margin-left: auto;
-    }
 
     main {
       width: min(100% - 1.4rem, 1100px);
@@ -304,23 +260,7 @@ const shellStyle = `
 `;
 
 const shellHTML = `
-<header class="topbar">
-  <a class="brand" href="http://127.0.0.1:1314/">Knowledge</a>
-  <nav class="nav">
-    <a href="http://127.0.0.1:1314/">Notes</a>
-    <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
-    <a href="http://127.0.0.1:1320/">Documentation</a>
-    <a href="http://127.0.0.1:1321/">Man</a>
-    <a href="http://127.0.0.1:1322/">Info</a>
-    <span class="nav-current">Commands</span>
-  </nav>
-  <button
-    class="search-button"
-    id="command-search-open"
-    type="button"
-    title="Search commands (Alt+K)"
-  >Search · Alt+K</button>
-</header>
+${renderTopbar("commands")}
 
 <div id="command-search" class="command-search" hidden>
   <div
@@ -347,7 +287,6 @@ const shellHTML = `
 (() => {
   const modal = document.getElementById("command-search");
   const input = document.getElementById("knowledge-search");
-  const openButton = document.getElementById("command-search-open");
 
   const openSearch = () => {
     modal.hidden = false;
@@ -363,7 +302,6 @@ const shellHTML = `
     document.documentElement.classList.remove("command-search-open");
   };
 
-  openButton.addEventListener("click", openSearch);
 
   modal
     .querySelector("[data-command-search-close]")
@@ -395,6 +333,7 @@ const renderPage = (
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHTML(title)} · Knowledge</title>
+<link rel="stylesheet" href="/css/shell.css">
 <style>${shellStyle}</style>
 </head>
 <body>
@@ -451,6 +390,8 @@ const server = Bun.serve({
 
   fetch(request) {
     const url = new URL(request.url);
+
+    if (url.pathname === "/css/shell.css") return new Response(Bun.file("static/css/shell.css"));
 
     if (url.pathname === "/health") {
       return Response.json({

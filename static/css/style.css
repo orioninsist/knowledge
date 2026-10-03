@@ -94,9 +94,13 @@ a {
 }
 
 .home,
-.section-page,
-.note {
+.section-page {
   width: min(100%, var(--max-width));
+  margin: 0 auto;
+}
+
+.note {
+  width: min(100%, 86ch);
   margin: 0 auto;
 }
 
@@ -213,7 +217,9 @@ h6 {
 
 .prose {
   overflow-wrap: anywhere;
-  font-size: 17px;
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 16px;
+  line-height: 1.65;
 }
 
 .prose > :first-child {
@@ -221,20 +227,20 @@ h6 {
 }
 
 .prose h1 {
-  margin: 0 0 36px;
-  font-size: clamp(34px, 6vw, 52px);
+  margin: 0 0 28px;
+  font-size: 28px;
 }
 
 .prose h2 {
-  margin-top: 48px;
+  margin-top: 28px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
-  font-size: 26px;
+  font-size: 21px;
 }
 
 .prose h3 {
-  margin-top: 36px;
-  font-size: 21px;
+  margin-top: 28px;
+  font-size: 18px;
 }
 
 .prose p,

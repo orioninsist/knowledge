@@ -1,3 +1,4 @@
+import { renderTopbar } from "./shell";
 import { spawnSync } from "node:child_process";
 
 const HOST = "127.0.0.1";
@@ -428,18 +429,7 @@ const shellStyle = `
 `;
 
 const shellHTML = `
-<header class="topbar">
-  <a class="brand" href="http://127.0.0.1:1314/">Knowledge</a>
-
-  <nav class="topnav" aria-label="Knowledge">
-    <a href="http://127.0.0.1:1314/">Notes</a>
-    <a href="http://127.0.0.1:1314/productivity/">Productivity</a>
-    <a href="http://127.0.0.1:1320/">Documentation</a>
-    <a href="http://127.0.0.1:1321/">Man</a>
-    <a href="http://127.0.0.1:1323/">Commands</a>
-    <a href="/">Info</a>
-  </nav>
-</header>
+${renderTopbar("info")}
 
 <div id="command-search" class="command-search" hidden>
   <div
