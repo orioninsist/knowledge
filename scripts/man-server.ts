@@ -492,10 +492,7 @@ const renderMan = (
 
   body {
     padding-bottom: 6rem;
-    font-family:
-      ui-monospace,
-      "JetBrains Mono",
-      monospace;
+    font-family: var(--font-mono);
     font-size: 16px;
     line-height: 1.65;
   }

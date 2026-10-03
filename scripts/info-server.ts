@@ -620,10 +620,7 @@ const readerStyle = `
     max-width: 86ch;
     margin: 0 auto;
     padding: 2rem 1rem 6rem;
-    font-family:
-      ui-monospace,
-      "JetBrains Mono",
-      monospace;
+    font-family: var(--font-mono);
     font-size: 16px;
     line-height: 1.65;
   }
