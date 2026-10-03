@@ -546,8 +546,6 @@ const pageHTML = (
 
   const body = selectedDoc
     ? `
-      ${header}
-
       <article class="note">
         <header class="note-header">
           <div class="note-header-row">
@@ -572,7 +570,6 @@ const pageHTML = (
       </article>
     `
     : `
-      ${header}
     `;
 
   return `<!doctype html>
@@ -589,6 +586,8 @@ const pageHTML = (
   <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 <body>
+  ${header}
+
   <main class="main content-shell">${body}</main>
 
   <div id="command-search" class="command-search" hidden>
