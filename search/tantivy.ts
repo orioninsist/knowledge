@@ -16,8 +16,6 @@ export class TantivySearchEngine implements SearchEngine {
     console.log(
       "Indexed:",
       document.filename,
-      "storage:",
-      this.storagePath,
     );
   }
 
@@ -31,11 +29,6 @@ export class TantivySearchEngine implements SearchEngine {
   }
 
   async search(query: string): Promise<SearchResult[]> {
-    console.log(
-      "Search query:",
-      query,
-    );
-
-    return [];
+    return this.store.search(query);
   }
 }
