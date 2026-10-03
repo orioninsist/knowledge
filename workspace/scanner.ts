@@ -17,30 +17,46 @@ export function isIgnoredPath(path: string): boolean {
   );
 }
 
-export async function scanWorkspace(
+async function walkDirectory(
   path: string,
 ): Promise<FileEntry[]> {
-  const files = await readdir(path, {
-    recursive: true,
+  const entries = await readdir(path, {
     withFileTypes: true,
   });
 
-  return files
-    .filter((file) => {
-      if (!file.isFile()) {
-        return false;
+  const files: FileEntry[] = [];
+
+  for (const entry of entries) {
+    const entryPath = join(path, entry.name);
+
+    if (entry.isDirectory()) {
+      if (IGNORED_DIRECTORIES.has(entry.name)) {
+        continue;
       }
 
-      const relativePath = join(
-        file.parentPath,
-        file.name,
+      files.push(
+        ...(await walkDirectory(entryPath)),
       );
 
-      return !isIgnoredPath(relativePath);
-    })
-    .map((file) => ({
-      name: file.name,
-      path: join(path, file.parentPath, file.name),
-      extension: extname(file.name),
-    }));
+      continue;
+    }
+
+    if (!entry.isFile()) {
+      continue;
+    }
+
+    files.push({
+      name: entry.name,
+      path: entryPath,
+      extension: extname(entry.name),
+    });
+  }
+
+  return files;
+}
+
+export async function scanWorkspace(
+  path: string,
+): Promise<FileEntry[]> {
+  return walkDirectory(path);
 }
