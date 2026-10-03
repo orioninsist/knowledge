@@ -10,6 +10,8 @@ import { loadWorkspaces } from "../workspace/manager";
 import { createRendererRuntime } from "../renderer/runtime";
 import { createLifecycle } from "./lifecycle";
 import { createApplicationFacade } from "./facade";
+import { createLifecycle } from "./lifecycle";
+import { createApplicationFacade } from "./facade";
 
 export async function bootstrap(): Promise<ApplicationContext & { watchers: ReturnType<typeof watchWorkspace>[] }> {
   const config = await loadConfig();
@@ -93,15 +95,8 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     lifecycle,
   );
 
-  return {
-    config,
-    workspaces,
-    engine,
-    search,
-    documents,
+  return createApplicationFacade(
     renderer,
     lifecycle,
-    facade,
-    watchers,
-  };
+  );
 }

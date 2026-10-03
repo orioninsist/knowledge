@@ -3,7 +3,7 @@ import type { ApplicationLifecycle } from "./lifecycle";
 
 export interface ApplicationFacade {
   renderer: RendererContract;
-  lifecycle: ApplicationLifecycle;
+  shutdown(): void;
 }
 
 export function createApplicationFacade(
@@ -12,6 +12,9 @@ export function createApplicationFacade(
 ): ApplicationFacade {
   return {
     renderer,
-    lifecycle,
+
+    shutdown() {
+      lifecycle.shutdown();
+    },
   };
 }
