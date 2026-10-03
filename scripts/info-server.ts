@@ -354,7 +354,7 @@ const shellStyle = `
     position: fixed;
     inset: 0;
     z-index: 5000;
-    font-family: system-ui, sans-serif;
+    font-family: var(--font-sans);
   }
 
   .command-search-backdrop {
@@ -632,7 +632,7 @@ const readerStyle = `
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid #333;
-    font-family: system-ui, sans-serif;
+    font-family: var(--font-sans);
     font-size: 13px;
   }
 

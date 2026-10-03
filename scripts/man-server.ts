@@ -168,7 +168,7 @@ const shellStyle = `
     position: fixed;
     inset: 0;
     z-index: 5000;
-    font-family: system-ui, sans-serif;
+    font-family: var(--font-sans);
   }
 
   .command-search-backdrop {
