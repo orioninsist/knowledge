@@ -1,3 +1,4 @@
+import type { ApplicationContext } from "./context";
 import { loadConfig } from "../core/config/loader";
 import { indexWorkspaceOnStartup } from "../indexing/startup";
 import { ensureStorage } from "../search/storage";
@@ -6,7 +7,7 @@ import { TantivySearchEngine } from "../search/tantivy";
 import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
 
-export async function bootstrap() {
+export async function bootstrap(): Promise<ApplicationContext & { watchers: ReturnType<typeof watchWorkspace>[] }> {
   const config = await loadConfig();
 
   const workspaces = await loadWorkspaces(
