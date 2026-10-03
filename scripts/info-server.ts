@@ -730,7 +730,7 @@ const renderInfo = (
 <body>
   ${shellHTML}
 
-  <main class="info-reader">
+  <main class="main content-shell info-reader">
     ${
       nav
         ? `<nav class="info-node-nav" aria-label="Info node">${nav}</nav>`

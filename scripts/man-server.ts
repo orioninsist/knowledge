@@ -481,7 +481,7 @@ const renderMan = (
   }
 
   body > :not(.topbar):not(.command-search):not(script) {
-    max-width: 78ch;
+    width: min(100%, 86ch);
     margin-left: auto;
     margin-right: auto;
   }
