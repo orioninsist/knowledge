@@ -739,8 +739,6 @@ const homePage = (): string => `
     html,
     body {
       margin: 0;
-      background: var(--reader-bg);
-      color: var(--reader-text);
     }
   </style>
 
