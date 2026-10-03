@@ -399,11 +399,7 @@ const server = Bun.serve({
     if (url.pathname === "/") {
       const statuses = (["tldr", "navi", "cheat"] as Source[])
         .map((source) => {
-          const available = sourceAvailable(source);
-
-          return `<span class="${available ? "" : "missing"}">
-${escapeHTML(source.toUpperCase())}: ${available ? "available" : "unavailable"}
-</span>`;
+          return "";
         })
         .join("");
 
