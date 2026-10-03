@@ -3,6 +3,7 @@ import { access } from "node:fs/promises";
 
 import { handleFileChange } from "./service";
 import type { SearchEngine } from "../search/engine";
+import { isIgnoredPath } from "../workspace/scanner";
 
 export type FileChangeEvent = {
   type: "add" | "change" | "remove";
@@ -30,6 +31,10 @@ export function watchWorkspace(
     },
     async (eventType, filename) => {
       if (!filename) {
+        return;
+      }
+
+      if (isIgnoredPath(filename)) {
         return;
       }
 

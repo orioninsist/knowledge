@@ -3,11 +3,19 @@ import { extname, join } from "node:path";
 
 import type { FileEntry } from "./types";
 
-const IGNORED_DIRECTORIES = new Set([
+export const IGNORED_DIRECTORIES = new Set([
   ".git",
   "node_modules",
   "storage",
 ]);
+
+export function isIgnoredPath(path: string): boolean {
+  const parts = path.split(/[\\/]+/);
+
+  return parts.some((part) =>
+    IGNORED_DIRECTORIES.has(part)
+  );
+}
 
 export async function scanWorkspace(
   path: string,
@@ -28,11 +36,7 @@ export async function scanWorkspace(
         file.name,
       );
 
-      const parts = relativePath.split("/");
-
-      return !parts.some((part) =>
-        IGNORED_DIRECTORIES.has(part)
-      );
+      return !isIgnoredPath(relativePath);
     })
     .map((file) => ({
       name: file.name,
