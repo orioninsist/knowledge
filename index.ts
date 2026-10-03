@@ -5,9 +5,13 @@ const storage = await ensureStorage("./storage/index");
 
 const engine = new TantivySearchEngine(storage);
 
+const path = "/notes/test.md";
+
 await engine.index({
-  path: "/notes/test.md",
+  path,
   filename: "test.md",
   content: "Docker and Linux notes",
   workspace: "Notes",
 });
+
+await engine.remove(path);
