@@ -369,7 +369,7 @@ const shellStyle = `
     margin: 10vh auto 0;
     border: 1px solid #555;
     border-radius: 12px;
-    background: #1c1c1c;
+    background: var(--reader-bg);
     box-shadow: 0 20px 70px rgb(0 0 0 / 45%);
     overflow: hidden;
   }
@@ -383,7 +383,7 @@ const shellStyle = `
     border-bottom: 1px solid #555;
     outline: none;
     background: transparent;
-    color: #d8d8d8;
+    color: var(--reader-text);
     font: inherit;
     font-size: 15px;
   }
@@ -397,7 +397,7 @@ const shellStyle = `
     display: block;
     padding: 13px 15px;
     border-bottom: 1px solid #333;
-    color: #d8d8d8;
+    color: var(--reader-text);
     text-decoration: none;
   }
 
@@ -604,15 +604,15 @@ const readerStyle = `
 <style>
   :root {
     color-scheme: dark;
-    background: #1c1c1c;
-    color: #d8d8d8;
+    background: var(--reader-bg);
+    color: var(--reader-text);
   }
 
   html,
   body {
     margin: 0;
-    background: #1c1c1c;
-    color: #d8d8d8;
+    background: var(--reader-bg);
+    color: var(--reader-text);
   }
 
   .info-reader {
@@ -638,7 +638,7 @@ const readerStyle = `
 
   .info-node-nav a,
   .info-ref {
-    color: #b8c7d9;
+    color: var(--reader-link);
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
@@ -646,7 +646,7 @@ const readerStyle = `
 
   .info-node-nav a:hover,
   .info-ref:hover {
-    color: #e0e7ef;
+    color: var(--reader-link-hover);
   }
 
   .info-reader pre {
@@ -755,15 +755,15 @@ const homePage = (): string => `
   <style>
     :root {
       color-scheme: dark;
-      background: #1c1c1c;
-      color: #d8d8d8;
+      background: var(--reader-bg);
+      color: var(--reader-text);
     }
 
     html,
     body {
       margin: 0;
-      background: #1c1c1c;
-      color: #d8d8d8;
+      background: var(--reader-bg);
+      color: var(--reader-text);
     }
   </style>
 
