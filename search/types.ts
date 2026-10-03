@@ -8,5 +8,6 @@ export interface SearchDocument {
 export interface SearchResult {
   path: string;
   filename: string;
+  workspace: string;
   score: number;
 }
