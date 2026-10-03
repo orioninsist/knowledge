@@ -8,7 +8,7 @@ import { TantivySearchEngine } from "../search/tantivy";
 import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
 import { createApplicationApi } from "./api/runtime";
-import { KnowledgeService } from "../kdao";
+import { createKnowledgeService } from "../kdao";
 import { createLifecycle } from "./lifecycle";
 import { createApplicationFacade } from "./facade";
 import { createLifecycle } from "./lifecycle";
@@ -39,7 +39,7 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     engine,
   );
 
-  const knowledge = new KnowledgeService(
+  const knowledge = createKnowledgeService(
     search,
     documents,
     workspaces,
