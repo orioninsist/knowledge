@@ -472,7 +472,6 @@ const renderMan = (
   }
 
   body {
-    margin: 0 !important;
     box-sizing: border-box;
   }
 
