@@ -1,17 +1,27 @@
 import type { SearchEngine } from "./engine";
 import type { SearchDocument, SearchResult } from "./types";
 
-import { MemorySearchStore } from "./memory-store";
+import { FileSearchStore } from "./file-store";
 
 export class TantivySearchEngine implements SearchEngine {
-  private store = new MemorySearchStore();
+  private store: FileSearchStore;
 
   constructor(
     private storagePath: string,
-  ) {}
+  ) {
+    this.store = new FileSearchStore(
+      `${storagePath}/documents.json`,
+    );
+  }
 
-  async index(document: SearchDocument): Promise<void> {
-    this.store.add(document);
+  async init(): Promise<void> {
+    await this.store.load();
+  }
+
+  async index(
+    document: SearchDocument,
+  ): Promise<void> {
+    await this.store.add(document);
 
     console.log(
       "Indexed:",
@@ -19,8 +29,10 @@ export class TantivySearchEngine implements SearchEngine {
     );
   }
 
-  async remove(path: string): Promise<void> {
-    this.store.remove(path);
+  async remove(
+    path: string,
+  ): Promise<void> {
+    await this.store.remove(path);
 
     console.log(
       "Removed:",
@@ -28,7 +40,26 @@ export class TantivySearchEngine implements SearchEngine {
     );
   }
 
-  async search(query: string): Promise<SearchResult[]> {
-    return this.store.search(query);
+  async search(
+    query: string,
+  ): Promise<SearchResult[]> {
+    const normalized =
+      query.toLowerCase();
+
+    return this.store
+      .all()
+      .filter((document) =>
+        document.filename
+          .toLowerCase()
+          .includes(normalized) ||
+        document.content
+          .toLowerCase()
+          .includes(normalized)
+      )
+      .map((document) => ({
+        path: document.path,
+        filename: document.filename,
+        score: 1,
+      }));
   }
 }
