@@ -50,8 +50,8 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
       config,
       workspaces,
       engine,
-      search,
-      documents,
+      knowledge,
+      api: undefined as never,
     },
     knowledge,
   );
