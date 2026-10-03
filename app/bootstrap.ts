@@ -7,6 +7,7 @@ import { DocumentService } from "../documents/service";
 import { TantivySearchEngine } from "../search/tantivy";
 import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
+import { createRendererRuntime } from "../renderer/runtime";
 
 export async function bootstrap(): Promise<ApplicationContext & { watchers: ReturnType<typeof watchWorkspace>[] }> {
   const config = await loadConfig();
@@ -32,6 +33,14 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
   const documents = new DocumentService(
     engine,
   );
+
+  const renderer = createRendererRuntime({
+    config,
+    workspaces,
+    engine,
+    search,
+    documents,
+  });
 
   const activeWorkspaces =
     workspaces.filter(
@@ -73,6 +82,7 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     engine,
     search,
     documents,
+    renderer,
     watchers,
   };
 }
