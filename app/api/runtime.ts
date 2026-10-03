@@ -1,7 +1,7 @@
 import type { ApplicationApi } from "./types";
 import type { KnowledgeDAO } from "../../kdao";
 
-export function createApplicationApiRuntime(
+export function createApplicationApi(
   knowledge: KnowledgeDAO,
 ): ApplicationApi {
   return {
