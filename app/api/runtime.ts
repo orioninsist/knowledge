@@ -3,18 +3,19 @@ import type { ApplicationApi } from "../app/api/types";
 
 export function createRendererRuntime(
   context: ApplicationContext,
+  knowledge: KnowledgeDAO,
 ): ApplicationApi {
   return {
     search(query) {
-      return context.search.query(query);
+      return knowledge.search(query);
     },
 
     getDocuments() {
-      return context.documents.list();
+      return knowledge.documents();
     },
 
     getWorkspaces() {
-      return context.workspaces;
+      return knowledge.workspaces();
     },
   };
 }
