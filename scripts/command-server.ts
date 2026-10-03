@@ -94,12 +94,6 @@ const shellStyle = `
 
 
 
-  main {
-    width: min(1100px, calc(100% - 2rem));
-    margin: 0 auto;
-    padding: 2rem 0 4rem;
-  }
-
   h1, h2 {
     color: var(--text);
   }
