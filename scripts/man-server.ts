@@ -459,30 +459,12 @@ const renderMan = (
 
   const readerStyle = `
 <style>
-  :root {
-    color-scheme: dark;
-    background: var(--reader-bg);
-    color: var(--reader-text);
-  }
-
-  html,
-  body {
-    background: var(--reader-bg) !important;
-    color: var(--reader-text) !important;
-  }
-
   body {
     box-sizing: border-box;
   }
 
   body > h1:first-of-type {
     margin-top: 0;
-  }
-
-  body {
-    font-family: var(--font-mono);
-    font-size: 16px;
-    line-height: 1.65;
   }
 
   a {
@@ -543,9 +525,6 @@ const homePage = (): string => `
 
   <style>
     :root {
-      color-scheme: dark;
-      background: var(--reader-bg);
-      color: var(--reader-text);
     }
 
     html,

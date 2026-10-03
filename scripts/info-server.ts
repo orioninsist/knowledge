@@ -598,27 +598,11 @@ ${renderTopbar("info")}
 
 const readerStyle = `
 <style>
-  :root {
-    color-scheme: dark;
-    background: var(--reader-bg);
-    color: var(--reader-text);
-  }
-
-  html,
-  body {
-    margin: 0;
-    background: var(--reader-bg);
-    color: var(--reader-text);
-  }
-
   .info-reader {
     box-sizing: border-box;
     max-width: 86ch;
     margin: 0 auto;
     padding: 2rem 1rem 6rem;
-    font-family: var(--font-mono);
-    font-size: 16px;
-    line-height: 1.65;
   }
 
   .info-node-nav {
@@ -750,9 +734,6 @@ const homePage = (): string => `
 
   <style>
     :root {
-      color-scheme: dark;
-      background: var(--reader-bg);
-      color: var(--reader-text);
     }
 
     html,
