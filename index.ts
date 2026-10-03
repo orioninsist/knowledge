@@ -1,5 +1,10 @@
-import { scanWorkspace } from "./workspace/scanner";
+import { ensureStorage } from "./search/storage";
+import { TantivySearchEngine } from "./search/tantivy";
 
-const files = await scanWorkspace("./");
+const storage = await ensureStorage(
+  "./storage/index",
+);
 
-console.log(files.slice(0, 5));
+const engine = new TantivySearchEngine(storage);
+
+await engine.search("test");
