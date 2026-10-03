@@ -86,7 +86,7 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     engine,
     search,
     documents,
-    renderer,
+    api,
     watchers,
   });
 
