@@ -7,7 +7,7 @@ import { DocumentService } from "../documents/service";
 import { TantivySearchEngine } from "../search/tantivy";
 import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
-import { createRendererRuntime } from "../renderer/runtime";
+import { createRendererRuntime } from "./api/runtime";
 import { createLifecycle } from "./lifecycle";
 import { createApplicationFacade } from "./facade";
 import { createLifecycle } from "./lifecycle";
