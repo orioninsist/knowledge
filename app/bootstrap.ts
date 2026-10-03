@@ -3,6 +3,7 @@ import { loadConfig } from "../core/config/loader";
 import { indexWorkspaceOnStartup } from "../indexing/startup";
 import { ensureStorage } from "../search/storage";
 import { SearchService } from "../search/service";
+import { DocumentService } from "../documents/service";
 import { TantivySearchEngine } from "../search/tantivy";
 import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
@@ -25,6 +26,10 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
   await engine.init();
 
   const search = new SearchService(
+    engine,
+  );
+
+  const documents = new DocumentService(
     engine,
   );
 
@@ -67,6 +72,7 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     workspaces,
     engine,
     search,
+    documents,
     watchers,
   };
 }
