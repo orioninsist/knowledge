@@ -3,7 +3,7 @@ import type { Workspace } from "../workspace/types";
 import type { SearchEngine } from "../search/engine";
 import type { SearchService } from "../search/service";
 import type { DocumentService } from "../documents/service";
-import type { RendererContract } from "../renderer/contract";
+import type { ApplicationApi } from "./api/types";
 import type { ApplicationFacade } from "./facade";
 
 export interface ApplicationContext {
@@ -12,6 +12,6 @@ export interface ApplicationContext {
   engine: SearchEngine;
   search: SearchService;
   documents: DocumentService;
-  renderer: RendererContract;
+  api: ApplicationApi;
   facade: ApplicationFacade;
 }
