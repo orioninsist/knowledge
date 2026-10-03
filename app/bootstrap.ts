@@ -7,7 +7,7 @@ import { DocumentService } from "../documents/service";
 import { TantivySearchEngine } from "../search/tantivy";
 import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
-import { createRendererRuntime } from "./api/runtime";
+import { createApplicationApiRuntime } from "./api/runtime";
 import { KnowledgeService } from "../kdao";
 import { createLifecycle } from "./lifecycle";
 import { createApplicationFacade } from "./facade";
@@ -45,7 +45,7 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     workspaces,
   );
 
-  const api = createRendererRuntime(knowledge);
+  const api = createApplicationApiRuntime(knowledge);
 
   const activeWorkspaces =
     workspaces.filter(
