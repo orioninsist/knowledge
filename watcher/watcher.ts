@@ -1,5 +1,8 @@
 import { watch } from "node:fs";
 
+import { handleFileChange } from "./service";
+import type { SearchEngine } from "../search/engine";
+
 export type FileChangeEvent = {
   type: "add" | "change" | "remove";
   path: string;
@@ -7,25 +10,31 @@ export type FileChangeEvent = {
 
 export function watchWorkspace(
   path: string,
-  callback: (event: FileChangeEvent) => void,
+  workspace: string,
+  engine: SearchEngine,
 ) {
   const watcher = watch(
     path,
     {
       recursive: true,
     },
-    (eventType, filename) => {
+    async (eventType, filename) => {
       if (!filename) {
         return;
       }
 
-      callback({
-        type:
-          eventType === "rename"
-            ? "change"
-            : "change",
+      const event: FileChangeEvent = {
+        type: "change",
         path: filename,
-      });
+      };
+
+      console.log(event);
+
+      await handleFileChange(
+        `${path}/${filename}`,
+        workspace,
+        engine,
+      );
     },
   );
 
