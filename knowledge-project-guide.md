@@ -101,13 +101,6 @@ Additional rules:
 New notes are created with:
 
 ```yaml
----
-title:
-description:
-status:
-aliases: []
-tags: []
----
 ```
 
 The indexer reads these fields when present:

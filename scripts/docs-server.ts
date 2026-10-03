@@ -20,6 +20,7 @@ import {
 
 import { openDocsDatabase } from "./docs-indexer";
 import { renderTopbar } from "./shell";
+import { renderSearchBox, searchStyle } from "./search-component";
 
 const HOST = "127.0.0.1";
 const PORT = Number(
@@ -591,30 +592,10 @@ const pageHTML = (
 
   <main class="main content-shell">${body}</main>
 
-  <div id="command-search" class="command-search" hidden>
-    <div class="command-search-backdrop" data-command-search-close></div>
-    <section class="command-search-panel" role="dialog" aria-modal="true" aria-label="Search documentation">
-      <label class="visually-hidden" for="knowledge-search">Search documentation</label>
-      <input id="knowledge-search" class="search-input command-search-input" type="search" placeholder="Search documentation..." autocomplete="off" spellcheck="false" aria-label="Search documentation">
-      <details id="search-filters" class="search-filters">
-        <summary>Filters</summary>
-        <div class="search-filter-fields">
-          <label>Folder<input id="search-filter-folder" type="text" autocomplete="off"></label>
-          <label>Filename<input id="search-filter-filename" type="text" autocomplete="off"></label>
-          <label>Title<input id="search-filter-title" type="text" autocomplete="off"></label>
-          <label>Description<input id="search-filter-description" type="text" autocomplete="off"></label>
-          <label>Status<input id="search-filter-status" type="text" autocomplete="off" disabled></label>
-          <label>Alias<input id="search-filter-alias" type="text" autocomplete="off" disabled></label>
-          <label>Tag<input id="search-filter-tag" type="text" autocomplete="off" disabled></label>
-          <button id="search-filter-clear" type="button">Clear filters</button>
-        </div>
-      </details>
-      <div id="search-results" class="search-results command-search-results" hidden>
-        <div id="search-summary" class="search-summary" hidden></div>
-        <div id="search-results-list" class="search-results-list"></div>
-      </div>
-    </section>
-  </div>
+${renderSearchBox(
+  "Search documentation...",
+  "Browse local documentation"
+)}
 
   <script src="/js/search.js" defer></script>
   <script src="/js/note-preview.js" defer></script>

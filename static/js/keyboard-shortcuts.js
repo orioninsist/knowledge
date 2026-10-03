@@ -1,95 +1,67 @@
 (() => {
-  const getSearchInput = () =>
-    document.querySelector(
-      "#knowledge-search"
-    );
 
-  const getPalette = () =>
-    document.querySelector(
-      "#command-search"
-    );
+  const getSearch = () =>
+    document.querySelector("#command-search");
+
+  const getInput = () =>
+    document.querySelector("#knowledge-search");
+
 
   const openSearch = () => {
-    const palette =
-      getPalette();
 
-    const input =
-      getSearchInput();
+    const box = getSearch();
+    const input = getInput();
 
-    if (
-      !palette ||
-      !input
-    ) {
+    if (!box || !input) {
       return;
     }
 
-    palette.hidden = false;
+    box.hidden = false;
 
-    document.documentElement
-      .classList.add(
-        "command-search-open"
-      );
+    requestAnimationFrame(() => {
+      input.focus();
+    });
 
-    requestAnimationFrame(
-      () => {
-        input.focus();
-
-        input.setSelectionRange(
-          input.value.length,
-          input.value.length
-        );
-      }
-    );
   };
+
 
   const closeSearch = () => {
-    const palette =
-      getPalette();
 
-    if (!palette) {
+    const box = getSearch();
+
+    if (!box) {
       return;
     }
 
-    palette.hidden = true;
+    box.hidden = true;
 
-    document.documentElement
-      .classList.remove(
-        "command-search-open"
-      );
   };
 
-  document.addEventListener(
-    "keydown",
-    (event) => {
-      const key =
-        event.key.toLowerCase();
 
-      if (key === "escape") {
-        closeSearch();
-        return;
-      }
+  document.addEventListener("keydown", (event) => {
 
-      if (
-        !event.altKey ||
-        event.ctrlKey ||
-        event.metaKey
-      ) {
-        return;
-      }
+    if (
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      event.key.toLowerCase() === "k"
+    ) {
 
-      if (key === "k") {
-        event.preventDefault();
-        openSearch();
-        return;
-      }
+      event.preventDefault();
 
-      if (key === "h") {
-        event.preventDefault();
+      openSearch();
 
-        window.location.assign(
-          "/"
-        );
-      }
+      return;
     }
-  );
+
+
+    if (event.key === "Escape") {
+
+      closeSearch();
+
+    }
+
+  });
+
+
 })();
