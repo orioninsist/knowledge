@@ -1,5 +1,5 @@
-import { loadConfig } from "./core/config/loader";
+import { scanWorkspace } from "./workspace/scanner";
 
-const config = await loadConfig();
+const files = await scanWorkspace("./");
 
-console.log(config);
+console.log(files.slice(0, 5));

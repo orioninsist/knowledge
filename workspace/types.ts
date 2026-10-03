@@ -3,3 +3,9 @@ export interface Workspace {
   path: string;
   exists: boolean;
 }
+
+export interface FileEntry {
+  name: string;
+  path: string;
+  extension: string;
+}
