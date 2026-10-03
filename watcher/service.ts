@@ -1,7 +1,6 @@
 import { stat } from "node:fs/promises";
-import { dirname, basename, extname } from "node:path";
+import { basename, extname } from "node:path";
 
-import { scanWorkspace } from "../workspace/scanner";
 import { indexFiles } from "../search/indexer";
 import type { SearchEngine } from "../search/engine";
 
@@ -11,23 +10,20 @@ export async function handleFileChange(
   engine: SearchEngine,
 ): Promise<void> {
   try {
-    await stat(path);
+    const fileStat = await stat(path);
 
-    const files = await scanWorkspace(dirname(path));
-
-    const file = files.find(
-      (item) => item.name === basename(path),
-    );
-
-    if (!file) {
+    if (!fileStat.isFile()) {
       return;
     }
+
+    const name = basename(path);
 
     await indexFiles(
       [
         {
-          ...file,
-          extension: extname(file.name),
+          name,
+          path,
+          extension: extname(name),
         },
       ],
       workspace,
