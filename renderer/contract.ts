@@ -1,15 +1,18 @@
 import type { ApplicationContext } from "../app/context";
-import type { SearchResult } from "../search/types";
-import type { Workspace } from "../workspace/types";
+import type {
+  RendererDocument,
+  RendererSearchResult,
+  RendererWorkspace,
+} from "./models";
 
 export interface RendererContract {
-  getWorkspaces(): Workspace[];
+  getWorkspaces(): RendererWorkspace[];
 
-  getDocuments(): Promise<import("../search/metadata").DocumentMetadata[]>;
+  getDocuments(): Promise<RendererDocument[]>;
 
   search(
     query: string,
-  ): Promise<SearchResult[]>;
+  ): Promise<RendererSearchResult[]>;
 }
 
 export function createRendererContract(
