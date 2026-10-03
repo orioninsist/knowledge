@@ -363,7 +363,7 @@ const shellStyle = `
     position: relative;
     width: min(720px, calc(100vw - 32px));
     margin: 10vh auto 0;
-    border: 1px solid #555;
+    border: 1px solid var(--reader-border);
     border-radius: 12px;
     background: var(--reader-bg);
     box-shadow: 0 20px 70px rgb(0 0 0 / 45%);
@@ -376,7 +376,7 @@ const shellStyle = `
     height: 48px;
     padding: 0 16px;
     border: 0;
-    border-bottom: 1px solid #555;
+    border-bottom: 1px solid var(--reader-border);
     outline: none;
     background: transparent;
     color: var(--reader-text);
@@ -392,7 +392,7 @@ const shellStyle = `
   .command-search-results a {
     display: block;
     padding: 13px 15px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--reader-border-subtle);
     color: var(--reader-text);
     text-decoration: none;
   }
@@ -627,7 +627,7 @@ const readerStyle = `
     gap: 8px 18px;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--reader-border-subtle);
     font-family: var(--font-sans);
     font-size: 13px;
   }

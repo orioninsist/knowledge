@@ -31,6 +31,8 @@
   --reader-text: #d8d8d8;
   --reader-link: #b8c7d9;
   --reader-link-hover: #e0e7ef;
+  --reader-border: #555;
+  --reader-border-subtle: #333;
 }
 
 .topbar {
