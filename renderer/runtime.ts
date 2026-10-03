@@ -1,10 +1,20 @@
 import type { ApplicationContext } from "../app/context";
-import {
-  createRendererContract,
-} from "./contract";
+import type { ApplicationApi } from "../app/api/types";
 
 export function createRendererRuntime(
   context: ApplicationContext,
-) {
-  return createRendererContract(context);
+): ApplicationApi {
+  return {
+    search(query) {
+      return context.search.query(query);
+    },
+
+    getDocuments() {
+      return context.documents.list();
+    },
+
+    getWorkspaces() {
+      return context.workspaces;
+    },
+  };
 }
