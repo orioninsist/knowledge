@@ -1,7 +1,7 @@
 import type { ApplicationContext } from "../app/context";
 import type { ApplicationApi } from "../app/api/types";
 
-export function createRendererRuntime(
+export function createApplicationApiRuntime(
   context: ApplicationContext,
   knowledge: KnowledgeDAO,
 ): ApplicationApi {
