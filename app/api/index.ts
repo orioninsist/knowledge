@@ -1,10 +1,7 @@
 import type { RendererContract } from "../../renderer/contract";
+import type { ApplicationApi } from "./types";
 
-export interface ApplicationApi {
-  search: RendererContract["search"];
-  getDocuments: RendererContract["getDocuments"];
-  getWorkspaces: RendererContract["getWorkspaces"];
-}
+export type { ApplicationApi };
 
 export function createApplicationApi(
   renderer: RendererContract,
