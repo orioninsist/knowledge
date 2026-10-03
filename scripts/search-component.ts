@@ -4,7 +4,8 @@ export const searchStyle = `
 <style>
 
 .command-search[hidden] {
-  display: none;
+  display: none !important;
+  visibility: hidden;
 }
 
 .command-search {
@@ -45,13 +46,6 @@ export const searchStyle = `
   font: inherit;
   font-size: 15px;
 }
-
-.command-search-hint {
-  padding: 12px 16px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
 .command-search-results {
   max-height: 62vh;
   overflow-y: auto;
@@ -77,8 +71,8 @@ export const searchStyle = `
 `;
 
 export function renderSearchBox(
-  placeholder: string,
-  description: string,
+  _placeholder: string,
+  _description: string,
 ): string {
   return `
 <div id="command-search" class="command-search" hidden>
@@ -96,14 +90,10 @@ export function renderSearchBox(
       id="knowledge-search"
       class="command-search-input"
       type="search"
-      placeholder="${placeholder}"
+      placeholder=""
       autocomplete="off"
       spellcheck="false"
     >
-
-    <div class="command-search-hint">
-      ${description}
-    </div>
 
     ${searchClientScript}
   </section>

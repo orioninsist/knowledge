@@ -11,8 +11,13 @@ export const searchClientScript = `
     return;
   }
 
+  // Always start closed. Only Alt+K can open it.
+  modal.hidden = true;
+  modal.style.display = "none";
+
   const open = () => {
     modal.hidden = false;
+    modal.style.display = "grid";
 
     document.documentElement
       .classList.add("command-search-open");
@@ -25,6 +30,7 @@ export const searchClientScript = `
 
   const close = () => {
     modal.hidden = true;
+    modal.style.display = "none";
 
     document.documentElement
       .classList.remove("command-search-open");
@@ -43,6 +49,7 @@ export const searchClientScript = `
     (event) => {
 
       if (
+        event.isTrusted &&
         event.altKey &&
         !event.ctrlKey &&
         !event.metaKey &&
