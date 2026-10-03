@@ -409,9 +409,9 @@ ${escapeHTML(source.toUpperCase())}: ${available ? "available" : "unavailable"}
 
       return renderPage(
         "Command Cheatsheets",
-        `<h1>Command Cheatsheets</h1>
+        `
 <p class="muted">
-Search once and read TLDR, Navi and Cheat together.
+
 </p>
 <div class="source-status">${statuses}</div>
 <form class="home-search" action="/open" method="get">

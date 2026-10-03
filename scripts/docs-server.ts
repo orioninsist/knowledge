@@ -570,12 +570,7 @@ const pageHTML = (
       </article>
     `
     : `
-      <section class="docs-home">
-        <h1>Documentation</h1>
-        <p class="muted">
-          Search documentation or open a document.
-        </p>
-      </section>
+
     `;
 
   return `<!doctype html>
@@ -753,4 +748,3 @@ console.log(
 console.log(`root=${ROOT}`);
 console.log(`ignored=${IGNORES.join(":")}`);
 console.log(`database=${DB_PATH}`);
-
