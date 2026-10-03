@@ -4,6 +4,7 @@ import type { SearchEngine } from "../search/engine";
 import type { SearchService } from "../search/service";
 import type { DocumentService } from "../documents/service";
 import type { RendererContract } from "../renderer/contract";
+import type { ApplicationFacade } from "./facade";
 
 export interface ApplicationContext {
   config: Config;
@@ -12,4 +13,5 @@ export interface ApplicationContext {
   search: SearchService;
   documents: DocumentService;
   renderer: RendererContract;
+  facade: ApplicationFacade;
 }

@@ -8,6 +8,8 @@ import { TantivySearchEngine } from "../search/tantivy";
 import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
 import { createRendererRuntime } from "../renderer/runtime";
+import { createLifecycle } from "./lifecycle";
+import { createApplicationFacade } from "./facade";
 
 export async function bootstrap(): Promise<ApplicationContext & { watchers: ReturnType<typeof watchWorkspace>[] }> {
   const config = await loadConfig();
@@ -76,6 +78,21 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
       )
     : [];
 
+  const lifecycle = createLifecycle({
+    config,
+    workspaces,
+    engine,
+    search,
+    documents,
+    renderer,
+    watchers,
+  });
+
+  const facade = createApplicationFacade(
+    renderer,
+    lifecycle,
+  );
+
   return {
     config,
     workspaces,
@@ -83,6 +100,8 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     search,
     documents,
     renderer,
+    lifecycle,
+    facade,
     watchers,
   };
 }
