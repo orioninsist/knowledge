@@ -136,7 +136,7 @@ const shellStyle = `
     border: 1px solid var(--border);
     border-radius: 7px;
     padding: .7rem .8rem;
-    background: #242424;
+    background: var(--command-surface);
     color: var(--text);
     font: inherit;
   }
@@ -145,7 +145,7 @@ const shellStyle = `
     border: 1px solid var(--border);
     border-radius: 7px;
     padding: .7rem 1rem;
-    background: #292929;
+    background: var(--command-surface-hover);
     color: var(--text);
     cursor: pointer;
   }
@@ -186,7 +186,7 @@ const shellStyle = `
     border-radius: 8px;
     padding: 1rem;
     color: var(--muted);
-    background: #181818;
+    background: var(--command-panel);
   }
 
   .command-search[hidden] {
