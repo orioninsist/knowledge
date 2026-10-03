@@ -1,4 +1,4 @@
-import type { RendererContract } from "../renderer/contract";
+import type { ApplicationApi } from "./api/types";
 import type { ApplicationLifecycle } from "./lifecycle";
 import type { ApplicationApi } from "./api";
 import { createApplicationApi } from "./api";
@@ -9,11 +9,11 @@ export interface ApplicationFacade {
 }
 
 export function createApplicationFacade(
-  renderer: RendererContract,
+  api: ApplicationApi,
   lifecycle: ApplicationLifecycle,
 ): ApplicationFacade {
   return {
-    api: createApplicationApi(renderer),
+    api: createApplicationApi(api),
 
     shutdown() {
       lifecycle.shutdown();
