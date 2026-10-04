@@ -1,1 +1,0 @@
-export { createDocumentService } from "./factory";
