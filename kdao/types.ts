@@ -7,7 +7,11 @@ export interface KnowledgeDAO {
     query: string,
   ): Promise<SearchResult[]>;
 
-  documents(): Promise<DocumentMetadata[]>;
+  listDocuments(): Promise<DocumentMetadata[]>;
 
-  workspaces(): Workspace[];
+  readDocument(
+    path: string,
+  ): Promise<string | null>;
+
+  listWorkspaces(): Workspace[];
 }

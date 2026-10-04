@@ -9,6 +9,8 @@ import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
 import { createKnowledgeService } from "../kdao";
 import { createLifecycle } from "./lifecycle";
+import { createWebApp } from "./web";
+import { startServer } from "./server";
 
 export async function bootstrap(): Promise<ApplicationContext> {
   const config = await loadConfig();
@@ -79,8 +81,19 @@ export async function bootstrap(): Promise<ApplicationContext> {
     watchers,
   );
 
+  const web = createWebApp(
+    knowledge,
+  );
+
+  startServer({
+    knowledge,
+    lifecycle,
+    web,
+  });
+
   return {
     knowledge,
     lifecycle,
+    web,
   };
 }

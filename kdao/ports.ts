@@ -7,4 +7,16 @@ export interface SearchPort {
 
 export interface DocumentPort {
   list(): Promise<DocumentMetadata[]>;
+
+  read(
+    path: string,
+  ): Promise<string | null>;
+}
+
+
+export interface ScopedSearchPort {
+  searchInPath(
+    path: string,
+    query: string,
+  ): Promise<SearchResult[]>;
 }

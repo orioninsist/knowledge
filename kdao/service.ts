@@ -15,11 +15,17 @@ export class KnowledgeService implements KnowledgeDAO {
     return this.searchService.query(query);
   }
 
-  documents(): Promise<DocumentMetadata[]> {
+  listDocuments(): Promise<DocumentMetadata[]> {
     return this.documentService.list();
   }
 
-  workspaces(): Workspace[] {
+  readDocument(
+    path: string,
+  ): Promise<string | null> {
+    return this.documentService.read(path);
+  }
+
+  listWorkspaces(): Workspace[] {
     return this.workspaceList;
   }
 }
