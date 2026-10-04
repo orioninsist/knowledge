@@ -55,24 +55,26 @@ Tantivy:
 - full text search
 
 
-## Renderer
+## Application Boundary
 
-Plugin based.
+The application exposes capabilities through a stable API layer.
 
-Renderer folders are discovered automatically.
+Flow:
 
-Example:
-
-renderers/
-- markdown
-- mermaid
-- typst
-- d2
-- canvas
-- pdf
+Application
+→ API
+→ Knowledge DAO
+→ Services
 
 
-Adding/removing renderer does not require core code changes.
+Knowledge DAO provides:
+
+- search
+- documents
+- workspaces
+
+
+Internal services remain hidden behind the DAO boundary.
 
 
 ## Config
@@ -84,6 +86,5 @@ Central configuration:
 - background
 - card layout
 - workspace paths
-- renderer settings
 
 One place controls the system.
