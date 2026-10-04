@@ -13,28 +13,80 @@ export function startServer(
       const url = new URL(req.url);
 
       if (url.pathname === "/") {
-        return new Response(`
+        return new Response(
+          `
+          <!doctype html>
           <html>
+          <head>
+            <title>Knowledge</title>
+            <style>
+              body {
+                max-width: 1000px;
+                margin: 40px auto;
+                font-family: sans-serif;
+              }
+
+              .grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+                margin-top: 40px;
+              }
+
+              .card {
+                padding: 35px;
+                border-radius: 16px;
+                background: #f2f2f2;
+                text-align: center;
+                font-size: 22px;
+                transition: .2s;
+              }
+
+              .card:hover {
+                background: #222;
+                color: white;
+              }
+
+              a {
+                text-decoration: none;
+                color: inherit;
+              }
+            </style>
+          </head>
           <body>
+
+          <script>
+            document.addEventListener("keydown", (e) => {
+              if (e.altKey && e.key.toLowerCase() === "k") {
+                location.href = "/search";
+              }
+
+              if (e.altKey && e.key.toLowerCase() === "t") {
+                location.href = "/";
+              }
+            });
+          </script>
             <h1>Knowledge</h1>
 
-            <div>
-              ${cards.map(card => `
-                <a href="/card?id=${card.id}">
-                  <div>
-                    ${card.title}
-                  </div>
-                </a>
-              `).join("")}
+            <div class="grid">
+            ${cards.map(card => `
+              <a href="/card?id=${card.id}">
+                <div class="card">
+                  ${card.title}
+                </div>
+              </a>
+            `).join("")}
             </div>
 
           </body>
           </html>
-        `, {
-          headers: {
-            "content-type": "text/html",
+          `,
+          {
+            headers: {
+              "content-type": "text/html",
+            },
           },
-        });
+        );
       }
 
       if (url.pathname === "/card") {
@@ -60,6 +112,18 @@ export function startServer(
         return new Response(`
           <html>
           <body>
+
+          <script>
+            document.addEventListener("keydown", (e) => {
+              if (e.altKey && e.key.toLowerCase() === "k") {
+                location.href = "/search";
+              }
+
+              if (e.altKey && e.key.toLowerCase() === "t") {
+                location.href = "/";
+              }
+            });
+          </script>
 
             <h1>${card.title}</h1>
 
@@ -106,6 +170,18 @@ export function startServer(
             <title>Knowledge Search</title>
           </head>
           <body>
+
+          <script>
+            document.addEventListener("keydown", (e) => {
+              if (e.altKey && e.key.toLowerCase() === "k") {
+                location.href = "/search";
+              }
+
+              if (e.altKey && e.key.toLowerCase() === "t") {
+                location.href = "/";
+              }
+            });
+          </script>
             <h1>Search</h1>
 
             <input id="q" autofocus />
@@ -257,6 +333,18 @@ export function startServer(
             </style>
           </head>
           <body>
+
+          <script>
+            document.addEventListener("keydown", (e) => {
+              if (e.altKey && e.key.toLowerCase() === "k") {
+                location.href = "/search";
+              }
+
+              if (e.altKey && e.key.toLowerCase() === "t") {
+                location.href = "/";
+              }
+            });
+          </script>
 
           <a href="/">Home</a>
 
