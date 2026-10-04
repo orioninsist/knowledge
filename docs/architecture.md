@@ -9,7 +9,6 @@ Flow:
 Workspace
 → Alt+K Search
 → File
-→ Renderer
 → Reader
 
 
