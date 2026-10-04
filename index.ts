@@ -5,7 +5,7 @@ const app = await bootstrap();
 console.log("application ready");
 
 process.on("SIGINT", () => {
-  app.shutdown();
+  app.lifecycle.shutdown();
 
   process.exit();
 });

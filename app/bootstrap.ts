@@ -7,14 +7,10 @@ import { createDocumentService } from "../documents";
 import { TantivySearchEngine } from "../search/tantivy";
 import { watchWorkspace } from "../watcher/watcher";
 import { loadWorkspaces } from "../workspace/manager";
-import { createApplicationApi } from "./api/runtime";
 import { createKnowledgeService } from "../kdao";
 import { createLifecycle } from "./lifecycle";
-import { createApplicationFacade } from "./facade";
-import { createLifecycle } from "./lifecycle";
-import { createApplicationFacade } from "./facade";
 
-export async function bootstrap(): Promise<ApplicationContext & { watchers: ReturnType<typeof watchWorkspace>[] }> {
+export async function bootstrap(): Promise<ApplicationContext> {
   const config = await loadConfig();
 
   const workspaces = await loadWorkspaces(
@@ -44,8 +40,6 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
     documents,
     workspaces,
   );
-
-  const api = createApplicationApi(knowledge);
 
   const activeWorkspaces =
     workspaces.filter(
@@ -81,22 +75,12 @@ export async function bootstrap(): Promise<ApplicationContext & { watchers: Retu
       )
     : [];
 
-  const lifecycle = createLifecycle({
-    config,
-    workspaces,
-    engine,
-    knowledge,
-    api,
+  const lifecycle = createLifecycle(
     watchers,
-  });
-
-  const facade = createApplicationFacade(
-    api,
-    lifecycle,
   );
 
-  return createApplicationFacade(
-    api,
+  return {
+    knowledge,
     lifecycle,
-  );
+  };
 }

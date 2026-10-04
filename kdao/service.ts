@@ -1,24 +1,25 @@
 import type { KnowledgeDAO } from "./types";
-import type { SearchService } from "../search/service";
-import type { DocumentService } from "../documents/service";
+import type { SearchPort, DocumentPort } from "./ports";
 import type { Workspace } from "../workspace/types";
+import type { SearchResult } from "../search/types";
+import type { DocumentMetadata } from "../search/metadata";
 
 export class KnowledgeService implements KnowledgeDAO {
   constructor(
-    private searchService: SearchService,
-    private documentService: DocumentService,
+    private searchService: SearchPort,
+    private documentService: DocumentPort,
     private workspaceList: Workspace[],
   ) {}
 
-  search(query: string) {
+  search(query: string): Promise<SearchResult[]> {
     return this.searchService.query(query);
   }
 
-  documents() {
+  documents(): Promise<DocumentMetadata[]> {
     return this.documentService.list();
   }
 
-  workspaces() {
+  workspaces(): Workspace[] {
     return this.workspaceList;
   }
 }

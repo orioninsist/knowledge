@@ -1,11 +1,10 @@
-import { SearchService } from "../search/service";
-import { DocumentService } from "../documents/service";
+import type { SearchPort, DocumentPort } from "./ports";
 import type { Workspace } from "../workspace/types";
 import { KnowledgeService } from "./service";
 
 export function createKnowledgeService(
-  search: SearchService,
-  documents: DocumentService,
+  search: SearchPort,
+  documents: DocumentPort,
   workspaces: Workspace[],
 ) {
   return new KnowledgeService(

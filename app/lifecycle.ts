@@ -1,17 +1,13 @@
-import type { ApplicationContext } from "./context";
-
 export interface ApplicationLifecycle {
   shutdown(): void;
 }
 
 export function createLifecycle(
-  context: ApplicationContext & {
-    watchers: { close(): void }[];
-  },
+  watchers: { close(): void }[],
 ): ApplicationLifecycle {
   return {
     shutdown() {
-      for (const watcher of context.watchers) {
+      for (const watcher of watchers) {
         watcher.close();
       }
     },

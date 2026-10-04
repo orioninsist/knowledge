@@ -1,13 +1,7 @@
-import type { Config } from "../core/config/schema";
-import type { Workspace } from "../workspace/types";
-import type { SearchEngine } from "../search/engine";
 import type { KnowledgeDAO } from "../kdao";
-import type { ApplicationFacade } from "./facade";
+import type { ApplicationLifecycle } from "./lifecycle";
 
 export interface ApplicationContext {
-  config: Config;
-  workspaces: Workspace[];
-  engine: SearchEngine;
   knowledge: KnowledgeDAO;
-  facade: ApplicationFacade;
+  lifecycle: ApplicationLifecycle;
 }
