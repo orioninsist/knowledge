@@ -37,10 +37,6 @@ export const ConfigSchema = z.object({
     watch: z.boolean(),
     batch_size: z.number(),
   }),
-
-    path: z.string(),
-    auto_discover: z.boolean(),
-  }),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
