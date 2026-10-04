@@ -24,6 +24,7 @@ export class MemorySearchStore {
       .map((document) => ({
         path: document.path,
         filename: document.filename,
+        workspace: document.workspace,
         score: 1,
       }));
   }

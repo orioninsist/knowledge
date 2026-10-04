@@ -1,8 +1,8 @@
 import { SearchService } from "./service";
-import type { SearchStorage } from "./storage";
+import type { SearchEngine } from "./engine";
 
 export function createSearchService(
-  storage: SearchStorage,
+  engine: SearchEngine,
 ) {
-  return new SearchService(storage);
+  return new SearchService(engine);
 }

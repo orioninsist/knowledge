@@ -40,6 +40,10 @@ export class TantivySearchEngine implements SearchEngine {
     );
   }
 
+  async all(): Promise<SearchDocument[]> {
+    return this.store.all();
+  }
+
   async search(
     query: string,
   ): Promise<SearchResult[]> {
@@ -59,6 +63,7 @@ export class TantivySearchEngine implements SearchEngine {
       .map((document) => ({
         path: document.path,
         filename: document.filename,
+        workspace: document.workspace,
         score: 1,
       }));
   }
