@@ -1,4 +1,5 @@
 import type { ApplicationContext } from "./context";
+import { renderMarkdown } from "./markdown";
 import { cards } from "../cards";
 import { setActiveCard, getActiveCard } from "../cards/state";
 
@@ -211,40 +212,73 @@ export function startServer(
         });
       }
 
+
       if (url.pathname === "/read") {
-        const path = url.searchParams.get("path");
+        const path =
+          url.searchParams.get("path");
 
         if (!path) {
-          return new Response("missing path", {
-            status: 400,
-          });
+          return new Response(
+            "missing path",
+            { status: 400 },
+          );
         }
 
         const content =
-          await app.web.document(path);
+          await app.knowledge.readDocument(path);
 
-        return new Response(`
+        if (!content) {
+          return new Response(
+            "document not found",
+            { status: 404 },
+          );
+        }
+
+        return new Response(
+          `
+          <!doctype html>
           <html>
-            <body>
-              <pre>${content ?? "not found"}</pre>
-            </body>
+          <head>
+            <title>Knowledge Reader</title>
+            <style>
+              body {
+                max-width: 900px;
+                margin: 40px auto;
+                font-family: sans-serif;
+                line-height: 1.6;
+              }
+
+              pre {
+                background: #222;
+                color: white;
+                padding: 16px;
+                overflow-x: auto;
+              }
+            </style>
+          </head>
+          <body>
+
+          <a href="/">Home</a>
+
+          <article>
+            ${renderMarkdown(content)}
+          </article>
+
+          </body>
           </html>
-        `, {
-          headers: {
-            "content-type": "text/html",
+          `,
+          {
+            headers: {
+              "content-type": "text/html",
+            },
           },
-        });
+        );
       }
 
-      return new Response("Not found", {
-        status: 404,
-      });
+      return new Response(
+        "not found",
+        { status: 404 },
+      );
     },
   });
-
-  console.log(
-    `web server: http://localhost:${server.port}`,
-  );
-
-  return server;
 }
