@@ -38,7 +38,6 @@ export const ConfigSchema = z.object({
     batch_size: z.number(),
   }),
 
-  renderer: z.object({
     path: z.string(),
     auto_discover: z.boolean(),
   }),

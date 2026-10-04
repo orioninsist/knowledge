@@ -24,6 +24,3 @@ search:
   watch: true
   batch_size: 500
 
-renderer:
-  path: "./renderer"
-  auto_discover: true
