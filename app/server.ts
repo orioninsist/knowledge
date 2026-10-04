@@ -58,7 +58,7 @@ export function startServer(
           <script>
             document.addEventListener("keydown", (e) => {
               if (e.altKey && e.key.toLowerCase() === "k") {
-                location.href = "/search";
+                location.href = "/search?card=" + getActiveCard();
               }
 
               if (e.altKey && e.key.toLowerCase() === "t") {
@@ -116,7 +116,7 @@ export function startServer(
           <script>
             document.addEventListener("keydown", (e) => {
               if (e.altKey && e.key.toLowerCase() === "k") {
-                location.href = "/search";
+                location.href = "/search?card=" + getActiveCard();
               }
 
               if (e.altKey && e.key.toLowerCase() === "t") {
@@ -174,7 +174,7 @@ export function startServer(
           <script>
             document.addEventListener("keydown", (e) => {
               if (e.altKey && e.key.toLowerCase() === "k") {
-                location.href = "/search";
+                location.href = "/search?card=" + getActiveCard();
               }
 
               if (e.altKey && e.key.toLowerCase() === "t") {
@@ -191,7 +191,7 @@ export function startServer(
             <script>
             document.addEventListener("keydown", (e) => {
               if (e.altKey && e.key.toLowerCase() === "k") {
-                location.href = "/search";
+                location.href = "/search?card=" + getActiveCard();
               }
 
               if (e.altKey && e.key.toLowerCase() === "t") {
@@ -236,7 +236,7 @@ export function startServer(
           url.searchParams.get("q") ?? "";
 
         const cardId =
-          getActiveCard();
+          url.searchParams.get("card") ?? "notes";
 
         const card =
           cards.find(
@@ -337,7 +337,7 @@ export function startServer(
           <script>
             document.addEventListener("keydown", (e) => {
               if (e.altKey && e.key.toLowerCase() === "k") {
-                location.href = "/search";
+                location.href = "/search?card=" + getActiveCard();
               }
 
               if (e.altKey && e.key.toLowerCase() === "t") {
