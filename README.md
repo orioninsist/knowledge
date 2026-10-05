@@ -38,7 +38,23 @@ knowledge/
 └── notes/
 ```
 
-## Terminal Workflow
+## Terminal Tool Stack
+
+The system uses small native terminal tools. Each tool has one clear purpose.
+
+| Tool | Purpose | Link |
+| --- | --- | --- |
+| fd | Fast file finding | https://github.com/sharkdp/fd |
+| ripgrep (rg) | Fast text search inside notes | https://github.com/BurntSushi/ripgrep |
+| yazi | Terminal file manager | https://github.com/sxyazi/yazi |
+| Neovim (nvim) | Markdown editor | https://github.com/neovim/neovim |
+| glow | Markdown renderer for terminal | https://github.com/charmbracelet/glow |
+| bat | Better cat with syntax highlighting | https://github.com/sharkdp/bat |
+| git | Version control | https://git-scm.com/ |
+| pandoc | Document conversion | https://pandoc.org/ |
+| tmux | Terminal session manager | https://github.com/tmux/tmux |
+
+## Daily Terminal Workflow
 
 ### Find files
 
@@ -52,10 +68,22 @@ fd keyword
 rg "keyword"
 ```
 
+### Browse files
+
+```bash
+yazi
+```
+
 ### Read Markdown
 
 ```bash
 glow note.md
+```
+
+### View file content
+
+```bash
+bat note.md
 ```
 
 ### Edit Markdown
@@ -64,14 +92,22 @@ glow note.md
 nvim note.md
 ```
 
+### Save changes
+
+```bash
+git status
+git add .
+git commit -m "update notes"
+```
+
 ## Documentation
 
 All system documentation lives as Markdown files inside this repository.
 
 Links:
 
-- Terminal tools
-- Daily workflows
+- [Terminal Stack](docs/terminal-stack.md)
+- [Terminal Daily Usage](docs/terminal-daily-usage.md)
 - Note organization
 - Future knowledge modules
 
