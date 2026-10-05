@@ -72,6 +72,7 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | Mermaid | Markdown-inspired text-to-diagram and chart language | https://github.com/mermaid-js/mermaid |
 | Typst | Modern markup-based typesetting system for documents and PDFs | https://github.com/typst/typst |
 | Excalidraw | Open-source infinite canvas and hand-drawn style whiteboard for diagrams and visual notes | https://github.com/excalidraw/excalidraw |
+| JSON Canvas | Open file format used by Obsidian Canvas for infinite-canvas data | https://github.com/obsidianmd/jsoncanvas |
 
 ## Daily Terminal Workflow
 
@@ -145,6 +146,8 @@ typst watch document.typ
 ```
 
 Excalidraw complements the terminal-native diagram tools when a free-form visual canvas is useful. Drawings use the open `.excalidraw` JSON format and can be exported to PNG or SVG.
+
+Obsidian Canvas uses the open JSON Canvas file format. The format is maintained by Obsidian under the `obsidianmd/jsoncanvas` repository and is useful for storing infinite-canvas nodes and connections as portable `.canvas` files.
 
 ### View file content
 
