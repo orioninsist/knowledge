@@ -71,6 +71,7 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | D2 | Text-to-diagram language for architecture and technical diagrams | https://github.com/d2lang/d2 |
 | Mermaid | Markdown-inspired text-to-diagram and chart language | https://github.com/mermaid-js/mermaid |
 | Typst | Modern markup-based typesetting system for documents and PDFs | https://github.com/typst/typst |
+| Excalidraw | Open-source infinite canvas and hand-drawn style whiteboard for diagrams and visual notes | https://github.com/excalidraw/excalidraw |
 
 ## Daily Terminal Workflow
 
@@ -142,6 +143,8 @@ mmdc -i diagram.mmd -o diagram.svg
 typst compile document.typ
 typst watch document.typ
 ```
+
+Excalidraw complements the terminal-native diagram tools when a free-form visual canvas is useful. Drawings use the open `.excalidraw` JSON format and can be exported to PNG or SVG.
 
 ### View file content
 
