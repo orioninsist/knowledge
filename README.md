@@ -68,6 +68,9 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | yq | YAML processor | https://github.com/mikefarah/yq |
 | direnv | Automatic environment loader | https://github.com/direnv/direnv |
 | shellcheck | Shell script analyzer | https://github.com/koalaman/shellcheck |
+| D2 | Text-to-diagram language for architecture and technical diagrams | https://github.com/d2lang/d2 |
+| Mermaid | Markdown-inspired text-to-diagram and chart language | https://github.com/mermaid-js/mermaid |
+| Typst | Modern markup-based typesetting system for documents and PDFs | https://github.com/typst/typst |
 
 ## Daily Terminal Workflow
 
@@ -124,6 +127,20 @@ glow note.md
 ```bash
 mdcat note.md
 mdcat --watch note.md
+```
+
+### Diagram and document tools
+
+```bash
+# D2: render a diagram
+d2 diagram.d2 diagram.svg
+
+# Mermaid: render with Mermaid CLI (mmdc)
+mmdc -i diagram.mmd -o diagram.svg
+
+# Typst: compile or watch a document
+typst compile document.typ
+typst watch document.typ
 ```
 
 ### View file content
