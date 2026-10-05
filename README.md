@@ -52,8 +52,11 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | yazi | Terminal file manager | https://github.com/sxyazi/yazi |
 | Neovim (nvim) | Markdown editor | https://github.com/neovim/neovim |
 | glow | Markdown renderer for terminal | https://github.com/charmbracelet/glow |
+| mdcat | Rich terminal Markdown renderer with GFM alerts, images, math, Mermaid, themes, and live preview | https://github.com/BIRSAx2/mdcat |
 | bat | Better cat with syntax highlighting | https://github.com/sharkdp/bat |
 | starship | Cross-shell prompt | https://github.com/starship/starship |
+| flyline | Modern Bash line editor with suggestions, completion, fuzzy history, and rich prompt features | https://github.com/HalFrgrd/flyline |
+| atuin | Shell history search and management | https://github.com/atuinsh/atuin |
 | git | Version control | https://git-scm.com/ |
 | lazygit | Terminal Git interface | https://github.com/jesseduffield/lazygit |
 | pandoc | Document conversion | https://pandoc.org/ |
@@ -116,10 +119,23 @@ yazi
 glow note.md
 ```
 
+### Rich Markdown preview
+
+```bash
+mdcat note.md
+mdcat --watch note.md
+```
+
 ### View file content
 
 ```bash
 bat note.md
+```
+
+### Shell history
+
+```bash
+atuin search
 ```
 
 ### Git workflow
