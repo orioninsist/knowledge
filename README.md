@@ -44,6 +44,7 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 
 | Tool | Purpose | Link |
 | --- | --- | --- |
+| Kitty | GPU-accelerated terminal emulator with image and graphics protocol support | https://github.com/kovidgoyal/kitty |
 | fd | Fast file finding | https://github.com/sharkdp/fd |
 | ripgrep (rg) | Fast text search inside notes | https://github.com/BurntSushi/ripgrep |
 | fzf | Fuzzy interactive search | https://github.com/junegunn/fzf |
@@ -51,6 +52,7 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | eza | Modern ls replacement | https://github.com/eza-community/eza |
 | yazi | Terminal file manager | https://github.com/sxyazi/yazi |
 | Neovim (nvim) | Markdown editor | https://github.com/neovim/neovim |
+| AstroNvim | Feature-rich and extensible Neovim configuration | https://github.com/AstroNvim/AstroNvim |
 | glow | Markdown renderer for terminal | https://github.com/charmbracelet/glow |
 | mdcat | Rich terminal Markdown renderer with GFM alerts, images, math, Mermaid, themes, and live preview | https://github.com/BIRSAx2/mdcat |
 | bat | Better cat with syntax highlighting | https://github.com/sharkdp/bat |
@@ -148,6 +150,14 @@ typst watch document.typ
 Excalidraw complements the terminal-native diagram tools when a free-form visual canvas is useful. Drawings use the open `.excalidraw` JSON format and can be exported to PNG or SVG.
 
 Obsidian Canvas uses the open JSON Canvas file format. The format is maintained by Obsidian under the `obsidianmd/jsoncanvas` repository and is useful for storing infinite-canvas nodes and connections as portable `.canvas` files.
+
+### AstroNvim profile
+
+AstroNvim can be kept separate from the main Neovim configuration:
+
+```bash
+NVIM_APPNAME=astronvim nvim
+```
 
 ### View file content
 
