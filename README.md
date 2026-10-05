@@ -48,14 +48,18 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | ripgrep (rg) | Fast text search inside notes | https://github.com/BurntSushi/ripgrep |
 | fzf | Fuzzy interactive search | https://github.com/junegunn/fzf |
 | zoxide | Smart directory jumping | https://github.com/ajeetdsouza/zoxide |
+| eza | Modern ls replacement | https://github.com/eza-community/eza |
 | yazi | Terminal file manager | https://github.com/sxyazi/yazi |
 | Neovim (nvim) | Markdown editor | https://github.com/neovim/neovim |
 | glow | Markdown renderer for terminal | https://github.com/charmbracelet/glow |
 | bat | Better cat with syntax highlighting | https://github.com/sharkdp/bat |
 | starship | Cross-shell prompt | https://github.com/starship/starship |
 | git | Version control | https://git-scm.com/ |
+| lazygit | Terminal Git interface | https://github.com/jesseduffield/lazygit |
 | pandoc | Document conversion | https://pandoc.org/ |
 | tmux | Terminal session manager | https://github.com/tmux/tmux |
+| duf | Disk usage viewer | https://github.com/muesli/duf |
+| btop | System monitor | https://github.com/aristocratos/btop |
 
 ## Daily Terminal Workflow
 
@@ -63,6 +67,12 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 
 ```bash
 z project
+```
+
+### List files
+
+```bash
+eza
 ```
 
 ### Find files
@@ -99,6 +109,19 @@ glow note.md
 
 ```bash
 bat note.md
+```
+
+### Git workflow
+
+```bash
+lazygit
+```
+
+### System check
+
+```bash
+btop
+duf
 ```
 
 ### Edit Markdown
