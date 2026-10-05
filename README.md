@@ -60,6 +60,11 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | tmux | Terminal session manager | https://github.com/tmux/tmux |
 | duf | Disk usage viewer | https://github.com/muesli/duf |
 | btop | System monitor | https://github.com/aristocratos/btop |
+| tldr | Simplified command examples | https://github.com/tldr-pages/tldr |
+| jq | JSON processor | https://github.com/jqlang/jq |
+| yq | YAML processor | https://github.com/mikefarah/yq |
+| direnv | Automatic environment loader | https://github.com/direnv/direnv |
+| shellcheck | Shell script analyzer | https://github.com/koalaman/shellcheck |
 
 ## Daily Terminal Workflow
 
@@ -91,6 +96,12 @@ rg "keyword"
 
 ```bash
 fzf
+```
+
+### Command help
+
+```bash
+tldr command
 ```
 
 ### Browse files
