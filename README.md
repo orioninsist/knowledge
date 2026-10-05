@@ -46,6 +46,7 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | --- | --- | --- |
 | fd | Fast file finding | https://github.com/sharkdp/fd |
 | ripgrep (rg) | Fast text search inside notes | https://github.com/BurntSushi/ripgrep |
+| fzf | Fuzzy interactive search | https://github.com/junegunn/fzf |
 | zoxide | Smart directory jumping | https://github.com/ajeetdsouza/zoxide |
 | yazi | Terminal file manager | https://github.com/sxyazi/yazi |
 | Neovim (nvim) | Markdown editor | https://github.com/neovim/neovim |
@@ -74,6 +75,12 @@ fd keyword
 
 ```bash
 rg "keyword"
+```
+
+### Interactive search
+
+```bash
+fzf
 ```
 
 ### Browse files
