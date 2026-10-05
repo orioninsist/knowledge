@@ -46,15 +46,23 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | --- | --- | --- |
 | fd | Fast file finding | https://github.com/sharkdp/fd |
 | ripgrep (rg) | Fast text search inside notes | https://github.com/BurntSushi/ripgrep |
+| zoxide | Smart directory jumping | https://github.com/ajeetdsouza/zoxide |
 | yazi | Terminal file manager | https://github.com/sxyazi/yazi |
 | Neovim (nvim) | Markdown editor | https://github.com/neovim/neovim |
 | glow | Markdown renderer for terminal | https://github.com/charmbracelet/glow |
 | bat | Better cat with syntax highlighting | https://github.com/sharkdp/bat |
+| starship | Cross-shell prompt | https://github.com/starship/starship |
 | git | Version control | https://git-scm.com/ |
 | pandoc | Document conversion | https://pandoc.org/ |
 | tmux | Terminal session manager | https://github.com/tmux/tmux |
 
 ## Daily Terminal Workflow
+
+### Change directory quickly
+
+```bash
+z project
+```
 
 ### Find files
 
