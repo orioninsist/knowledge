@@ -126,9 +126,10 @@ Each format has one primary role and one preferred toolchain.
 | `.typ` | Standalone typeset documents | Neovim | Typst | PDF |
 | `.excalidraw` | Free-form visual drawings | Excalidraw Desktop | Excalidraw Desktop | Native drawing, SVG/PNG export |
 | `.pdf` | Final document / reading format | — | Zathura | PDF |
-| `.epub` | E-book / long-form reading | — | Calibre Ebook Viewer | EPUB |
+| `.epub` | E-book / long-form reading | — | ebook-viewer | EPUB |
 | `.html` | Browser-readable publication | Neovim | Google Chrome | HTML |
-| `.svg` | Vector diagram output | Neovim if needed | Inkscape | SVG |
+| `.svg` | Vector image / diagram output | Neovim if needed | imv | SVG |
+| `.png` / `.jpg` / `.jpeg` / `.webp` | Raster image reading | — | imv | Native image |
 | `.json` | Structured data | Neovim | jq | JSON |
 | `.yaml` / `.yml` | Structured configuration | Neovim | yq | YAML |
 
@@ -142,7 +143,7 @@ diagram.d2
    ↓ d2
 diagram.svg
    ↓
-Inkscape
+imv
 ```
 
 ```text
@@ -151,7 +152,7 @@ diagram.mmd
    ↓ mmdc
 diagram.svg
    ↓
-Inkscape
+imv
 ```
 
 ```text
@@ -220,10 +221,11 @@ The system uses small native tools. Each tool has one clear purpose.
 | Mermaid CLI (mmdc) | Render Mermaid source files from the command line | https://github.com/mermaid-js/mermaid-cli |
 | Mermaid | Markdown-inspired text-to-diagram and chart language | https://github.com/mermaid-js/mermaid |
 | Typst | Modern markup-based typesetting system for documents and PDFs | https://github.com/typst/typst |
-| Inkscape | SVG viewer and SVG-to-PNG conversion for the D2 inline pipeline | https://inkscape.org/ |
+| Inkscape | SVG-to-PNG conversion dependency used by the embedded D2 preview pipeline | https://inkscape.org/ |
 | ImageMagick | Image conversion dependency available to the rendering stack | https://imagemagick.org/ |
+| imv | Lightweight Wayland-friendly image viewer for SVG, PNG, JPEG, WebP, and other image formats | https://sr.ht/~exec64/imv/ |
 | Zathura | PDF reader | https://pwmt.org/projects/zathura/ |
-| Calibre Ebook Viewer | EPUB reader | https://calibre-ebook.com/ |
+| ebook-viewer | EPUB reader from the Calibre package, used directly without the main library GUI | https://calibre-ebook.com/ |
 | Excalidraw | Open-source free-form drawing format/application | https://github.com/excalidraw/excalidraw |
 | Excalidraw Desktop | Linux desktop client used for local `.excalidraw` files | https://github.com/quabyt-tech/excalidraw-desktop |
 
@@ -336,13 +338,20 @@ zathura document.pdf
 ebook-viewer book.epub
 
 # SVG
-inkscape diagram.svg
+imv diagram.svg
+
+# PNG / JPEG / WebP
+imv image.png
 
 # HTML
 google-chrome document.html
 ```
 
 Excalidraw Desktop is used for local `.excalidraw` files. The older Chrome/PWA launcher is not part of the primary workflow.
+
+For normal image viewing, imv is the preferred viewer. Inkscape remains installed only because the embedded D2 renderer currently uses it as the SVG-to-PNG conversion step; it is not the default SVG viewer.
+
+The Calibre library GUI is not part of the workflow. EPUB files are opened directly with `ebook-viewer`.
 
 ## AstroNvim Rendering Configuration
 
@@ -385,6 +394,7 @@ lazygit
 - Human-readable source files
 - Open and portable formats where practical
 - One preferred tool per file type
+- Lightweight dedicated viewers for reading
 - Source remains the source of truth
 - Generated previews are disposable
 - Embedded visual source stays copyable and editable
