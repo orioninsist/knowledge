@@ -2,11 +2,6 @@
 
 > Markdown-first personal knowledge system. Terminal-native workflow for capturing, finding, reading, editing, rendering, and maintaining notes.
 
-## Navigation
-
-- [Terminal Stack](docs/terminal-stack.md) — native terminal tools used by the system
-- [Terminal Daily Usage](docs/terminal-daily-usage.md) — daily workflows and command patterns
-
 ## Core Idea
 
 Knowledge is organized under one root and searched recursively. Files may live in any subdirectory.
@@ -450,3 +445,7 @@ lazygit
 - Embedded visual source stays copyable and editable
 - Render automatically; edit explicitly
 - Fast retrieval
+
+## Consolidated Notes
+
+The previous `docs/terminal-stack.md` and `docs/terminal-daily-usage.md` content has been consolidated into this README so the repository keeps a single source of truth for the terminal stack, daily workflow, rendering conventions, and shortcuts.
