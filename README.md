@@ -1,6 +1,6 @@
 # Knowledge
 
-> Markdown-first personal knowledge system. Terminal-native workflow for capturing, finding, reading, and maintaining notes.
+> Markdown-first personal knowledge system. Terminal-native workflow for capturing, finding, reading, editing, rendering, and maintaining notes.
 
 ## Navigation
 
@@ -9,7 +9,7 @@
 
 ## Core Idea
 
-Knowledge is organized as Markdown documents.
+Knowledge is organized under one root and searched recursively. Files may live in any subdirectory.
 
 The workflow is:
 
@@ -20,12 +20,20 @@ Organize
   ↓
 Find
   ↓
-Read
-  ↓
 Edit
+  ↓
+Render / Read
   ↓
 Review
 ```
+
+## Knowledge Root
+
+```text
+/home/murat/Media/8-Document/Knowledge
+```
+
+All note, diagram, canvas, document, and publication files can be searched from this single root.
 
 ## Repository Structure
 
@@ -38,9 +46,64 @@ knowledge/
 └── notes/
 ```
 
+## File Formats and Rendering Workflow
+
+Each format has one primary role and one preferred toolchain.
+
+| Format | Role | Edit | Render / Open | Preferred Output |
+| --- | --- | --- | --- | --- |
+| `.md` | Notes and publishable source | Neovim | glow / mdcat; Pandoc for conversion | Terminal, HTML, PDF, EPUB |
+| `.d2` | Architecture and technical diagrams | Neovim | D2 | SVG |
+| `.mmd` | Flowcharts and Mermaid diagrams | Neovim | Mermaid CLI (`mmdc`) | SVG |
+| `.typ` | Typeset documents | Neovim | Typst | PDF |
+| `.excalidraw` | Free-form visual drawings | Excalidraw Desktop | Excalidraw Desktop | Native drawing, SVG/PNG export |
+| `.canvas` | Infinite-canvas knowledge maps | Obsidian Canvas | Obsidian Canvas | Native JSON Canvas |
+| `.pdf` | Final document / reading format | — | System PDF viewer | PDF |
+| `.epub` | E-book / long-form reading | — | EPUB reader | EPUB |
+| `.html` | Browser-readable publication | Neovim | Web browser | HTML |
+| `.svg` | Vector diagram output | Neovim if needed | System image/browser viewer | SVG |
+| `.json` | Structured data | Neovim | jq | JSON |
+| `.yaml` / `.yml` | Structured configuration | Neovim | yq | YAML |
+
+### Rendering conventions
+
+Keep source formats editable and generate presentation formats from them.
+
+```text
+D2
+diagram.d2
+   ↓ d2
+diagram.svg
+```
+
+```text
+Mermaid
+diagram.mmd
+   ↓ mmdc
+diagram.svg
+```
+
+```text
+Typst
+document.typ
+   ↓ typst compile
+document.pdf
+```
+
+```text
+Markdown
+document.md
+   ↓ pandoc
+document.html
+document.pdf
+document.epub
+```
+
+The default diagram output is SVG because it stays sharp at any scale. Typst is the preferred source for typeset PDF documents. Markdown plus Pandoc is the preferred publishing path when one source needs HTML, PDF, or EPUB output.
+
 ## Terminal Tool Stack
 
-The system uses small native terminal tools. Each tool has one clear purpose.
+The system uses small native tools. Each tool has one clear purpose.
 
 | Tool | Purpose | Link |
 | --- | --- | --- |
@@ -51,7 +114,7 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | zoxide | Smart directory jumping | https://github.com/ajeetdsouza/zoxide |
 | eza | Modern ls replacement | https://github.com/eza-community/eza |
 | yazi | Terminal file manager | https://github.com/sxyazi/yazi |
-| Neovim (nvim) | Markdown editor | https://github.com/neovim/neovim |
+| Neovim (nvim) | Markdown and source-format editor | https://github.com/neovim/neovim |
 | AstroNvim | Feature-rich and extensible Neovim configuration | https://github.com/AstroNvim/AstroNvim |
 | glow | Markdown renderer for terminal | https://github.com/charmbracelet/glow |
 | mdcat | Rich terminal Markdown renderer with GFM alerts, images, math, Mermaid, themes, and live preview | https://github.com/BIRSAx2/mdcat |
@@ -61,7 +124,7 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | atuin | Shell history search and management | https://github.com/atuinsh/atuin |
 | git | Version control | https://git-scm.com/ |
 | lazygit | Terminal Git interface | https://github.com/jesseduffield/lazygit |
-| pandoc | Document conversion | https://pandoc.org/ |
+| Pandoc | Convert Markdown to HTML, PDF, EPUB, and other formats | https://pandoc.org/ |
 | tmux | Terminal session manager | https://github.com/tmux/tmux |
 | duf | Disk usage viewer | https://github.com/muesli/duf |
 | btop | System monitor | https://github.com/aristocratos/btop |
@@ -71,10 +134,13 @@ The system uses small native terminal tools. Each tool has one clear purpose.
 | direnv | Automatic environment loader | https://github.com/direnv/direnv |
 | shellcheck | Shell script analyzer | https://github.com/koalaman/shellcheck |
 | D2 | Text-to-diagram language for architecture and technical diagrams | https://github.com/d2lang/d2 |
+| Mermaid CLI (mmdc) | Render Mermaid source files from the command line | https://github.com/mermaid-js/mermaid-cli |
 | Mermaid | Markdown-inspired text-to-diagram and chart language | https://github.com/mermaid-js/mermaid |
 | Typst | Modern markup-based typesetting system for documents and PDFs | https://github.com/typst/typst |
-| Excalidraw | Open-source infinite canvas and hand-drawn style whiteboard for diagrams and visual notes | https://github.com/excalidraw/excalidraw |
-| JSON Canvas | Open file format used by Obsidian Canvas for infinite-canvas data | https://github.com/obsidianmd/jsoncanvas |
+| Excalidraw | Open-source infinite canvas and hand-drawn style whiteboard | https://github.com/excalidraw/excalidraw |
+| Excalidraw Desktop | Linux desktop client used for local `.excalidraw` files | https://github.com/quabyt-tech/excalidraw-desktop |
+| JSON Canvas | Open `.canvas` file format for infinite-canvas data | https://github.com/obsidianmd/jsoncanvas |
+| Obsidian | Visual editor currently used for JSON Canvas files | https://obsidian.md/ |
 
 ## Daily Terminal Workflow
 
@@ -136,20 +202,35 @@ mdcat --watch note.md
 ### Diagram and document tools
 
 ```bash
-# D2: render a diagram
+# D2: render a diagram to SVG
 d2 diagram.d2 diagram.svg
 
-# Mermaid: render with Mermaid CLI (mmdc)
+# Mermaid: render to SVG with Mermaid CLI
 mmdc -i diagram.mmd -o diagram.svg
 
-# Typst: compile or watch a document
+# Typst: compile or watch a PDF document
 typst compile document.typ
 typst watch document.typ
+
+# Pandoc: publish Markdown
+pandoc document.md -o document.html
+pandoc document.md -o document.epub
+pandoc document.md -o document.pdf
 ```
 
-Excalidraw complements the terminal-native diagram tools when a free-form visual canvas is useful. Drawings use the open `.excalidraw` JSON format and can be exported to PNG or SVG.
+### Visual files
 
-Obsidian Canvas uses the open JSON Canvas file format. The format is maintained by Obsidian under the `obsidianmd/jsoncanvas` repository and is useful for storing infinite-canvas nodes and connections as portable `.canvas` files.
+```bash
+# Local Excalidraw file
+excalidraw-desktop drawing.excalidraw
+
+# JSON Canvas is edited visually with Obsidian Canvas
+obsidian
+```
+
+Excalidraw Desktop is used for local `.excalidraw` files. The older Chrome/PWA launcher is not part of the primary workflow.
+
+JSON Canvas remains an open, portable file format. Obsidian is currently used only as the visual Canvas editor; the files remain ordinary `.canvas` JSON files.
 
 ### AstroNvim profile
 
@@ -198,22 +279,15 @@ git add .
 git commit -m "update notes"
 ```
 
-## Documentation
-
-All system documentation lives as Markdown files inside this repository.
-
-Links:
-
-- [Terminal Stack](docs/terminal-stack.md)
-- [Terminal Daily Usage](docs/terminal-daily-usage.md)
-- Note organization
-- Future knowledge modules
-
 ## Principles
 
 - Markdown first
+- One Knowledge root
+- Recursive search
 - Local first
 - Terminal native
-- Simple tools
+- Human-readable source files
+- Open and portable formats where practical
+- One preferred tool per file type
+- Source and rendered output stay separate
 - Fast retrieval
-- Human readable files
