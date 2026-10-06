@@ -33,7 +33,7 @@ Review
 /home/murat/Media/8-Document/Knowledge
 ```
 
-All note, diagram, canvas, document, and publication files can be searched from this single root.
+All notes, diagrams, documents, drawings, and publication files can be searched recursively from this single root.
 
 ## Repository Structure
 
@@ -46,34 +46,103 @@ knowledge/
 └── notes/
 ```
 
+## Primary Markdown Workflow
+
+Markdown is the main working format.
+
+AstroNvim is used as the primary editor profile:
+
+```bash
+NVIM_APPNAME=astronvim nvim note.md
+```
+
+Inside Markdown, fenced Mermaid, D2, and Typst blocks are rendered inline in AstroNvim through Snacks Image and Kitty graphics.
+
+The verified interactive workflow is:
+
+```text
+open note.md
+   ↓
+Mermaid / D2 / Typst blocks render automatically
+   ↓
+move to the fenced block opener
+   ↓
+Enter
+   ↓
+edit the source block
+   ↓
+Esc
+   ↓
+updated render returns automatically
+```
+
+The Markdown file always remains the source of truth. Rendered images are generated for preview only; source code stays copyable and editable.
+
+### Embedded Mermaid
+
+```text
+Markdown fenced mermaid block
+   ↓ Mermaid CLI / Snacks document rendering
+inline image
+   ↓
+Kitty graphics inside AstroNvim
+```
+
+### Embedded D2
+
+```text
+Markdown fenced d2 block
+   ↓ d2
+temporary SVG
+   ↓ Inkscape
+temporary PNG
+   ↓ Snacks Image
+Kitty graphics inside AstroNvim
+```
+
+D2 uses the SVG path because it is stable and avoids the browser/Playwright path required by direct PNG rendering.
+
+### Embedded Typst
+
+```text
+Markdown fenced typst block
+   ↓ typst compile
+temporary PNG
+   ↓ Snacks Image
+Kitty graphics inside AstroNvim
+```
+
+Typst blocks are compiled directly to PNG for inline preview.
+
 ## File Formats and Rendering Workflow
 
 Each format has one primary role and one preferred toolchain.
 
 | Format | Role | Edit | Render / Open | Preferred Output |
 | --- | --- | --- | --- | --- |
-| `.md` | Notes and publishable source | Neovim | glow / mdcat; Pandoc for conversion | Terminal, HTML, PDF, EPUB |
-| `.d2` | Architecture and technical diagrams | Neovim | D2 | SVG |
-| `.mmd` | Flowcharts and Mermaid diagrams | Neovim | Mermaid CLI (`mmdc`) | SVG |
-| `.typ` | Typeset documents | Neovim | Typst | PDF |
+| `.md` | Main notes and publishable source | AstroNvim / Neovim | inline render; glow / mdcat; Pandoc for publication | Terminal, inline graphics, HTML, PDF, EPUB |
+| `.d2` | Standalone architecture and technical diagrams | Neovim | D2 | SVG |
+| `.mmd` | Standalone Mermaid diagrams | Neovim | Mermaid CLI (`mmdc`) | SVG |
+| `.typ` | Standalone typeset documents | Neovim | Typst | PDF |
 | `.excalidraw` | Free-form visual drawings | Excalidraw Desktop | Excalidraw Desktop | Native drawing, SVG/PNG export |
-| `.canvas` | Infinite-canvas knowledge maps | Obsidian Canvas | Obsidian Canvas | Native JSON Canvas |
-| `.pdf` | Final document / reading format | — | System PDF viewer | PDF |
-| `.epub` | E-book / long-form reading | — | EPUB reader | EPUB |
-| `.html` | Browser-readable publication | Neovim | Web browser | HTML |
-| `.svg` | Vector diagram output | Neovim if needed | System image/browser viewer | SVG |
+| `.pdf` | Final document / reading format | — | Zathura | PDF |
+| `.epub` | E-book / long-form reading | — | Calibre Ebook Viewer | EPUB |
+| `.html` | Browser-readable publication | Neovim | Google Chrome | HTML |
+| `.svg` | Vector diagram output | Neovim if needed | Inkscape | SVG |
 | `.json` | Structured data | Neovim | jq | JSON |
 | `.yaml` / `.yml` | Structured configuration | Neovim | yq | YAML |
 
-### Rendering conventions
+### Standalone rendering conventions
 
-Keep source formats editable and generate presentation formats from them.
+Keep editable sources separate from final outputs.
 
 ```text
 D2
 diagram.d2
    ↓ d2
 diagram.svg
+   ↓
+Inkscape
 ```
 
 ```text
@@ -81,6 +150,8 @@ Mermaid
 diagram.mmd
    ↓ mmdc
 diagram.svg
+   ↓
+Inkscape
 ```
 
 ```text
@@ -88,6 +159,8 @@ Typst
 document.typ
    ↓ typst compile
 document.pdf
+   ↓
+Zathura
 ```
 
 ```text
@@ -99,7 +172,16 @@ document.pdf
 document.epub
 ```
 
-The default diagram output is SVG because it stays sharp at any scale. Typst is the preferred source for typeset PDF documents. Markdown plus Pandoc is the preferred publishing path when one source needs HTML, PDF, or EPUB output.
+The default standalone diagram output is SVG because it remains sharp at any scale. Typst is the preferred source for typeset PDF documents. Markdown plus Pandoc is the preferred publishing path when one source needs HTML, PDF, or EPUB output.
+
+For Markdown-to-PDF through Typst, the verified command uses an explicit main font:
+
+```bash
+pandoc document.md \
+  --pdf-engine=typst \
+  -V mainfont="Noto Serif" \
+  -o document.pdf
+```
 
 ## Terminal Tool Stack
 
@@ -107,7 +189,7 @@ The system uses small native tools. Each tool has one clear purpose.
 
 | Tool | Purpose | Link |
 | --- | --- | --- |
-| Kitty | GPU-accelerated terminal emulator with image and graphics protocol support | https://github.com/kovidgoyal/kitty |
+| Kitty | GPU-accelerated terminal emulator and inline graphics backend | https://github.com/kovidgoyal/kitty |
 | fd | Fast file finding | https://github.com/sharkdp/fd |
 | ripgrep (rg) | Fast text search inside notes | https://github.com/BurntSushi/ripgrep |
 | fzf | Fuzzy interactive search | https://github.com/junegunn/fzf |
@@ -115,9 +197,10 @@ The system uses small native tools. Each tool has one clear purpose.
 | eza | Modern ls replacement | https://github.com/eza-community/eza |
 | yazi | Terminal file manager | https://github.com/sxyazi/yazi |
 | Neovim (nvim) | Markdown and source-format editor | https://github.com/neovim/neovim |
-| AstroNvim | Feature-rich and extensible Neovim configuration | https://github.com/AstroNvim/AstroNvim |
+| AstroNvim | Primary Neovim profile for the Knowledge editing workflow | https://github.com/AstroNvim/AstroNvim |
+| Snacks.nvim | Inline image/document rendering inside AstroNvim | https://github.com/folke/snacks.nvim |
 | glow | Markdown renderer for terminal | https://github.com/charmbracelet/glow |
-| mdcat | Rich terminal Markdown renderer with GFM alerts, images, math, Mermaid, themes, and live preview | https://github.com/BIRSAx2/mdcat |
+| mdcat | Rich terminal Markdown renderer and live preview | https://github.com/BIRSAx2/mdcat |
 | bat | Better cat with syntax highlighting | https://github.com/sharkdp/bat |
 | starship | Cross-shell prompt | https://github.com/starship/starship |
 | flyline | Modern Bash line editor with suggestions, completion, fuzzy history, and rich prompt features | https://github.com/HalFrgrd/flyline |
@@ -137,10 +220,12 @@ The system uses small native tools. Each tool has one clear purpose.
 | Mermaid CLI (mmdc) | Render Mermaid source files from the command line | https://github.com/mermaid-js/mermaid-cli |
 | Mermaid | Markdown-inspired text-to-diagram and chart language | https://github.com/mermaid-js/mermaid |
 | Typst | Modern markup-based typesetting system for documents and PDFs | https://github.com/typst/typst |
-| Excalidraw | Open-source infinite canvas and hand-drawn style whiteboard | https://github.com/excalidraw/excalidraw |
+| Inkscape | SVG viewer and SVG-to-PNG conversion for the D2 inline pipeline | https://inkscape.org/ |
+| ImageMagick | Image conversion dependency available to the rendering stack | https://imagemagick.org/ |
+| Zathura | PDF reader | https://pwmt.org/projects/zathura/ |
+| Calibre Ebook Viewer | EPUB reader | https://calibre-ebook.com/ |
+| Excalidraw | Open-source free-form drawing format/application | https://github.com/excalidraw/excalidraw |
 | Excalidraw Desktop | Linux desktop client used for local `.excalidraw` files | https://github.com/quabyt-tech/excalidraw-desktop |
-| JSON Canvas | Open `.canvas` file format for infinite-canvas data | https://github.com/obsidianmd/jsoncanvas |
-| Obsidian | Visual editor currently used for JSON Canvas files | https://obsidian.md/ |
 
 ## Daily Terminal Workflow
 
@@ -159,19 +244,20 @@ eza
 ### Find files
 
 ```bash
-fd keyword
+fd keyword /home/murat/Media/8-Document/Knowledge
 ```
 
 ### Search inside notes
 
 ```bash
-rg "keyword"
+rg "keyword" /home/murat/Media/8-Document/Knowledge
 ```
 
-### Interactive search
+### Interactive recursive Markdown search
 
 ```bash
-fzf
+f="$(fd -t f -e md . /home/murat/Media/8-Document/Knowledge | fzf)"
+[ -n "$f" ] && NVIM_APPNAME=astronvim nvim "$f"
 ```
 
 ### Command help
@@ -199,84 +285,94 @@ mdcat note.md
 mdcat --watch note.md
 ```
 
+### Edit Markdown with inline renders
+
+```bash
+NVIM_APPNAME=astronvim nvim note.md
+```
+
+Within a Mermaid, D2, or Typst fenced block:
+
+```text
+Enter → edit source
+Esc   → return to automatic rendered preview
+```
+
 ### Diagram and document tools
 
 ```bash
-# D2: render a diagram to SVG
+# D2: standalone diagram to SVG
 d2 diagram.d2 diagram.svg
 
-# Mermaid: render to SVG with Mermaid CLI
+# Mermaid: standalone diagram to SVG
 mmdc -i diagram.mmd -o diagram.svg
 
-# Typst: compile or watch a PDF document
-typst compile document.typ
-typst watch document.typ
+# Typst: standalone document to PDF
+typst compile document.typ document.pdf
 
-# Pandoc: publish Markdown
+# Markdown: publish to HTML
 pandoc document.md -o document.html
+
+# Markdown: publish to EPUB
 pandoc document.md -o document.epub
-pandoc document.md -o document.pdf
+
+# Markdown: publish to PDF through Typst
+pandoc document.md \
+  --pdf-engine=typst \
+  -V mainfont="Noto Serif" \
+  -o document.pdf
 ```
 
 ### Visual files
 
 ```bash
-# Local Excalidraw file
+# Excalidraw
 excalidraw-desktop drawing.excalidraw
 
-# JSON Canvas is edited visually with Obsidian Canvas
-obsidian
+# PDF
+zathura document.pdf
+
+# EPUB
+ebook-viewer book.epub
+
+# SVG
+inkscape diagram.svg
+
+# HTML
+google-chrome document.html
 ```
 
 Excalidraw Desktop is used for local `.excalidraw` files. The older Chrome/PWA launcher is not part of the primary workflow.
 
-JSON Canvas remains an open, portable file format. Obsidian is currently used only as the visual Canvas editor; the files remain ordinary `.canvas` JSON files.
+## AstroNvim Rendering Configuration
 
-### AstroNvim profile
+The final verified setup keeps three active Knowledge-specific plugin specs:
 
-AstroNvim can be kept separate from the main Neovim configuration:
-
-```bash
-NVIM_APPNAME=astronvim nvim
+```text
+~/.config/astronvim/lua/plugins/
+├── snacks_image.lua
+├── knowledge_inline_render.lua
+└── knowledge_render_edit.lua
 ```
 
-### View file content
+Their responsibilities are:
 
-```bash
-bat note.md
-```
+- `snacks_image.lua` — enables Snacks Image document/inline rendering.
+- `knowledge_inline_render.lua` — renders embedded D2 and Typst blocks and places the generated images inline.
+- `knowledge_render_edit.lua` — provides the Enter-to-edit and Esc-to-re-render workflow.
 
-### Shell history
+Mermaid rendering is handled through the Snacks document rendering path already active in AstroNvim.
 
-```bash
-atuin search
-```
-
-### Git workflow
-
-```bash
-lazygit
-```
-
-### System check
-
-```bash
-btop
-duf
-```
-
-### Edit Markdown
-
-```bash
-nvim note.md
-```
-
-### Save changes
+## Git Workflow
 
 ```bash
 git status
 git add .
 git commit -m "update notes"
+```
+
+```bash
+lazygit
 ```
 
 ## Principles
@@ -289,5 +385,8 @@ git commit -m "update notes"
 - Human-readable source files
 - Open and portable formats where practical
 - One preferred tool per file type
-- Source and rendered output stay separate
+- Source remains the source of truth
+- Generated previews are disposable
+- Embedded visual source stays copyable and editable
+- Render automatically; edit explicitly
 - Fast retrieval
