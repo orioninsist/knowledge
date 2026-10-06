@@ -353,6 +353,56 @@ For normal image viewing, imv is the preferred viewer. Inkscape remains installe
 
 The Calibre library GUI is not part of the workflow. EPUB files are opened directly with `ebook-viewer`.
 
+## Espanso Shortcuts
+
+Espanso provides short terminal triggers for the most common Knowledge actions. The configuration lives at:
+
+```text
+~/.config/espanso/match/knowledge.yml
+```
+
+The active shortcuts are:
+
+| Trigger | Action |
+| --- | --- |
+| `:kn` | Go to the Knowledge root |
+| `:knfind` | Recursively find a Markdown file with fd + fzf and open it in AstroNvim |
+| `:knfile` | Recursively choose a Markdown filename with fd + fzf |
+| `:knsearch` | Run the dedicated `knsearch` helper for Markdown content search |
+| `:knglow` | Recursively choose a Markdown file and read it with glow |
+| `:knexcalidraw` | Open a recursive `.excalidraw` selection in Excalidraw Desktop |
+| `:knd2` | Render a recursive `.d2` selection to SVG and open it with imv |
+| `:knmermaid` | Render a recursive `.mmd` selection to SVG and open it with imv |
+| `:kntypst` | Compile a recursive `.typ` selection to PDF and open it with Zathura |
+| `:knpdf` | Recursively choose a PDF and open it with Zathura |
+| `:knepub` | Recursively choose an EPUB and open it with ebook-viewer |
+| `:knimage` | Recursively choose SVG/PNG/JPEG/WebP and open it with imv |
+| `:knreadme` | Read the repository README with glow |
+| `:knrepo` | Go to the Knowledge repository |
+
+### Interactive content search
+
+`:knsearch` intentionally expands only to the short command `knsearch`. The shell logic lives in a dedicated helper instead of being embedded inside Espanso:
+
+```text
+~/.local/bin/knsearch
+```
+
+The search flow is:
+
+```text
+Markdown files under the Knowledge root
+   ↓ ripgrep (rg)
+matching lines
+   ↓ fzf
+interactive selection + bat preview
+   ↓ Enter
+AstroNvim opens the selected file at the selected line
+```
+
+This keeps Espanso configuration simple and avoids shell quoting/parsing problems in long replacement strings.
+
+
 ## AstroNvim Rendering Configuration
 
 The final verified setup keeps three active Knowledge-specific plugin specs:
