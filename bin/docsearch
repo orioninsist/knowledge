@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+ROOT="/home/murat/Media/5-Documentation"
+
+# 1. Önce ana Documentation klasörünün alt klasörlerinden birini seç
+dir="$(
+  find "$ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' |
+  sort |
+  fzf --prompt='Klasor > '
+)"
+
+[ -z "$dir" ] && exit 0
+
+dir="$ROOT/$dir"
+
+# 2. Sadece seçilen klasör altında Markdown içeriklerini ara
+result="$(
+  rg \
+    --line-number \
+    --no-heading \
+    --color=never \
+    --glob '*.md' \
+    '.' "$dir" |
+  fzf \
+    --delimiter=: \
+    --prompt='Markdown icerigi > ' \
+    --preview 'bat --color=always --style=numbers --highlight-line {2} {1}' \
+    --preview-window='right:60%'
+)"
+
+[ -z "$result" ] && exit 0
+
+# 3. Seçilen sonucu Glow ile oku
+file="${result%%:*}"
+
+glow -p "$file"

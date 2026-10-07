@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+ROOT="/home/murat/Media/8-Document/Knowledge"
+
+file="$(
+  fd --type f --extension md \
+    --max-depth 1 \
+    --no-ignore \
+    --hidden \
+    --exclude '.git' \
+    --exclude '.gitignore' \
+    . "$ROOT" |
+  fzf --prompt='Markdown > '
+)"
+
+[[ -z "$file" ]] && exit 0
+
+glow -p "$file"

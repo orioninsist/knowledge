@@ -38,6 +38,7 @@ knowledge/
 └── bin/
     ├── docsearch
     ├── knfile
+    ├── knglow
     ├── knrename
     └── knsearch
 ```
@@ -75,6 +76,15 @@ Select any Knowledge file, open it in AstroNvim for inspection/editing, then ren
 - Works with all file extensions.
 - The new filename includes the extension.
 - Existing destination files are never overwritten.
+
+### knglow
+
+Select a Markdown file from the flat Knowledge root and read it with Glow.
+
+- Uses `fd + fzf + glow`.
+- Uses `--no-ignore` because Knowledge files are ignored by Git.
+- Searches only the flat root with `--max-depth 1`.
+- Excludes `.git` and `.gitignore`.
 
 ### docsearch
 
@@ -428,7 +438,7 @@ The active shortcuts are:
 | `:knfile` | Run `knfile`: open any existing file or type a new filename and open it in AstroNvim |
 | `:knsearch` | Run `knsearch`: search text-readable Knowledge files and open the selected match in AstroNvim |
 | `:knrename` | Run `knrename`: select any file, inspect/edit it in AstroNvim, then rename it |
-| `:knglow` | Select a Markdown file with `fd + fzf` and read it with Glow |
+| `:knglow` | Run the dedicated `knglow` helper: select a Markdown file and read it with Glow |
 | `:docsearch` | Run the dedicated `docsearch` helper |
 | `:knexcalidraw` | Select an `.excalidraw` file and open it in Excalidraw Desktop |
 | `:knd2` | Select a `.d2` file, render it to SVG with D2, and open it with `imv` |
@@ -446,17 +456,17 @@ The commands below are real executable scripts and are stored in the repository 
 bin/
 ├── docsearch
 ├── knfile
+├── knglow
 ├── knrename
 └── knsearch
 ```
 
-`knfile`, `knsearch`, and `knrename` are also installed locally under `~/.local/bin/` for direct terminal use.
+`knfile`, `knsearch`, `knrename`, and `knglow` are also installed locally under `~/.local/bin/` for direct terminal use.
 
 ### Direct Espanso launchers
 
 The remaining shortcuts are intentionally not separate scripts. Their shell commands live directly in `knowledge.yml`:
 
-- `:knglow` → `fd + fzf + glow`
 - `:knexcalidraw` → `fd + fzf + excalidraw-desktop`
 - `:knd2` → `fd + fzf + d2 + imv`
 - `:knmermaid` → `fd + fzf + mmdc + imv`
