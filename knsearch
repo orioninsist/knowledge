@@ -7,11 +7,7 @@ result="$(
     --line-number \
     --no-heading \
     --color=never \
-    --no-ignore \
-    --hidden \
-    --max-depth 1 \
-    --glob '!.git/**' \
-    --glob '!.gitignore' \
+    --glob '*.md' \
     '.' "$ROOT" |
   fzf \
     --delimiter=: \
@@ -19,7 +15,7 @@ result="$(
     --preview-window='right:60%'
 )"
 
-[[ -z "$result" ]] && exit 0
+[ -z "$result" ] && exit 0
 
 file="${result%%:*}"
 rest="${result#*:}"
