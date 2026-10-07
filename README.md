@@ -1,18 +1,52 @@
 # Knowledge
 
-A flat, terminal-first personal knowledge system centered around AstroNvim.
+> Terminal-first personal knowledge system centered around AstroNvim. Markdown remains an important format, but the current workflow is file-format agnostic for opening, creating, searching text content, and renaming files.
 
-The Knowledge directory is:
+## Core Idea
+
+Knowledge is organized under one flat root. All Knowledge files live directly in the root directory; the current setup does not use PARA subfolders.
+
+The workflow is:
+
+```text
+Capture
+  ↓
+Organize
+  ↓
+Find
+  ↓
+Edit
+  ↓
+Render / Read
+  ↓
+Review
+```
+
+## Knowledge Root
 
 ```text
 /home/murat/Media/8-Document/Knowledge
 ```
 
-All knowledge files live directly in this directory. There are no PARA subfolders in the current setup.
+All notes, diagrams, documents, drawings, and publication files live directly in this single root.
 
-## Core workflow
+## Repository Structure
 
-The main editor is AstroNvim/Neovim.
+```text
+knowledge/
+├── README.md
+└── bin/
+    ├── docsearch
+    ├── knfile
+    ├── knrename
+    └── knsearch
+```
+
+The repository keeps reusable executable helpers under `bin/`. Simple one-line preview/open commands remain in the Espanso configuration instead of becoming separate scripts.
+
+## Core File Workflow
+
+AstroNvim is the primary editor for the Knowledge system.
 
 ### knfile
 
@@ -20,6 +54,7 @@ Open any existing Knowledge file in AstroNvim, or type a new filename to create 
 
 - Works with all file extensions.
 - Uses `fd` + `fzf`.
+- Reads only the flat Knowledge root.
 - Ignores `.git` and `.gitignore`.
 - New files are created when saved from AstroNvim.
 
@@ -45,41 +80,367 @@ Select any Knowledge file, open it in AstroNvim for inspection/editing, then ren
 
 Search the local documentation collection and open the selected result for reading.
 
-## Espanso shortcuts
+## Primary Markdown Workflow
 
-The Espanso configuration acts as the launcher layer.
+Markdown is the main working format.
 
-### General Knowledge
+AstroNvim is used as the primary editor profile:
 
-- `:kn` — change directory to the Knowledge root.
-- `:knfile` — run `knfile`.
-- `:knsearch` — run `knsearch`.
-- `:knrename` — run `knrename`.
-- `:knglow` — select a Markdown file with `fd + fzf` and read it with Glow.
+```bash
+NVIM_APPNAME=astronvim nvim note.md
+```
 
-### Documentation
+Inside Markdown, fenced Mermaid, D2, and Typst blocks are rendered inline in AstroNvim through Snacks Image and Kitty graphics.
 
-- `:docsearch` — run `docsearch`.
+The verified interactive workflow is:
 
-### Visual formats
+```text
+open note.md
+   ↓
+Mermaid / D2 / Typst blocks render automatically
+   ↓
+move to the fenced block opener
+   ↓
+Enter
+   ↓
+edit the source block
+   ↓
+Esc
+   ↓
+updated render returns automatically
+```
 
-- `:knexcalidraw` — select an `.excalidraw` file and open it with Excalidraw Desktop.
-- `:knd2` — select a `.d2` file, render it to SVG with D2, and view it with `imv`.
-- `:knmermaid` — select an `.mmd` file, render it to SVG with Mermaid CLI, and view it with `imv`.
+The Markdown file always remains the source of truth. Rendered images are generated for preview only; source code stays copyable and editable.
 
-### Documents
+### Embedded Mermaid
 
-- `:kntypst` — select a `.typ` file, compile it to PDF with Typst, and open it with Zathura.
-- `:knpdf` — select a PDF and open it with Zathura.
-- `:knepub` — select an EPUB and open it with `ebook-viewer`.
+```text
+Markdown fenced mermaid block
+   ↓ Mermaid CLI / Snacks document rendering
+inline image
+   ↓
+Kitty graphics inside AstroNvim
+```
 
-### Project
+### Embedded D2
 
-- `:knrepo` — change directory to the Knowledge Git repository.
+```text
+Markdown fenced d2 block
+   ↓ d2
+temporary SVG
+   ↓ Inkscape
+temporary PNG
+   ↓ Snacks Image
+Kitty graphics inside AstroNvim
+```
 
-## Repository scripts
+D2 uses the SVG path because it is stable and avoids the browser/Playwright path required by direct PNG rendering.
 
-Executable scripts are kept under `bin/`:
+### Embedded Typst
+
+```text
+Markdown fenced typst block
+   ↓ typst compile
+temporary PNG
+   ↓ Snacks Image
+Kitty graphics inside AstroNvim
+```
+
+Typst blocks are compiled directly to PNG for inline preview.
+
+## File Formats and Rendering Workflow
+
+Each format has one primary role and one preferred toolchain.
+
+| Format | Role | Edit | Render / Open | Preferred Output |
+| --- | --- | --- | --- | --- |
+| `.md` | Main notes and publishable source | AstroNvim / Neovim | inline render; glow / mdcat; Pandoc for publication | Terminal, inline graphics, HTML, PDF, EPUB |
+| `.d2` | Standalone architecture and technical diagrams | Neovim | D2 | SVG |
+| `.mmd` | Standalone Mermaid diagrams | Neovim | Mermaid CLI (`mmdc`) | SVG |
+| `.typ` | Standalone typeset documents | Neovim | Typst | PDF |
+| `.excalidraw` | Free-form visual drawings | Excalidraw Desktop | Excalidraw Desktop | Native drawing, SVG/PNG export |
+| `.pdf` | Final document / reading format | — | Zathura | PDF |
+| `.epub` | E-book / long-form reading | — | ebook-viewer | EPUB |
+| `.html` | Browser-readable publication | Neovim | Google Chrome | HTML |
+| `.svg` | Vector image / diagram output | Neovim if needed | imv | SVG |
+| `.png` / `.jpg` / `.jpeg` / `.webp` | Raster image reading | — | imv | Native image |
+| `.json` | Structured data | Neovim | jq | JSON |
+| `.yaml` / `.yml` | Structured configuration | Neovim | yq | YAML |
+
+### Standalone rendering conventions
+
+Keep editable sources separate from final outputs.
+
+```text
+D2
+diagram.d2
+   ↓ d2
+diagram.svg
+   ↓
+imv
+```
+
+```text
+Mermaid
+diagram.mmd
+   ↓ mmdc
+diagram.svg
+   ↓
+imv
+```
+
+```text
+Typst
+document.typ
+   ↓ typst compile
+document.pdf
+   ↓
+Zathura
+```
+
+```text
+Markdown
+document.md
+   ↓ pandoc
+document.html
+document.pdf
+document.epub
+```
+
+The default standalone diagram output is SVG because it remains sharp at any scale. Typst is the preferred source for typeset PDF documents. Markdown plus Pandoc is the preferred publishing path when one source needs HTML, PDF, or EPUB output.
+
+For Markdown-to-PDF through Typst, the verified command uses an explicit main font:
+
+```bash
+pandoc document.md \
+  --pdf-engine=typst \
+  -V mainfont="Noto Serif" \
+  -o document.pdf
+```
+
+## Terminal Tool Stack
+
+The system uses small native tools. Each tool has one clear purpose.
+
+| Tool | Purpose | Link |
+| --- | --- | --- |
+| Kitty | GPU-accelerated terminal emulator and inline graphics backend | https://github.com/kovidgoyal/kitty |
+| fd | Fast file finding | https://github.com/sharkdp/fd |
+| ripgrep (rg) | Fast text search inside notes | https://github.com/BurntSushi/ripgrep |
+| fzf | Fuzzy interactive search | https://github.com/junegunn/fzf |
+| zoxide | Smart directory jumping | https://github.com/ajeetdsouza/zoxide |
+| eza | Modern ls replacement | https://github.com/eza-community/eza |
+| yazi | Terminal file manager | https://github.com/sxyazi/yazi |
+| Neovim (nvim) | Markdown and source-format editor | https://github.com/neovim/neovim |
+| AstroNvim | Primary Neovim profile for the Knowledge editing workflow | https://github.com/AstroNvim/AstroNvim |
+| Snacks.nvim | Inline image/document rendering inside AstroNvim | https://github.com/folke/snacks.nvim |
+| glow | Markdown renderer for terminal | https://github.com/charmbracelet/glow |
+| mdcat | Rich terminal Markdown renderer and live preview | https://github.com/BIRSAx2/mdcat |
+| bat | Better cat with syntax highlighting | https://github.com/sharkdp/bat |
+| starship | Cross-shell prompt | https://github.com/starship/starship |
+| flyline | Modern Bash line editor with suggestions, completion, fuzzy history, and rich prompt features | https://github.com/HalFrgrd/flyline |
+| atuin | Shell history search and management | https://github.com/atuinsh/atuin |
+| git | Version control | https://git-scm.com/ |
+| lazygit | Terminal Git interface | https://github.com/jesseduffield/lazygit |
+| Pandoc | Convert Markdown to HTML, PDF, EPUB, and other formats | https://pandoc.org/ |
+| tmux | Terminal session manager | https://github.com/tmux/tmux |
+| duf | Disk usage viewer | https://github.com/muesli/duf |
+| btop | System monitor | https://github.com/aristocratos/btop |
+| tldr | Simplified command examples | https://github.com/tldr-pages/tldr |
+| jq | JSON processor | https://github.com/jqlang/jq |
+| yq | YAML processor | https://github.com/mikefarah/yq |
+| direnv | Automatic environment loader | https://github.com/direnv/direnv |
+| shellcheck | Shell script analyzer | https://github.com/koalaman/shellcheck |
+| D2 | Text-to-diagram language for architecture and technical diagrams | https://github.com/d2lang/d2 |
+| Mermaid CLI (mmdc) | Render Mermaid source files from the command line | https://github.com/mermaid-js/mermaid-cli |
+| Mermaid | Markdown-inspired text-to-diagram and chart language | https://github.com/mermaid-js/mermaid |
+| Typst | Modern markup-based typesetting system for documents and PDFs | https://github.com/typst/typst |
+| Inkscape | SVG-to-PNG conversion dependency used by the embedded D2 preview pipeline | https://inkscape.org/ |
+| ImageMagick | Image conversion dependency available to the rendering stack | https://imagemagick.org/ |
+| imv | Lightweight Wayland-friendly image viewer for SVG, PNG, JPEG, WebP, and other image formats | https://sr.ht/~exec64/imv/ |
+| Zathura | PDF reader | https://pwmt.org/projects/zathura/ |
+| ebook-viewer | EPUB reader from the Calibre package, used directly without the main library GUI | https://calibre-ebook.com/ |
+| Excalidraw | Open-source free-form drawing format/application | https://github.com/excalidraw/excalidraw |
+| Excalidraw Desktop | Linux desktop client used for local `.excalidraw` files | https://github.com/quabyt-tech/excalidraw-desktop |
+
+## Daily Terminal Workflow
+
+### Change directory quickly
+
+```bash
+z project
+```
+
+### List files
+
+```bash
+eza
+```
+
+### Find files
+
+```bash
+fd keyword /home/murat/Media/8-Document/Knowledge
+```
+
+### Search inside notes
+
+```bash
+rg "keyword" /home/murat/Media/8-Document/Knowledge
+```
+
+### Open or create any Knowledge file
+
+```bash
+knfile
+```
+
+### Search text content across Knowledge files
+
+```bash
+knsearch
+```
+
+### Rename any Knowledge file
+
+```bash
+knrename
+```
+
+### Command help
+
+```bash
+tldr command
+```
+
+### Browse files
+
+```bash
+yazi
+```
+
+### Read Markdown
+
+```bash
+glow note.md
+```
+
+### Rich Markdown preview
+
+```bash
+mdcat note.md
+mdcat --watch note.md
+```
+
+### Edit Markdown with inline renders
+
+```bash
+NVIM_APPNAME=astronvim nvim note.md
+```
+
+Within a Mermaid, D2, or Typst fenced block:
+
+```text
+Enter → edit source
+Esc   → return to automatic rendered preview
+```
+
+### Glow current Markdown
+
+Open the current Markdown file directly in Glow from AstroNvim:
+
+```text
+Space g g
+```
+
+Configuration:
+
+```text
+~/.config/astronvim/lua/plugins/glow.lua
+```
+
+### Diagram and document tools
+
+```bash
+# D2: standalone diagram to SVG
+d2 diagram.d2 diagram.svg
+
+# Mermaid: standalone diagram to SVG
+mmdc -i diagram.mmd -o diagram.svg
+
+# Typst: standalone document to PDF
+typst compile document.typ document.pdf
+
+# Markdown: publish to HTML
+pandoc document.md -o document.html
+
+# Markdown: publish to EPUB
+pandoc document.md -o document.epub
+
+# Markdown: publish to PDF through Typst
+pandoc document.md \
+  --pdf-engine=typst \
+  -V mainfont="Noto Serif" \
+  -o document.pdf
+```
+
+### Visual files
+
+```bash
+# Excalidraw
+excalidraw-desktop drawing.excalidraw
+
+# PDF
+zathura document.pdf
+
+# EPUB
+ebook-viewer book.epub
+
+# SVG
+imv diagram.svg
+
+# PNG / JPEG / WebP
+imv image.png
+
+# HTML
+google-chrome document.html
+```
+
+Excalidraw Desktop is used for local `.excalidraw` files. The older Chrome/PWA launcher is not part of the primary workflow.
+
+For normal image viewing, imv is the preferred viewer. Inkscape remains installed only because the embedded D2 renderer currently uses it as the SVG-to-PNG conversion step; it is not the default SVG viewer.
+
+The Calibre library GUI is not part of the workflow. EPUB files are opened directly with `ebook-viewer`.
+
+## Espanso Shortcuts
+
+Espanso provides short terminal triggers for the most common Knowledge actions. The configuration lives at:
+
+```text
+~/.config/espanso/match/knowledge.yml
+```
+
+The active shortcuts are:
+
+| Trigger | Action |
+| --- | --- |
+| `:kn` | Go to the flat Knowledge root |
+| `:knfile` | Run `knfile`: open any existing file or type a new filename and open it in AstroNvim |
+| `:knsearch` | Run `knsearch`: search text-readable Knowledge files and open the selected match in AstroNvim |
+| `:knrename` | Run `knrename`: select any file, inspect/edit it in AstroNvim, then rename it |
+| `:knglow` | Select a Markdown file with `fd + fzf` and read it with Glow |
+| `:docsearch` | Run the dedicated `docsearch` helper |
+| `:knexcalidraw` | Select an `.excalidraw` file and open it in Excalidraw Desktop |
+| `:knd2` | Select a `.d2` file, render it to SVG with D2, and open it with `imv` |
+| `:knmermaid` | Select an `.mmd` file, render it to SVG with Mermaid CLI, and open it with `imv` |
+| `:kntypst` | Select a `.typ` file, compile it to PDF with Typst, and open it with Zathura |
+| `:knpdf` | Select a PDF and open it with Zathura |
+| `:knepub` | Select an EPUB and open it with `ebook-viewer` |
+| `:knrepo` | Go to the Knowledge Git repository |
+
+### Dedicated helper scripts
+
+The commands below are real executable scripts and are stored in the repository under `bin/`:
 
 ```text
 bin/
@@ -89,20 +450,93 @@ bin/
 └── knsearch
 ```
 
-The Espanso one-line launchers for Glow, Excalidraw, D2, Mermaid, Typst, PDF, and EPUB are intentionally not separate scripts because they are simple direct commands.
+`knfile`, `knsearch`, and `knrename` are also installed locally under `~/.local/bin/` for direct terminal use.
 
-## AstroNvim
+### Direct Espanso launchers
 
-AstroNvim is the primary editor for the Knowledge system.
+The remaining shortcuts are intentionally not separate scripts. Their shell commands live directly in `knowledge.yml`:
 
-The current Markdown file can also be opened directly in Glow from AstroNvim with:
+- `:knglow` → `fd + fzf + glow`
+- `:knexcalidraw` → `fd + fzf + excalidraw-desktop`
+- `:knd2` → `fd + fzf + d2 + imv`
+- `:knmermaid` → `fd + fzf + mmdc + imv`
+- `:kntypst` → `fd + fzf + typst + zathura`
+- `:knpdf` → `fd + fzf + zathura`
+- `:knepub` → `fd + fzf + ebook-viewer`
+- `:kn` and `:knrepo` → direct `cd` commands
+
+### Knowledge search flow
+
+`:knsearch` expands only to the short command `knsearch`. The shell logic lives in the dedicated helper:
 
 ```text
-Space g g
+~/.local/bin/knsearch
 ```
 
-The related AstroNvim configuration lives at:
+The current search flow is:
 
 ```text
-~/.config/astronvim/lua/plugins/glow.lua
+text-readable files in the flat Knowledge root
+   ↓ ripgrep (rg)
+matching lines
+   ↓ fzf
+interactive selection + bat preview
+   ↓ Enter
+AstroNvim opens the selected file at the selected line
 ```
+
+This keeps Espanso configuration simple and avoids shell quoting/parsing problems in long replacement strings.
+
+## AstroNvim Rendering Configuration
+
+The final verified setup keeps three active Knowledge-specific plugin specs:
+
+```text
+~/.config/astronvim/lua/plugins/
+├── snacks_image.lua
+├── knowledge_inline_render.lua
+└── knowledge_render_edit.lua
+```
+
+Their responsibilities are:
+
+- `snacks_image.lua` — enables Snacks Image document/inline rendering.
+- `knowledge_inline_render.lua` — renders embedded D2 and Typst blocks and places the generated images inline.
+- `knowledge_render_edit.lua` — provides the Enter-to-edit and Esc-to-re-render workflow.
+- `glow.lua` — adds `Space g g` to open the current Markdown file in Glow from AstroNvim.
+
+Mermaid rendering is handled through the Snacks document rendering path already active in AstroNvim.
+
+## Git Workflow
+
+```bash
+git status
+git add .
+git commit -m "update notes"
+```
+
+```bash
+lazygit
+```
+
+## Principles
+
+- AstroNvim as the primary editor
+- One flat Knowledge root
+- File-format agnostic open/create/rename
+- Text-content search across readable file formats
+- Local first
+- Terminal native
+- Human-readable source files
+- Open and portable formats where practical
+- One preferred tool per file type
+- Lightweight dedicated viewers for reading
+- Source remains the source of truth
+- Generated previews are disposable
+- Embedded visual source stays copyable and editable
+- Render automatically; edit explicitly
+- Fast retrieval
+
+## Consolidated Notes
+
+The previous terminal stack and daily usage documentation has been consolidated into this README so the repository keeps a single source of truth for the terminal stack, daily workflow, rendering conventions, helper scripts, and Espanso shortcuts.
