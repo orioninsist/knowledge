@@ -14,10 +14,10 @@ file="$(
 
 [[ -z "$file" ]] && exit 0
 
-# Open the selected file in AstroNvim first.
+# Önce dosyayı AstroNvim'de aç
 NVIM_APPNAME=astronvim nvim "$ROOT/$file"
 
-# After Neovim exits, ask for the new filename.
+# Neovim'den çıktıktan sonra yeni adı sor
 echo
 echo "Mevcut dosya: $file"
 read -r -p "Yeni dosya adı (uzantı dahil): " newname
