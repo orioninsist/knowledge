@@ -295,6 +295,20 @@ Enter → edit source
 Esc   → return to automatic rendered preview
 ```
 
+### Glow current Markdown
+
+Open the current Markdown file directly in Glow from AstroNvim:
+
+```text
+Space g g
+```
+
+Configuration:
+
+```text
+~/.config/astronvim/lua/plugins/glow.lua
+```
+
 ### Diagram and document tools
 
 ```bash
